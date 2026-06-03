@@ -13,11 +13,11 @@ const config: Config = {
     extend: {
       colors: {
         // Fonds sombres
-        ink: '#08090B', // noir profond — fond principal
-        'ink-soft': '#0F1117', // gris très sombre — fond secondaire
+        ink: '#0C0E13', // noir profond — fond principal (légèrement relevé)
+        'ink-soft': '#14171E', // gris très sombre — fond secondaire
         // Cartes & séparateurs
-        card: '#1E222A', // gris anthracite — cartes (légèrement éclairci pour plus de lumière)
-        border: '#30343D', // bordure 1px (un peu plus visible)
+        card: '#23272F', // gris anthracite — cartes (plus de lumière)
+        border: '#383D47', // bordure 1px (plus visible)
         // Couleur signature : bleu électrique froid
         accent: {
           DEFAULT: '#4A9EFF',
@@ -25,9 +25,9 @@ const config: Config = {
           deep: '#1A6EFF',
         },
         // Textes
-        foreground: '#E8EAF0', // blanc cassé — corps de texte
+        foreground: '#ECEEF4', // blanc cassé — corps de texte (plus lumineux)
         title: '#FFFFFF', // blanc pur — titres
-        muted: '#9AA0AD', // gris doux — texte secondaire (plus lumineux)
+        muted: '#A6ACB8', // gris doux — texte secondaire (plus lumineux)
       },
       fontFamily: {
         // Titres : Space Grotesk — Corps : Inter (chargées via next/font)

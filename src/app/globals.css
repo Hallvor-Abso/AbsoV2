@@ -12,9 +12,9 @@
     /* Halos bleus d'ambiance, très diffus : apportent de la lumière sans
        casser l'ambiance sombre. Fixés pour rester en place au défilement. */
     background-image:
-      radial-gradient(48rem 32rem at 50% -8%, rgba(74, 158, 255, 0.12), transparent 60%),
-      radial-gradient(36rem 28rem at 100% 6%, rgba(26, 110, 255, 0.08), transparent 55%),
-      radial-gradient(32rem 26rem at 0% 18%, rgba(74, 158, 255, 0.05), transparent 55%);
+      radial-gradient(48rem 32rem at 50% -8%, rgba(74, 158, 255, 0.16), transparent 60%),
+      radial-gradient(36rem 28rem at 100% 6%, rgba(26, 110, 255, 0.11), transparent 55%),
+      radial-gradient(32rem 26rem at 0% 18%, rgba(74, 158, 255, 0.08), transparent 55%);
     background-attachment: fixed;
     background-repeat: no-repeat;
   }
@@ -55,7 +55,7 @@
   /* Carte standard : léger dégradé + liseré lumineux en haut pour du relief */
   .card {
     @apply rounded-xl border border-border shadow-card-top;
-    background-image: linear-gradient(to bottom, #23272F, #1A1D24);
+    background-image: linear-gradient(to bottom, #2A2F39, #20242C);
   }
 
   /* Bouton principal (bleu signature) */
