@@ -5,14 +5,12 @@ import { Logo } from '@/components/logo';
 import { Reveal } from '@/components/reveal';
 import { SectionHeading } from '@/components/section-heading';
 import { GameCard } from '@/components/game-card';
-import { SLOT_STATUS } from '@/lib/labels';
 import { formatDate } from '@/lib/utils';
 import { getSiteContent } from '@/lib/site-content';
 import {
   getActiveGames,
   getUpcomingGames,
   getRecentKills,
-  getRecruitmentSlots,
 } from '@/lib/data';
 
 // ISR : la page est régénérée au maximum toutes les 60 secondes.
@@ -20,18 +18,15 @@ export const revalidate = 60;
 
 export default async function HomePage() {
   // On charge en parallèle tout ce dont la page a besoin.
-  const [content, activeGames, upcomingGames, recentKills, slots] =
+  const [content, activeGames, upcomingGames, recentKills] =
     await Promise.all([
       getSiteContent(),
       getActiveGames(),
       getUpcomingGames(),
       getRecentKills(5),
-      getRecruitmentSlots(),
     ]);
 
   const allGames = [...activeGames, ...upcomingGames];
-  // Postes ouverts ou limités uniquement (on ne met pas en avant les fermés).
-  const openSlots = slots.filter((s) => s.status !== 'CLOSED');
 
   return (
     <>
@@ -157,40 +152,6 @@ export default async function HomePage() {
           <div className="mt-6">
             <Link href="/progression" className="text-sm font-medium text-accent hover:text-accent-deep">
               Voir toute la progression →
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {/* ====================== RECRUTEMENT RAPIDE ====================== */}
-      {openSlots.length > 0 && (
-        <section className="container-page py-12">
-          <Reveal>
-            <SectionHeading
-              eyebrow="Rejoindre les rangs"
-              title="Recrutement"
-              subtitle="Les postes que nous recherchons actuellement."
-              className="mb-10"
-            />
-          </Reveal>
-          <div className="flex flex-wrap gap-3">
-            {openSlots.map((slot, i) => (
-              <Reveal key={slot.id} delay={i * 0.04}>
-                <div
-                  className={`rounded-lg border px-4 py-2.5 text-sm ${SLOT_STATUS[slot.status].badge}`}
-                >
-                  <span className="font-semibold">{slot.className}</span>
-                  <span className="opacity-70"> · {slot.role}</span>
-                  <span className="ml-2 text-xs uppercase tracking-wider opacity-80">
-                    {SLOT_STATUS[slot.status].label}
-                  </span>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-          <div className="mt-8">
-            <Link href="/recrutement" className="btn-primary">
-              Postuler
             </Link>
           </div>
         </section>
