@@ -188,26 +188,28 @@ la souris.
    `NEXTAUTH_URL` avec cette adresse (ex. `https://absolution.vercel.app`), puis
    va dans l'onglet **Deployments** et clique sur **« Redeploy »** pour appliquer.
 
-### Partie D — Remplir la base avec les données de départ
+### Partie D — Initialiser la base (sans aucune ligne de commande)
 
-Au tout premier déploiement, les tables sont créées automatiquement, mais la
-base est **vide** (pas encore de compte admin ni de jeux). Pour la remplir,
-le plus simple est de lancer le « seed » une seule fois **depuis ton
-ordinateur**, branché sur la base Supabase :
+Au premier déploiement, les tables sont créées automatiquement, mais la base
+est encore **vide** (pas de compte admin ni de données). Pour l'initialiser, il
+suffit d'**ouvrir une page une seule fois** :
 
-1. Sur ta machine, mets dans ton fichier `.env` local les **mêmes**
-   `DATABASE_URL`, `DIRECT_URL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD` que sur Vercel.
-2. Lance :
+1. Va sur **`https://ton-site.vercel.app/setup`**
+2. Clique sur le bouton **« Initialiser le site »**.
+3. C'est fait ✅ : ton compte admin (identifiants = `ADMIN_USERNAME` /
+   `ADMIN_PASSWORD` de Vercel) et les données de départ (jeux WoW & SWTOR,
+   progression, news d'exemple) sont créés.
 
-   ```bash
-   npm run db:seed
-   ```
+Tu peux ensuite cliquer sur **« Aller à l'espace admin »** et te connecter.
 
-C'est fait : ton compte admin et les données d'exemple sont en ligne. Tu peux
-te connecter sur `https://ton-site.vercel.app/admin`.
+> 🔒 La page `/setup` est **sans danger** : elle ne fait rien si le site est
+> déjà initialisé (impossible d'écraser tes données par erreur). Tu peux même
+> la rouvrir : elle te renverra simplement vers la connexion admin.
 
-> 💡 Tu n'as besoin de faire ça **qu'une seule fois**. Ensuite, tout se gère
-> depuis l'interface admin.
+> 💡 *(Alternative pour les plus à l'aise)* : si tu préfères, tu peux aussi
+> lancer la commande `npm run db:seed` depuis ton ordinateur après avoir mis les
+> mêmes variables dans un fichier `.env` local. Mais la page `/setup` est plus
+> simple.
 
 ---
 
