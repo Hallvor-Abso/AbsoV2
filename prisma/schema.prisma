@@ -1,0 +1,200 @@
+// =============================================================================
+//  SCHÉMA DE LA BASE DE DONNÉES — Guilde Absolution
+// =============================================================================
+//  Ce fichier décrit TOUTES les tables du site. Si tu modifies une table ici,
+//  pense à lancer une migration : `npm run db:migrate`
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // connexion applicative (pooler)
+  directUrl = env("DIRECT_URL")   // connexion directe (migrations)
+}
+
+// -----------------------------------------------------------------------------
+//  UTILISATEUR ADMIN
+//  Un seul rôle : administrateur. Sert à protéger l'espace /admin.
+// -----------------------------------------------------------------------------
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+// -----------------------------------------------------------------------------
+//  JEU (World of Warcraft, SWTOR, futurs jeux...)
+//  Si `isActive` est false, le jeu disparaît ENTIÈREMENT du site public.
+// -----------------------------------------------------------------------------
+model Game {
+  id              String   @id @default(cuid())
+  name            String // "World of Warcraft"
+  slug            String   @unique // "wow" — utilisé dans les URLs
+  logoUrl         String? // logo du jeu
+  coverImageUrl   String? // art officiel (affiché assombri sur les cartes)
+  color           String   @default("#4A9EFF") // couleur d'accent du jeu
+  isActive        Boolean  @default(true) // visible sur le site public ?
+  status          GameStatus @default(ACTIVE) // ACTIVE = jouable, UPCOMING = à venir
+  order           Int      @default(0) // ordre d'affichage
+
+  raidTiers       RaidTier[]
+  news            News[]
+  recruitmentSlots RecruitmentSlot[]
+  applications    Application[]
+  events          Event[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum GameStatus {
+  ACTIVE   // jeu sur lequel la guilde est active
+  UPCOMING // jeu prévu / à venir
+}
+
+// -----------------------------------------------------------------------------
+//  TIER DE RAID (ex : "Nerub-ar Palace", "Liberation of Undermine")
+//  Regroupe plusieurs boss. Appartient à un jeu.
+// -----------------------------------------------------------------------------
+model RaidTier {
+  id        String   @id @default(cuid())
+  name      String
+  order     Int      @default(0) // les tiers récents en premier
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId    String
+  bosses    Boss[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+//  BOSS — un combat de raid avec son statut de progression.
+// -----------------------------------------------------------------------------
+model Boss {
+  id            String     @id @default(cuid())
+  name          String
+  status        BossStatus @default(UNTESTED)
+  firstKillDate DateTime? // date du premier kill (si tué)
+  order         Int        @default(0) // ordre dans le tier
+  tier          RaidTier   @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  tierId        String
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+enum BossStatus {
+  KILLED      // tué
+  PROGRESSING // en progression
+  UNTESTED    // non tenté
+}
+
+// -----------------------------------------------------------------------------
+//  NEWS / ARTICLE — contenu rédigé via l'éditeur Tiptap (HTML riche).
+// -----------------------------------------------------------------------------
+model News {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique // identifiant dans l'URL
+  excerpt     String? // résumé court affiché dans la grille
+  content     String // HTML riche produit par l'éditeur
+  imageUrl    String? // image de couverture
+  status      NewsStatus @default(DRAFT)
+  publishedAt DateTime? // date de publication
+  game        Game?      @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  gameId      String?
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+enum NewsStatus {
+  DRAFT     // brouillon (invisible au public)
+  PUBLISHED // publié
+}
+
+// -----------------------------------------------------------------------------
+//  POSTE DE RECRUTEMENT — une classe/rôle recherché, avec son statut.
+// -----------------------------------------------------------------------------
+model RecruitmentSlot {
+  id        String     @id @default(cuid())
+  role      String // "Tank", "Heal", "DPS Distance"...
+  className String // "Guerrier", "Sage"...
+  status    SlotStatus @default(OPEN)
+  note      String? // précision optionnelle
+  order     Int        @default(0)
+  game      Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId    String
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+enum SlotStatus {
+  OPEN    // ouvert
+  LIMITED // limité (high-end only)
+  CLOSED  // fermé
+}
+
+// -----------------------------------------------------------------------------
+//  CANDIDATURE — soumise via le formulaire public de recrutement.
+// -----------------------------------------------------------------------------
+model Application {
+  id            String            @id @default(cuid())
+  pseudo        String
+  characterId   String? // BattleTag / ID de personnage
+  className     String
+  role          String
+  server        String
+  experience    String // expérience PvE / progress
+  availability  String // disponibilités
+  logsUrl       String? // lien Warcraftlogs / armory / parses
+  motivation    String
+  status        ApplicationStatus @default(PENDING)
+  internalNotes String? // notes internes (admin only)
+  game          Game?             @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  gameId        String?
+
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+enum ApplicationStatus {
+  PENDING    // en attente
+  DISCUSSING // en discussion
+  ACCEPTED   // acceptée
+  REJECTED   // refusée
+}
+
+// -----------------------------------------------------------------------------
+//  ÉVÉNEMENT DU CALENDRIER (raid, soirée, événement spécial...).
+// -----------------------------------------------------------------------------
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  type        String    @default("RAID") // RAID, EVENT, OTHER
+  game        Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId      String
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+//  CONTENU STATIQUE (textes de la homepage, logo de guilde...).
+//  Système clé/valeur simple, éditable depuis l'admin.
+//  Ex : key="hero.tagline", value="Progression. Cohésion. Excellence."
+// -----------------------------------------------------------------------------
+model SiteContent {
+  key       String   @id // identifiant du texte
+  value     String // contenu
+  updatedAt DateTime @updatedAt
+}

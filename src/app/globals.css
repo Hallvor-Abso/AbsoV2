@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================================
+   STYLES GLOBAUX — Guilde Absolution
+   ========================================================================= */
+
+@layer base {
+  body {
+    @apply bg-ink text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-title;
+  }
+
+  /* Barre de défilement sombre et discrète */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0f1117;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2a2d35;
+    border-radius: 6px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a3d45;
+  }
+
+  /* Sélection de texte aux couleurs de la guilde */
+  ::selection {
+    background: rgba(74, 158, 255, 0.3);
+    color: #fff;
+  }
+}
+
+@layer components {
+  /* Conteneur de largeur de page standard */
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+  }
+
+  /* Carte standard (gris anthracite + bordure 1px) */
+  .card {
+    @apply rounded-xl border border-border bg-card;
+  }
+
+  /* Bouton principal (bleu signature) */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-5 py-2.5
+           font-medium text-ink transition-all duration-200
+           hover:bg-accent-deep hover:shadow-glow focus:outline-none
+           focus-visible:ring-2 focus-visible:ring-accent/60;
+  }
+
+  /* Bouton secondaire (contour) */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border
+           bg-transparent px-5 py-2.5 font-medium text-foreground transition-all duration-200
+           hover:border-accent/60 hover:text-title hover:shadow-glow focus:outline-none
+           focus-visible:ring-2 focus-visible:ring-accent/60;
+  }
+
+  /* Champ de formulaire */
+  .field {
+    @apply w-full rounded-lg border border-border bg-ink-soft px-4 py-2.5 text-foreground
+           placeholder:text-muted transition-colors duration-200
+           focus:border-accent/60 focus:outline-none focus:ring-1 focus:ring-accent/40;
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-foreground;
+  }
+
+  /* Petit titre de section avec barre d'accent bleue */
+  .eyebrow {
+    @apply mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent;
+  }
+}
+
+/* Contenu rédigé (rendu HTML des articles) — typographie soignée */
+.prose-absolution {
+  @apply text-foreground leading-relaxed;
+}
+.prose-absolution h1,
+.prose-absolution h2,
+.prose-absolution h3 {
+  @apply mb-3 mt-8 font-display text-title;
+}
+.prose-absolution h1 { @apply text-3xl; }
+.prose-absolution h2 { @apply text-2xl; }
+.prose-absolution h3 { @apply text-xl; }
+.prose-absolution p { @apply mb-4; }
+.prose-absolution a { @apply text-accent underline underline-offset-2 hover:text-accent-deep; }
+.prose-absolution ul { @apply mb-4 list-disc pl-6; }
+.prose-absolution ol { @apply mb-4 list-decimal pl-6; }
+.prose-absolution li { @apply mb-1; }
+.prose-absolution blockquote {
+  @apply my-4 border-l-2 border-accent/60 pl-4 italic text-muted;
+}
+.prose-absolution img { @apply my-6 rounded-lg border border-border; }
+.prose-absolution code {
+  @apply rounded bg-ink-soft px-1.5 py-0.5 text-sm text-accent;
+}
+.prose-absolution pre {
+  @apply my-4 overflow-x-auto rounded-lg border border-border bg-ink-soft p-4;
+}
+.prose-absolution hr { @apply my-8 border-border; }
