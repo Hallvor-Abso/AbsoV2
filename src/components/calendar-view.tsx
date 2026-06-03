@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { EVENT_TYPE } from '@/lib/labels';
+import { GameTabBar, type GameTabInfo } from './game-tab-bar';
 
 export type CalendarEvent = {
   id: string;
@@ -11,6 +12,7 @@ export type CalendarEvent = {
   startDate: string; // ISO
   endDate: string | null;
   type: string;
+  gameId: string;
   gameName: string;
   gameColor: string;
 };
@@ -27,18 +29,32 @@ const MONTHS = [
  * - Chaque événement est coloré selon son jeu
  * - Clic sur un événement -> modal de détails
  */
-export function CalendarView({ events }: { events: CalendarEvent[] }) {
+export function CalendarView({
+  events,
+  games,
+}: {
+  events: CalendarEvent[];
+  games: GameTabInfo[];
+}) {
   const today = new Date();
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState<CalendarEvent | null>(null);
+  // Un seul jeu affiché à la fois pour éviter un calendrier surchargé.
+  const [activeId, setActiveId] = useState(games[0]?.id);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
+  // On ne garde que les événements du jeu sélectionné.
+  const visibleEvents = useMemo(
+    () => (activeId ? events.filter((e) => e.gameId === activeId) : events),
+    [events, activeId]
+  );
+
   // Regroupe les événements par jour (clé "YYYY-M-D") pour un accès rapide.
   const eventsByDay = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
-    for (const ev of events) {
+    for (const ev of visibleEvents) {
       const d = new Date(ev.startDate);
       const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
       const arr = map.get(key) ?? [];
@@ -46,7 +62,7 @@ export function CalendarView({ events }: { events: CalendarEvent[] }) {
       map.set(key, arr);
     }
     return map;
-  }, [events]);
+  }, [visibleEvents]);
 
   // Construction de la grille du mois (cases vides incluses pour aligner).
   const cells = useMemo(() => {
@@ -67,6 +83,9 @@ export function CalendarView({ events }: { events: CalendarEvent[] }) {
 
   return (
     <div>
+      {/* Onglets par jeu : un calendrier distinct par jeu */}
+      <GameTabBar games={games} activeId={activeId ?? ''} onSelect={setActiveId} />
+
       {/* En-tête de navigation */}
       <div className="mb-6 flex items-center justify-between">
         <h3 className="font-display text-xl font-semibold text-title">

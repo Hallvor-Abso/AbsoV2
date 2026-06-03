@@ -87,8 +87,11 @@ export default async function AdminProgressionPage() {
                             <label className="mb-1 block text-xs text-muted">Date de premier kill</label>
                             <input type="date" name="firstKillDate" defaultValue={toDateInput(boss.firstKillDate)} className="field py-1.5 text-sm" />
                           </div>
+                          <div className="min-w-[220px] flex-1">
+                            <label className="mb-1 block text-xs text-muted">Image du boss (URL)</label>
+                            <input name="imageUrl" defaultValue={boss.imageUrl ?? ''} placeholder="https://..." className="field py-1.5 text-sm" />
+                          </div>
                           <button type="submit" className="btn-secondary py-2 text-sm">Enregistrer</button>
-                          <span className="ml-auto" />
                         </form>
                         <form action={deleteBoss.bind(null, boss.id)} className="mt-2">
                           <ConfirmButton className="text-xs text-red-300 hover:text-red-200" message="Supprimer ce boss ?">

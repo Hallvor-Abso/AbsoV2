@@ -104,6 +104,7 @@ export async function seedDatabase(prisma: PrismaClient) {
       content:
         '<p>Nous sommes fiers de vous présenter le nouveau site officiel d’<strong>Absolution</strong>. Vous y retrouverez notre progression en temps réel, nos postes de recrutement ouverts et toute l’actualité de la guilde.</p><p>Notre objectif reste inchangé : viser l’excellence dans le contenu haut-niveau, tout en cultivant une communauté mature et soudée.</p>',
       imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop',
+      featured: true,
       status: 'PUBLISHED',
       publishedAt: new Date('2025-03-01'),
       gameId: wow.id,

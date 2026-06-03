@@ -35,6 +35,7 @@ export default async function EditNewsPage({
           imageUrl: news.imageUrl,
           status: news.status,
           gameId: news.gameId,
+          featured: news.featured,
         }}
         games={games.map((g) => ({ id: g.id, name: g.name }))}
       />

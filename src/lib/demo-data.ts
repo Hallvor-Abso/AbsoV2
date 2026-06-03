@@ -14,6 +14,10 @@ const now = new Date();
 const d = (offsetDays: number) =>
   new Date(now.getFullYear(), now.getMonth(), now.getDate() + offsetDays, 20, 0, 0);
 
+// Image d'exemple pour les boss vaincus (en mode démo uniquement).
+const bossImg =
+  'https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=600&auto=format&fit=crop';
+
 const wow = {
   id: 'demo-wow',
   name: 'World of Warcraft',
@@ -53,14 +57,14 @@ const wowTier = {
   createdAt: now,
   updatedAt: now,
   bosses: [
-    { id: 'b1', name: 'Vexie and the Geargrinders', status: 'KILLED' as const, firstKillDate: d(-60), order: 0 },
-    { id: 'b2', name: 'Cauldron of Carnage', status: 'KILLED' as const, firstKillDate: d(-58), order: 1 },
-    { id: 'b3', name: 'Rik Reverb', status: 'KILLED' as const, firstKillDate: d(-52), order: 2 },
-    { id: 'b4', name: 'Stix Bunkjunker', status: 'KILLED' as const, firstKillDate: d(-45), order: 3 },
-    { id: 'b5', name: 'Sprocketmonger Lockenstock', status: 'PROGRESSING' as const, firstKillDate: null, order: 4 },
-    { id: 'b6', name: 'One-Armed Bandit', status: 'UNTESTED' as const, firstKillDate: null, order: 5 },
-    { id: 'b7', name: 'Mug’Zee', status: 'UNTESTED' as const, firstKillDate: null, order: 6 },
-    { id: 'b8', name: 'Chrome King Gallywix', status: 'UNTESTED' as const, firstKillDate: null, order: 7 },
+    { id: 'b1', name: 'Vexie and the Geargrinders', status: 'KILLED' as const, firstKillDate: d(-60), order: 0, imageUrl: bossImg },
+    { id: 'b2', name: 'Cauldron of Carnage', status: 'KILLED' as const, firstKillDate: d(-58), order: 1, imageUrl: bossImg },
+    { id: 'b3', name: 'Rik Reverb', status: 'KILLED' as const, firstKillDate: d(-52), order: 2, imageUrl: bossImg },
+    { id: 'b4', name: 'Stix Bunkjunker', status: 'KILLED' as const, firstKillDate: d(-45), order: 3, imageUrl: bossImg },
+    { id: 'b5', name: 'Sprocketmonger Lockenstock', status: 'PROGRESSING' as const, firstKillDate: null, order: 4, imageUrl: null },
+    { id: 'b6', name: 'One-Armed Bandit', status: 'UNTESTED' as const, firstKillDate: null, order: 5, imageUrl: null },
+    { id: 'b7', name: 'Mug’Zee', status: 'UNTESTED' as const, firstKillDate: null, order: 6, imageUrl: null },
+    { id: 'b8', name: 'Chrome King Gallywix', status: 'UNTESTED' as const, firstKillDate: null, order: 7, imageUrl: null },
   ].map((b) => ({ ...b, tierId: 'demo-tier-1', createdAt: now, updatedAt: now })),
 };
 
@@ -81,6 +85,7 @@ const news = [
     content:
       '<p>Nous sommes fiers de vous présenter le nouveau site officiel d’<strong>Absolution</strong>. Vous y retrouverez notre progression en temps réel, nos postes de recrutement ouverts et toute l’actualité de la guilde.</p><p>Notre objectif reste inchangé : viser l’excellence dans le contenu haut-niveau, tout en cultivant une communauté mature et soudée.</p>',
     imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop',
+    featured: true,
     status: 'PUBLISHED' as const,
     publishedAt: d(-30),
     gameId: wow.id,
@@ -96,6 +101,7 @@ const news = [
     content:
       '<p>Forte de son expérience sur World of Warcraft, la guilde <strong>Absolution</strong> annonce le lancement d’un projet sur <em>Star Wars: The Old Republic</em>.</p><p>Nous recherchons des joueurs motivés pour bâtir un roster compétitif dès l’ouverture.</p>',
     imageUrl: 'https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?q=80&w=1600&auto=format&fit=crop',
+    featured: false,
     status: 'PUBLISHED' as const,
     publishedAt: d(-10),
     gameId: swtor.id,

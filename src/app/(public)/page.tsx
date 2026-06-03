@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ElectricArc } from '@/components/electric-arc';
 import { Logo } from '@/components/logo';
 import { Reveal } from '@/components/reveal';
@@ -120,25 +121,38 @@ export default async function HomePage() {
               className="mb-10"
             />
           </Reveal>
-          <div className="card divide-y divide-border">
-            {recentKills.map((boss, i) => (
-              <Reveal key={boss.id} delay={i * 0.05}>
-                <div className="flex items-center justify-between gap-4 p-5">
-                  <div className="flex items-center gap-4">
-                    <span className="h-2 w-2 rounded-full bg-accent shadow-glow" />
-                    <div>
-                      <p className="font-medium text-title">{boss.name}</p>
-                      <p className="text-sm text-muted">
-                        {boss.tier.game.name} · {boss.tier.name}
-                      </p>
+          {/* Piste linéaire de derniers kills (défilement horizontal sur mobile) */}
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {recentKills.map((boss, i) => {
+              const color = boss.tier.game.color;
+              return (
+                <Reveal key={boss.id} delay={i * 0.05}>
+                  <div
+                    className="w-56 shrink-0 overflow-hidden rounded-xl border bg-ink-soft"
+                    style={{ borderColor: `${color}55` }}
+                  >
+                    <div className="relative aspect-[16/10] overflow-hidden bg-ink">
+                      {boss.imageUrl ? (
+                        <Image src={boss.imageUrl} alt={boss.name} fill sizes="224px" className="object-cover" />
+                      ) : (
+                        <div className="h-full w-full" style={{ background: `radial-gradient(circle at 50% 30%, ${color}40, #0C0E13)` }} />
+                      )}
+                      <span
+                        className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-ink"
+                        style={{ backgroundColor: color }}
+                      >
+                        ✓
+                      </span>
+                    </div>
+                    <div className="p-3">
+                      <p className="truncate font-medium text-title" title={boss.name}>{boss.name}</p>
+                      <p className="mt-0.5 text-xs text-muted">{boss.tier.game.name}</p>
+                      <p className="mt-1 text-xs" style={{ color }}>{formatDate(boss.firstKillDate)}</p>
                     </div>
                   </div>
-                  <span className="whitespace-nowrap text-sm text-muted">
-                    {formatDate(boss.firstKillDate)}
-                  </span>
-                </div>
-              </Reveal>
-            ))}
+                </Reveal>
+              );
+            })}
           </div>
           <div className="mt-6">
             <Link href="/progression" className="text-sm font-medium text-accent hover:text-accent-deep">

@@ -96,6 +96,7 @@ export async function saveNews(formData: FormData) {
     excerpt: sanitizeText(formData.get('excerpt'), 400) || null,
     content: sanitizeHtml((formData.get('content') as string) || ''),
     imageUrl: sanitizeText(formData.get('imageUrl'), 500) || null,
+    featured: formData.get('featured') === 'on', // article « À la Une »
     status,
     gameId: gameId || null,
     // On fixe la date de publication la première fois qu'on publie.
@@ -164,7 +165,7 @@ export async function createBoss(formData: FormData) {
   revalidatePath('/admin/progression');
 }
 
-/** Met à jour le statut d'un boss et, si "tué", sa date de premier kill. */
+/** Met à jour un boss : statut, date de premier kill et visuel. */
 export async function updateBoss(formData: FormData) {
   await requireAdmin();
   const id = formData.get('id') as string;
@@ -177,6 +178,7 @@ export async function updateBoss(formData: FormData) {
       status,
       firstKillDate:
         status === 'KILLED' && dateStr ? new Date(dateStr) : null,
+      imageUrl: sanitizeText(formData.get('imageUrl'), 500) || null,
     },
   });
   revalidatePublic();

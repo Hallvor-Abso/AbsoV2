@@ -80,6 +80,7 @@ model Boss {
   name          String
   status        BossStatus @default(UNTESTED)
   firstKillDate DateTime? // date du premier kill (si tué)
+  imageUrl      String? // visuel du boss (éditable depuis l'admin)
   order         Int        @default(0) // ordre dans le tier
   tier          RaidTier   @relation(fields: [tierId], references: [id], onDelete: Cascade)
   tierId        String
@@ -104,6 +105,7 @@ model News {
   excerpt     String? // résumé court affiché dans la grille
   content     String // HTML riche produit par l'éditeur
   imageUrl    String? // image de couverture
+  featured    Boolean    @default(false) // article mis « À la Une »
   status      NewsStatus @default(DRAFT)
   publishedAt DateTime? // date de publication
   game        Game?      @relation(fields: [gameId], references: [id], onDelete: SetNull)

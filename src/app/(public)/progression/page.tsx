@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { SectionHeading } from '@/components/section-heading';
 import { ProgressionView, type ProgressionGame } from '@/components/progression-view';
-import { getActiveGames, getGameProgression } from '@/lib/data';
+import { getVisibleGames, getGameProgression } from '@/lib/data';
 
 export const revalidate = 60;
 
@@ -15,9 +15,10 @@ export default async function ProgressionPage({
 }: {
   searchParams: { jeu?: string };
 }) {
-  const games = await getActiveGames();
+  // On affiche TOUS les jeux visibles (actifs + à venir), pour que WoW et SWTOR
+  // soient tous deux présents et distinguables via les onglets.
+  const games = await getVisibleGames();
 
-  // Pour chaque jeu actif, on récupère ses tiers + boss.
   const withProgression: ProgressionGame[] = await Promise.all(
     games.map(async (game) => {
       const tiers = await getGameProgression(game.id);
@@ -26,6 +27,8 @@ export default async function ProgressionPage({
         name: game.name,
         slug: game.slug,
         color: game.color,
+        logoUrl: game.logoUrl,
+        status: game.status,
         tiers: tiers.map((t) => ({
           id: t.id,
           name: t.name,
@@ -34,6 +37,7 @@ export default async function ProgressionPage({
             name: b.name,
             status: b.status,
             firstKillDate: b.firstKillDate ? b.firstKillDate.toISOString() : null,
+            imageUrl: b.imageUrl,
           })),
         })),
       };
@@ -45,12 +49,12 @@ export default async function ProgressionPage({
       <SectionHeading
         eyebrow="Faits d'armes"
         title="Progression"
-        subtitle="L'avancée de la guilde dans le contenu de raid, tier par tier."
+        subtitle="L'avancée de la guilde dans le contenu de raid, jeu par jeu et tier par tier."
         className="mb-12"
       />
 
       {withProgression.length === 0 ? (
-        <p className="text-muted">Aucun jeu actif pour le moment.</p>
+        <p className="text-muted">Aucun jeu disponible pour le moment.</p>
       ) : (
         <ProgressionView games={withProgression} initialSlug={searchParams.jeu} />
       )}
