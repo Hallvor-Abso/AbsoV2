@@ -1,4 +1,5 @@
 import { prisma } from './prisma';
+import { IS_DEMO } from './env';
 
 /**
  * Contenu statique éditable de la homepage.
@@ -28,6 +29,9 @@ export type SiteContentKey = keyof typeof SITE_CONTENT_DEFAULTS;
  * avec les valeurs par défaut pour les clés non encore personnalisées.
  */
 export async function getSiteContent(): Promise<Record<string, string>> {
+  // En mode démo (pas de base), on renvoie simplement les textes par défaut.
+  if (IS_DEMO) return { ...SITE_CONTENT_DEFAULTS };
+
   const rows = await prisma.siteContent.findMany();
   const overrides = Object.fromEntries(rows.map((r) => [r.key, r.value]));
   return { ...SITE_CONTENT_DEFAULTS, ...overrides };

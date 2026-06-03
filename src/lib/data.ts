@@ -1,4 +1,6 @@
 import { prisma } from './prisma';
+import { IS_DEMO } from './env';
+import * as demo from './demo-data';
 
 /**
  * Fonctions de lecture des données pour les pages PUBLIQUES.
@@ -6,10 +8,15 @@ import { prisma } from './prisma';
  * RÈGLE DE SÉCURITÉ CENTRALE : un jeu désactivé (isActive = false) ne doit
  * JAMAIS apparaître sur le site public. Tous les filtres ci-dessous excluent
  * donc systématiquement les jeux inactifs côté serveur.
+ *
+ * MODE DÉMO : si aucune base de données n'est configurée (IS_DEMO), on renvoie
+ * des données d'exemple afin de pouvoir prévisualiser le design sans installer
+ * de base. Dès qu'une vraie base est branchée, ce mode se désactive tout seul.
  */
 
 /** Jeux actifs sur lesquels la guilde évolue (isActive = true & ACTIVE). */
 export function getActiveGames() {
+  if (IS_DEMO) return Promise.resolve(demo.demoActiveGames());
   return prisma.game.findMany({
     where: { isActive: true, status: 'ACTIVE' },
     orderBy: { order: 'asc' },
@@ -18,6 +25,7 @@ export function getActiveGames() {
 
 /** Jeux à venir visibles publiquement (isActive = true & UPCOMING). */
 export function getUpcomingGames() {
+  if (IS_DEMO) return Promise.resolve(demo.demoUpcomingGames());
   return prisma.game.findMany({
     where: { isActive: true, status: 'UPCOMING' },
     orderBy: { order: 'asc' },
@@ -26,6 +34,7 @@ export function getUpcomingGames() {
 
 /** Tous les jeux visibles (actifs + à venir), pour la navigation. */
 export function getVisibleGames() {
+  if (IS_DEMO) return Promise.resolve(demo.demoVisibleGames());
   return prisma.game.findMany({
     where: { isActive: true },
     orderBy: [{ status: 'asc' }, { order: 'asc' }],
@@ -34,6 +43,7 @@ export function getVisibleGames() {
 
 /** Récupère un jeu visible par son slug, ou null s'il est masqué/inexistant. */
 export function getVisibleGameBySlug(slug: string) {
+  if (IS_DEMO) return Promise.resolve(demo.demoGameBySlug(slug));
   return prisma.game.findFirst({
     where: { slug, isActive: true },
   });
@@ -41,6 +51,7 @@ export function getVisibleGameBySlug(slug: string) {
 
 /** Progression complète (tiers + boss) d'un jeu actif donné. */
 export function getGameProgression(gameId: string) {
+  if (IS_DEMO) return Promise.resolve(demo.demoProgression(gameId));
   return prisma.raidTier.findMany({
     where: { gameId },
     orderBy: { order: 'asc' },
@@ -52,6 +63,7 @@ export function getGameProgression(gameId: string) {
 
 /** Derniers boss tués (toutes guildes actives confondues) pour la homepage. */
 export function getRecentKills(limit = 5) {
+  if (IS_DEMO) return Promise.resolve(demo.demoRecentKills(limit));
   return prisma.boss.findMany({
     where: {
       status: 'KILLED',
@@ -66,6 +78,7 @@ export function getRecentKills(limit = 5) {
 
 /** Postes de recrutement ouverts/limités des jeux actifs. */
 export function getRecruitmentSlots() {
+  if (IS_DEMO) return Promise.resolve(demo.demoSlots());
   return prisma.recruitmentSlot.findMany({
     where: { game: { isActive: true } },
     orderBy: { order: 'asc' },
@@ -75,6 +88,7 @@ export function getRecruitmentSlots() {
 
 /** Liste des news publiées (optionnellement filtrées par jeu). */
 export function getPublishedNews(gameSlug?: string) {
+  if (IS_DEMO) return Promise.resolve(demo.demoNews(gameSlug));
   return prisma.news.findMany({
     where: {
       status: 'PUBLISHED',
@@ -89,6 +103,7 @@ export function getPublishedNews(gameSlug?: string) {
 
 /** Récupère un article publié par son slug. */
 export function getPublishedNewsBySlug(slug: string) {
+  if (IS_DEMO) return Promise.resolve(demo.demoNewsBySlug(slug));
   return prisma.news.findFirst({
     where: { slug, status: 'PUBLISHED' },
     include: { game: true },
@@ -97,6 +112,7 @@ export function getPublishedNewsBySlug(slug: string) {
 
 /** Événements de calendrier des jeux actifs. */
 export function getEvents() {
+  if (IS_DEMO) return Promise.resolve(demo.demoEvents());
   return prisma.event.findMany({
     where: { game: { isActive: true } },
     orderBy: { startDate: 'asc' },
