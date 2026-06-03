@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { BOSS_STATUS } from '@/lib/labels';
 import {
   createTier,
+  updateTier,
   deleteTier,
   createBoss,
   updateBoss,
@@ -56,13 +57,24 @@ export default async function AdminProgressionPage() {
             <div className="space-y-6">
               {game.raidTiers.map((tier) => (
                 <div key={tier.id} className="card p-5">
-                  <div className="mb-4 flex items-center justify-between">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <h3 className="font-semibold text-title">{tier.name}</h3>
-                    <form action={deleteTier.bind(null, tier.id)}>
-                      <ConfirmButton message="Supprimer ce tier et tous ses boss ?">
-                        Supprimer le tier
-                      </ConfirmButton>
-                    </form>
+                    <div className="flex items-center gap-4">
+                      {/* zoneId Warcraft Logs (synchro auto des pulls/%) */}
+                      <form action={updateTier} className="flex items-end gap-2">
+                        <input type="hidden" name="id" value={tier.id} />
+                        <div>
+                          <label className="mb-1 block text-xs text-muted">Zone ID (Warcraft Logs)</label>
+                          <input name="zoneId" type="number" defaultValue={tier.zoneId ?? ''} placeholder="ex : 38" className="field w-28 py-1.5 text-sm" />
+                        </div>
+                        <button type="submit" className="btn-secondary py-2 text-sm">OK</button>
+                      </form>
+                      <form action={deleteTier.bind(null, tier.id)}>
+                        <ConfirmButton message="Supprimer ce tier et tous ses boss ?">
+                          Supprimer le tier
+                        </ConfirmButton>
+                      </form>
+                    </div>
                   </div>
 
                   {/* Liste des boss */}
@@ -87,7 +99,11 @@ export default async function AdminProgressionPage() {
                             <label className="mb-1 block text-xs text-muted">Date de premier kill</label>
                             <input type="date" name="firstKillDate" defaultValue={toDateInput(boss.firstKillDate)} className="field py-1.5 text-sm" />
                           </div>
-                          <div className="min-w-[220px] flex-1">
+                          <div>
+                            <label className="mb-1 block text-xs text-muted">Encounter ID (WCL)</label>
+                            <input name="encounterId" type="number" defaultValue={boss.encounterId ?? ''} placeholder="ex : 3009" className="field w-28 py-1.5 text-sm" />
+                          </div>
+                          <div className="min-w-[200px] flex-1">
                             <label className="mb-1 block text-xs text-muted">Image du boss (URL)</label>
                             <input name="imageUrl" defaultValue={boss.imageUrl ?? ''} placeholder="https://..." className="field py-1.5 text-sm" />
                           </div>

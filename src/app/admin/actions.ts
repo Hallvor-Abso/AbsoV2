@@ -147,6 +147,17 @@ export async function createTier(formData: FormData) {
   revalidatePath('/admin/progression');
 }
 
+/** Met à jour le zoneId Warcraft Logs d'un tier (pour la synchro auto). */
+export async function updateTier(formData: FormData) {
+  await requireAdmin();
+  const id = formData.get('id') as string;
+  const zoneRaw = formData.get('zoneId') as string;
+  const zoneId = zoneRaw && !Number.isNaN(Number(zoneRaw)) ? Number(zoneRaw) : null;
+  await prisma.raidTier.update({ where: { id }, data: { zoneId } });
+  revalidatePublic();
+  revalidatePath('/admin/progression');
+}
+
 export async function deleteTier(id: string) {
   await requireAdmin();
   await prisma.raidTier.delete({ where: { id } });
@@ -172,6 +183,11 @@ export async function updateBoss(formData: FormData) {
   const status = formData.get('status') as 'KILLED' | 'PROGRESSING' | 'UNTESTED';
   const dateStr = formData.get('firstKillDate') as string;
 
+  const encounterRaw = formData.get('encounterId') as string;
+  const encounterId = encounterRaw && !Number.isNaN(Number(encounterRaw))
+    ? Number(encounterRaw)
+    : null;
+
   await prisma.boss.update({
     where: { id },
     data: {
@@ -179,6 +195,7 @@ export async function updateBoss(formData: FormData) {
       firstKillDate:
         status === 'KILLED' && dateStr ? new Date(dateStr) : null,
       imageUrl: sanitizeText(formData.get('imageUrl'), 500) || null,
+      encounterId,
     },
   });
   revalidatePublic();

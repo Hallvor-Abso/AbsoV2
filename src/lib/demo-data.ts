@@ -53,6 +53,7 @@ const wowTier = {
   id: 'demo-tier-1',
   name: 'Liberation of Undermine',
   order: 0,
+  zoneId: null,
   gameId: wow.id,
   createdAt: now,
   updatedAt: now,
@@ -65,7 +66,7 @@ const wowTier = {
     { id: 'b6', name: 'One-Armed Bandit', status: 'UNTESTED' as const, firstKillDate: null, order: 5, imageUrl: null },
     { id: 'b7', name: 'Mug’Zee', status: 'UNTESTED' as const, firstKillDate: null, order: 6, imageUrl: null },
     { id: 'b8', name: 'Chrome King Gallywix', status: 'UNTESTED' as const, firstKillDate: null, order: 7, imageUrl: null },
-  ].map((b) => ({ ...b, tierId: 'demo-tier-1', createdAt: now, updatedAt: now })),
+  ].map((b) => ({ ...b, encounterId: null, tierId: 'demo-tier-1', createdAt: now, updatedAt: now })),
 };
 
 const slots = [

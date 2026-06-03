@@ -12,6 +12,8 @@ type Boss = {
   status: keyof typeof BOSS_STATUS;
   firstKillDate: string | null;
   imageUrl: string | null;
+  pulls: number | null; // nb de pulls (synchro Warcraft Logs)
+  bestPercent: number | null; // meilleur % de vie restante atteint
 };
 type Tier = { id: string; name: string; bosses: Boss[] };
 export type ProgressionGame = {
@@ -178,14 +180,25 @@ function BossCard({ boss, color }: { boss: Boss; color: string }) {
         )}
       </div>
 
-      {/* Nom + date */}
+      {/* Nom + infos */}
       <div className="p-2.5">
         <p className="truncate text-sm font-medium text-title" title={boss.name}>
           {boss.name}
         </p>
-        <p className="mt-0.5 text-xs text-muted">
-          {killed && boss.firstKillDate ? formatDate(boss.firstKillDate) : '—'}
-        </p>
+        {killed ? (
+          <p className="mt-0.5 text-xs text-muted">
+            {boss.firstKillDate ? formatDate(boss.firstKillDate) : 'Tué'}
+          </p>
+        ) : progressing && (boss.pulls || boss.bestPercent != null) ? (
+          // Données live Warcraft Logs sur le boss en cours de progression.
+          <p className="mt-0.5 text-xs" style={{ color }}>
+            {boss.pulls ? `${boss.pulls} pulls` : ''}
+            {boss.pulls && boss.bestPercent != null ? ' · ' : ''}
+            {boss.bestPercent != null ? `meilleur ${boss.bestPercent.toFixed(1)}%` : ''}
+          </p>
+        ) : (
+          <p className="mt-0.5 text-xs text-muted">—</p>
+        )}
       </div>
     </div>
   );

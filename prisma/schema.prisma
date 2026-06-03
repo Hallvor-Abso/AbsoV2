@@ -64,6 +64,7 @@ model RaidTier {
   id        String   @id @default(cuid())
   name      String
   order     Int      @default(0) // les tiers récents en premier
+  zoneId    Int? // ID de la zone Warcraft Logs (pour la synchro auto des pulls/%)
   game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
   gameId    String
   bosses    Boss[]
@@ -81,6 +82,7 @@ model Boss {
   status        BossStatus @default(UNTESTED)
   firstKillDate DateTime? // date du premier kill (si tué)
   imageUrl      String? // visuel du boss (éditable depuis l'admin)
+  encounterId   Int? // ID de rencontre Warcraft Logs (pour la synchro auto)
   order         Int        @default(0) // ordre dans le tier
   tier          RaidTier   @relation(fields: [tierId], references: [id], onDelete: Cascade)
   tierId        String

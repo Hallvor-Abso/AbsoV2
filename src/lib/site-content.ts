@@ -20,6 +20,12 @@ export const SITE_CONTENT_DEFAULTS = {
   'philosophy.title': 'Notre philosophie',
   'philosophy.body':
     'Nous croyons qu’une progression durable repose sur trois piliers : la rigueur individuelle, la cohésion de groupe et une communication saine. Chaque membre est tenu de venir préparé, à l’écoute, et investi dans la réussite collective.',
+  // Identité Warcraft Logs (synchro auto des pulls/% sur la progression).
+  // Laisser vide pour désactiver la synchro.
+  'wcl.region': '', // ex : eu
+  'wcl.realm': '', // slug du royaume, ex : hyjal
+  'wcl.guild': '', // nom exact de la guilde
+  'wcl.difficulty': '5', // 5 = Mythique, 4 = Héroïque, 3 = Normal
 } as const;
 
 export type SiteContentKey = keyof typeof SITE_CONTENT_DEFAULTS;

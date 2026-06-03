@@ -14,6 +14,11 @@ const FIELDS: { key: string; label: string; help?: string; multiline?: boolean }
   { key: 'about.body', label: 'Texte — section « Qui sommes-nous »', multiline: true },
   { key: 'philosophy.title', label: 'Titre — section « Philosophie »' },
   { key: 'philosophy.body', label: 'Texte — section « Philosophie »', multiline: true },
+  // --- Synchro Warcraft Logs (pulls / % automatiques sur la Progression) ---
+  { key: 'wcl.region', label: 'Warcraft Logs — Région', help: 'eu, us, kr, tw… (laisser vide pour désactiver la synchro)' },
+  { key: 'wcl.realm', label: 'Warcraft Logs — Royaume (slug)', help: 'Le royaume en minuscules sans espaces (ex : hyjal, tarren-mill).' },
+  { key: 'wcl.guild', label: 'Warcraft Logs — Nom de la guilde', help: 'Le nom exact de la guilde tel qu’il apparaît sur Warcraft Logs.' },
+  { key: 'wcl.difficulty', label: 'Warcraft Logs — Difficulté', help: '5 = Mythique, 4 = Héroïque, 3 = Normal.' },
 ];
 
 export default async function AdminContentPage() {
