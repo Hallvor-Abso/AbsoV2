@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { SLOT_STATUS } from '@/lib/labels';
 import { GameTabBar, type GameTabInfo } from './game-tab-bar';
+import { ApplicationForm } from './application-form';
+import { SectionHeading } from './section-heading';
 
 export type RecruitSlot = {
   id: string;
@@ -38,11 +40,12 @@ export function RecruitmentView({
     <div>
       <GameTabBar games={games} activeId={activeGame.id} onSelect={setActiveId} />
 
+      {/* ---- Postes recherchés pour le jeu sélectionné ---- */}
       {gameSlots.length === 0 ? (
         <div className="card p-10 text-center text-muted">
           {activeGame.status === 'UPCOMING'
             ? `Le recrutement sur ${activeGame.name} ouvrira prochainement.`
-            : 'Aucun poste pour le moment.'}
+            : 'Aucun poste ouvert pour le moment.'}
         </div>
       ) : (
         <div className="space-y-5">
@@ -81,6 +84,23 @@ export function RecruitmentView({
           </div>
         </div>
       )}
+
+      {/* ---- Formulaire de candidature, propre au jeu sélectionné ---- */}
+      <div className="mt-16">
+        <SectionHeading
+          eyebrow="Postuler"
+          title={`Candidature — ${activeGame.name}`}
+          subtitle="Prends le temps de remplir chaque champ : une candidature soignée fait la différence."
+          className="mb-8"
+        />
+        {activeGame.status === 'ACTIVE' ? (
+          <ApplicationForm gameId={activeGame.id} gameName={activeGame.name} />
+        ) : (
+          <div className="card p-10 text-center text-muted">
+            Les candidatures pour {activeGame.name} ouvriront au lancement du projet.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

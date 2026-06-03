@@ -2,13 +2,18 @@
 
 import { useState } from 'react';
 
-type GameOption = { id: string; name: string };
-
 /**
- * Formulaire public de candidature.
- * Envoie les données à l'API /api/applications (validation + rate limiting côté serveur).
+ * Formulaire public de candidature, propre à UN jeu.
+ * Le jeu n'est pas demandé au joueur : il est déterminé par l'onglet/la page
+ * sur laquelle il se trouve (transmis en champ caché `gameId`).
  */
-export function ApplicationForm({ games }: { games: GameOption[] }) {
+export function ApplicationForm({
+  gameId,
+  gameName,
+}: {
+  gameId: string;
+  gameName: string;
+}) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string>('');
 
@@ -70,28 +75,20 @@ export function ApplicationForm({ games }: { games: GameOption[] }) {
 
   return (
     <form onSubmit={handleSubmit} className="card space-y-5 p-6 sm:p-8">
+      {/* Le jeu est imposé par la page : aucun choix demandé au joueur. */}
+      <input type="hidden" name="gameId" value={gameId} />
+
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Pseudo *" name="pseudo" required placeholder="Ton pseudo en jeu" />
         <Field label="BattleTag / ID" name="characterId" placeholder="Pseudo#1234" />
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label className="label" htmlFor="gameId">Jeu *</label>
-          <select id="gameId" name="gameId" required className="field" defaultValue="">
-            <option value="" disabled>Choisis un jeu</option>
-            {games.map((g) => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-          </select>
-        </div>
         <Field label="Serveur *" name="server" required placeholder="Hyjal, Tarren Mill..." />
+        <Field label="Classe *" name="className" required placeholder="Mage, Prêtre..." />
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Classe *" name="className" required placeholder="Mage, Prêtre..." />
-        <Field label="Rôle *" name="role" required placeholder="DPS, Heal, Tank" />
-      </div>
+      <Field label="Rôle *" name="role" required placeholder="DPS, Heal, Tank" />
 
       <div>
         <label className="label" htmlFor="experience">Expérience PvE *</label>
@@ -126,7 +123,7 @@ export function ApplicationForm({ games }: { games: GameOption[] }) {
       )}
 
       <button type="submit" disabled={status === 'sending'} className="btn-primary w-full sm:w-auto">
-        {status === 'sending' ? 'Envoi...' : 'Envoyer ma candidature'}
+        {status === 'sending' ? 'Envoi...' : `Postuler pour ${gameName}`}
       </button>
     </form>
   );
