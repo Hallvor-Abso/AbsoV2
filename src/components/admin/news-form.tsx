@@ -9,7 +9,7 @@ type NewsData = {
   imageUrl: string | null;
   status: string;
   gameId: string | null;
-  featured: boolean;
+  publishedAt: string; // valeur pour <input datetime-local> ('' si vide)
 };
 
 type GameOption = { id: string; name: string };
@@ -18,9 +18,11 @@ type GameOption = { id: string; name: string };
 export function NewsForm({
   news,
   games,
+  presetGameId,
 }: {
   news?: NewsData;
   games: GameOption[];
+  presetGameId?: string;
 }) {
   return (
     <form action={saveNews} className="space-y-5">
@@ -42,9 +44,9 @@ export function NewsForm({
           <input name="imageUrl" defaultValue={news?.imageUrl ?? ''} className="field" placeholder="https://..." />
         </div>
         <div>
-          <label className="label">Jeu associé (optionnel)</label>
-          <select name="gameId" defaultValue={news?.gameId ?? ''} className="field">
-            <option value="">Aucun</option>
+          <label className="label">Jeu associé</label>
+          <select name="gameId" defaultValue={news?.gameId ?? presetGameId ?? ''} className="field">
+            <option value="">Aucun (général)</option>
             {games.map((g) => (
               <option key={g.id} value={g.id}>{g.name}</option>
             ))}
@@ -57,23 +59,23 @@ export function NewsForm({
         <RichTextEditor name="content" defaultValue={news?.content ?? ''} />
       </div>
 
-      <div>
-        <label className="label">Statut</label>
-        <select name="status" defaultValue={news?.status ?? 'DRAFT'} className="field max-w-xs">
-          <option value="DRAFT">Brouillon (invisible au public)</option>
-          <option value="PUBLISHED">Publié</option>
-        </select>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label className="label">Statut</label>
+          <select name="status" defaultValue={news?.status ?? 'DRAFT'} className="field">
+            <option value="DRAFT">Brouillon (invisible au public)</option>
+            <option value="PUBLISHED">Publié</option>
+          </select>
+        </div>
+        <div>
+          <label className="label">Date de publication</label>
+          <input type="datetime-local" name="publishedAt" defaultValue={news?.publishedAt ?? ''} className="field" />
+          <p className="mt-1 text-xs text-muted">
+            Vide = maintenant. Une date <strong>future</strong> programme la publication
+            (l'article reste masqué jusque-là).
+          </p>
+        </div>
       </div>
-
-      <label className="flex items-center gap-2 text-sm text-foreground">
-        <input
-          type="checkbox"
-          name="featured"
-          defaultChecked={news?.featured ?? false}
-          className="h-4 w-4 accent-[#4A9EFF]"
-        />
-        Mettre cet article « À la Une » (grande carte en haut de la page News)
-      </label>
 
       <button type="submit" className="btn-primary">
         {news ? 'Enregistrer les modifications' : "Créer l'article"}

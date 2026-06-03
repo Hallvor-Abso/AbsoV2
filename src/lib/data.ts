@@ -92,6 +92,7 @@ export function getPublishedNews(gameSlug?: string) {
   return prisma.news.findMany({
     where: {
       status: 'PUBLISHED',
+      publishedAt: { lte: new Date() }, // exclut les articles programmés (futurs)
       ...(gameSlug ? { game: { slug: gameSlug, isActive: true } } : {}),
       // On exclut les news rattachées à un jeu désactivé.
       OR: [{ gameId: null }, { game: { isActive: true } }],
@@ -105,7 +106,7 @@ export function getPublishedNews(gameSlug?: string) {
 export function getPublishedNewsBySlug(slug: string) {
   if (IS_DEMO) return Promise.resolve(demo.demoNewsBySlug(slug));
   return prisma.news.findFirst({
-    where: { slug, status: 'PUBLISHED' },
+    where: { slug, status: 'PUBLISHED', publishedAt: { lte: new Date() } },
     include: { game: true },
   });
 }

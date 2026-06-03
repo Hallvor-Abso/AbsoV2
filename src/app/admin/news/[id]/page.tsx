@@ -8,6 +8,14 @@ import { allowedGameIds } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
+/** Formate une date pour <input type="datetime-local"> (heure locale). */
+function toDateTimeLocal(d: Date | null): string {
+  if (!d) return '';
+  const date = new Date(d);
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
+  return local.toISOString().slice(0, 16);
+}
+
 export default async function EditNewsPage({
   params,
 }: {
@@ -44,7 +52,7 @@ export default async function EditNewsPage({
           imageUrl: news.imageUrl,
           status: news.status,
           gameId: news.gameId,
-          featured: news.featured,
+          publishedAt: toDateTimeLocal(news.publishedAt),
         }}
         games={games.map((g) => ({ id: g.id, name: g.name }))}
       />

@@ -153,33 +153,33 @@ export async function saveNews(formData: FormData) {
   const existing = await prisma.news.findUnique({ where: { slug } });
   if (existing && existing.id !== id) slug = `${slug}-${Date.now().toString(36)}`;
 
+  // Date de publication : champ fourni (permet de PROGRAMMER dans le futur),
+  // sinon maintenant. Un article publié dont la date est future reste invisible
+  // jusqu'à cette date (voir getPublishedNews).
+  const scheduledRaw = formData.get('publishedAt') as string;
+  const current = id ? await prisma.news.findUnique({ where: { id } }) : null;
+  const publishedAt =
+    status === 'PUBLISHED'
+      ? scheduledRaw
+        ? new Date(scheduledRaw)
+        : current?.publishedAt ?? new Date()
+      : null;
+
   const data = {
     title,
     slug: id ? undefined : slug, // on ne régénère pas le slug à l'édition
     excerpt: sanitizeText(formData.get('excerpt'), 400) || null,
     content: sanitizeHtml((formData.get('content') as string) || ''),
     imageUrl: sanitizeText(formData.get('imageUrl'), 500) || null,
-    featured: formData.get('featured') === 'on', // article « À la Une »
+    // NB : « À la Une » se gère via un bouton dans la liste (toggleFeatured),
+    // pas ici, pour ne pas l'écraser à chaque édition.
     status,
     gameId: gameId || null,
-    // On fixe la date de publication la première fois qu'on publie.
-    publishedAt:
-      status === 'PUBLISHED' ? new Date() : null,
+    publishedAt,
   };
 
   if (id) {
-    // À l'édition, on conserve la date de publication d'origine si déjà publiée.
-    const current = await prisma.news.findUnique({ where: { id } });
-    await prisma.news.update({
-      where: { id },
-      data: {
-        ...data,
-        publishedAt:
-          status === 'PUBLISHED'
-            ? current?.publishedAt ?? new Date()
-            : null,
-      },
-    });
+    await prisma.news.update({ where: { id }, data });
   } else {
     await prisma.news.create({ data: { ...data, slug } });
   }
@@ -188,6 +188,20 @@ export async function saveNews(formData: FormData) {
   revalidatePath('/admin/news');
   // Retour à la liste des articles après l'enregistrement.
   redirect('/admin/news');
+}
+
+/** Bascule l'article « À la Une » (un seul à la fois sur tout le site). */
+export async function toggleFeatured(id: string) {
+  const n = await prisma.news.findUnique({ where: { id }, select: { gameId: true, featured: true } });
+  await requireGameAccess(n?.gameId);
+  if (n?.featured) {
+    await prisma.news.update({ where: { id }, data: { featured: false } });
+  } else {
+    await prisma.news.updateMany({ data: { featured: false } }); // une seule à la Une
+    await prisma.news.update({ where: { id }, data: { featured: true } });
+  }
+  revalidatePublic();
+  revalidatePath('/admin/news');
 }
 
 export async function deleteNews(id: string) {
