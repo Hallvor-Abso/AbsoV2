@@ -36,11 +36,12 @@ export default async function HomePage() {
     <>
       {/* ============================== HERO ============================== */}
       <section className="relative flex min-h-[88vh] items-center overflow-hidden">
-        {/* Arc électrique en fond, basse opacité */}
-        <ElectricArc className="absolute inset-0 h-full w-full opacity-60" />
-        <div className="absolute inset-0 bg-gradient-to-b from-ink/40 via-ink/60 to-ink" />
-        {/* Halo bleu radial discret */}
-        <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-accent/10 blur-[120px]" />
+        {/* Arc électrique en fond */}
+        <ElectricArc className="absolute inset-0 h-full w-full opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-ink/25 via-ink/55 to-ink" />
+        {/* Halos bleus radiaux — apportent de la lumière au hero */}
+        <div className="absolute left-1/2 top-1/3 h-[620px] w-[620px] -translate-x-1/2 rounded-full bg-accent/20 blur-[130px]" />
+        <div className="absolute left-1/2 top-1/4 h-[320px] w-[320px] -translate-x-1/2 rounded-full bg-accent-deep/25 blur-[90px]" />
 
         <div className="container-page relative">
           <div className="mx-auto max-w-3xl text-center">

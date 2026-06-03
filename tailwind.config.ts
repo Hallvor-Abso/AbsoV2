@@ -16,8 +16,8 @@ const config: Config = {
         ink: '#08090B', // noir profond — fond principal
         'ink-soft': '#0F1117', // gris très sombre — fond secondaire
         // Cartes & séparateurs
-        card: '#1C1F26', // gris anthracite — cartes
-        border: '#2A2D35', // bordure 1px
+        card: '#1E222A', // gris anthracite — cartes (légèrement éclairci pour plus de lumière)
+        border: '#30343D', // bordure 1px (un peu plus visible)
         // Couleur signature : bleu électrique froid
         accent: {
           DEFAULT: '#4A9EFF',
@@ -27,7 +27,7 @@ const config: Config = {
         // Textes
         foreground: '#E8EAF0', // blanc cassé — corps de texte
         title: '#FFFFFF', // blanc pur — titres
-        muted: '#8A8F9C', // gris doux — texte secondaire
+        muted: '#9AA0AD', // gris doux — texte secondaire (plus lumineux)
       },
       fontFamily: {
         // Titres : Space Grotesk — Corps : Inter (chargées via next/font)
@@ -36,8 +36,10 @@ const config: Config = {
       },
       boxShadow: {
         // Lueur bleue discrète au hover
-        glow: '0 0 20px rgba(74, 158, 255, 0.25)',
-        'glow-strong': '0 0 35px rgba(74, 158, 255, 0.4)',
+        glow: '0 0 24px rgba(74, 158, 255, 0.30)',
+        'glow-strong': '0 0 40px rgba(74, 158, 255, 0.45)',
+        // Liseré lumineux en haut des cartes (donne du relief)
+        'card-top': 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
       },
       keyframes: {
         // Animation lente de l'arc électrique en fond de hero
