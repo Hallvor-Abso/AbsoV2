@@ -1,6 +1,7 @@
 import { type NextAuthOptions, getServerSession } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
+import { cache } from 'react';
 import { prisma } from './prisma';
 import type { SessionUser } from './permissions';
 import type { Role } from '@prisma/client';
@@ -64,17 +65,34 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         const u = user as unknown as SessionUser;
         token.id = u.id;
-        token.role = u.role;
-        token.adminGameIds = u.adminGameIds;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token.id) {
         const su = session.user as unknown as SessionUser;
         su.id = token.id as string;
-        su.role = token.role as Role;
-        su.adminGameIds = (token.adminGameIds as string[]) ?? [];
+        // On relit le rôle et les jeux administrés EN BASE à chaque fois :
+        // ainsi tout changement de rôle est pris en compte immédiatement,
+        // sans avoir à se déconnecter/reconnecter.
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: {
+            role: true,
+            displayName: true,
+            username: true,
+            email: true,
+            adminGames: { select: { id: true } },
+          },
+        });
+        if (dbUser) {
+          su.role = dbUser.role;
+          su.adminGameIds = dbUser.adminGames.map((g) => g.id);
+          su.name = dbUser.displayName || dbUser.username || dbUser.email || 'Utilisateur';
+        } else {
+          su.role = 'VISITEUR';
+          su.adminGameIds = [];
+        }
       }
       return session;
     },
@@ -86,8 +104,12 @@ export function getSession() {
   return getServerSession(authOptions);
 }
 
-/** Récupère l'utilisateur courant (typé) côté serveur, ou null. */
-export async function getAppUser(): Promise<SessionUser | null> {
+/**
+ * Récupère l'utilisateur courant (typé) côté serveur, ou null.
+ * Mis en cache pour la durée d'UNE requête (React cache) afin d'éviter de
+ * recalculer la session plusieurs fois sur une même page.
+ */
+export const getAppUser = cache(async (): Promise<SessionUser | null> => {
   try {
     const session = await getSession();
     if (!session?.user) return null;
@@ -96,4 +118,4 @@ export async function getAppUser(): Promise<SessionUser | null> {
     // Ex : pas de NEXTAUTH_SECRET (mode démo) → simplement déconnecté.
     return null;
   }
-}
+});

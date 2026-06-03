@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
 import { Logo } from './logo';
 import { cn } from '@/lib/utils';
@@ -15,15 +15,14 @@ const BASE_LINKS = [
   { href: '/recrutement', label: 'Recrutement' },
 ];
 
-export function Navbar({
-  logoUrl,
-  user,
-}: {
-  logoUrl?: string;
-  user: SessionUser | null;
-}) {
+export function Navbar({ logoUrl }: { logoUrl?: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
+
+  // On ne considère l'utilisateur que lorsque son rôle est chargé.
+  const su = session?.user as { role?: string } | undefined;
+  const user = (su?.role ? su : null) as SessionUser | null;
 
   // Le Calendrier n'est visible que par les membres (et plus).
   const links = canAccessCalendar(user)

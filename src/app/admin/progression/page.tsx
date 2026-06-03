@@ -22,10 +22,12 @@ function toDateInput(d: Date | null): string {
 }
 
 export default async function AdminProgressionPage() {
+  // Tous les jeux (actifs ET à venir) ont leur catégorie ; un nouveau jeu
+  // apparaît automatiquement ici.
   const scope = allowedGameIds(await getAppUser());
   const games = await prisma.game.findMany({
-    where: { status: 'ACTIVE', ...(scope !== 'all' ? { id: { in: scope } } : {}) },
-    orderBy: { order: 'asc' },
+    where: scope !== 'all' ? { id: { in: scope } } : {},
+    orderBy: [{ status: 'asc' }, { order: 'asc' }],
     include: {
       raidTiers: {
         orderBy: { order: 'asc' },

@@ -21,7 +21,8 @@ export default async function AdminCalendarPage() {
 
   const [events, games] = await Promise.all([
     prisma.event.findMany({ where: eventWhere, orderBy: { startDate: 'desc' } }),
-    prisma.game.findMany({ where: { status: 'ACTIVE', ...gameWhere }, orderBy: { order: 'asc' } }),
+    // Tous les jeux (un nouveau jeu crée automatiquement son onglet calendrier).
+    prisma.game.findMany({ where: gameWhere, orderBy: [{ status: 'asc' }, { order: 'asc' }] }),
   ]);
 
   const adminEvents: AdminEvent[] = events.map((ev) => ({

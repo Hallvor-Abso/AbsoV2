@@ -31,18 +31,23 @@ export async function POST(request: Request) {
   }
   const data = parsed.data;
   const email = data.email.toLowerCase().trim();
+  const pseudo = sanitizeText(data.displayName, 40);
 
   // Email déjà utilisé ?
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
+  if (await prisma.user.findUnique({ where: { email } })) {
     return NextResponse.json({ error: 'Un compte existe déjà avec cet email.' }, { status: 409 });
+  }
+  // Pseudo déjà pris ? (le pseudo sert aussi d'identifiant de connexion)
+  if (await prisma.user.findUnique({ where: { username: pseudo } })) {
+    return NextResponse.json({ error: 'Ce pseudo est déjà utilisé.' }, { status: 409 });
   }
 
   const passwordHash = await bcrypt.hash(data.password, 10);
   await prisma.user.create({
     data: {
       email,
-      displayName: sanitizeText(data.displayName, 40),
+      username: pseudo, // permet aussi de se connecter avec le pseudo
+      displayName: pseudo,
       discord: sanitizeText(data.discord, 60),
       passwordHash,
       role: 'VISITEUR',

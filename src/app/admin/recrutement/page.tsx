@@ -9,10 +9,11 @@ import { saveSlot, deleteSlot } from '@/app/admin/actions';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminRecruitmentPage() {
+  // Tous les jeux ont leur catégorie de recrutement (un nouveau jeu apparaît seul).
   const scope = allowedGameIds(await getAppUser());
   const games = await prisma.game.findMany({
-    where: { status: 'ACTIVE', ...(scope !== 'all' ? { id: { in: scope } } : {}) },
-    orderBy: { order: 'asc' },
+    where: scope !== 'all' ? { id: { in: scope } } : {},
+    orderBy: [{ status: 'asc' }, { order: 'asc' }],
     include: { recruitmentSlots: { orderBy: { order: 'asc' } } },
   });
 
