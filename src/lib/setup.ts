@@ -18,8 +18,8 @@ export async function seedDatabase(prisma: PrismaClient) {
 
   await prisma.user.upsert({
     where: { username },
-    update: { passwordHash },
-    create: { username, passwordHash },
+    update: { passwordHash, role: 'SUPER_ADMIN' },
+    create: { username, passwordHash, role: 'SUPER_ADMIN' },
   });
 
   // --- 2. Jeux ------------------------------------------------------------

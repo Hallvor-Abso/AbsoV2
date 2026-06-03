@@ -6,6 +6,14 @@ import { z } from 'zod';
  * avant d'être enregistrées en base.
  */
 
+// Inscription d'un compte visiteur
+export const registerSchema = z.object({
+  displayName: z.string().min(2, 'Pseudo trop court').max(40),
+  email: z.string().email('Email invalide').max(120),
+  discord: z.string().min(2, 'Identifiant Discord requis').max(60),
+  password: z.string().min(8, 'Mot de passe : 8 caractères minimum').max(200),
+});
+
 // Formulaire public de candidature
 export const applicationSchema = z.object({
   pseudo: z.string().min(2, 'Pseudo trop court').max(60),

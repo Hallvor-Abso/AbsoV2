@@ -7,21 +7,31 @@ import { useState } from 'react';
 import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
 
-const ADMIN_LINKS = [
-  { href: '/admin', label: 'Tableau de bord' },
-  { href: '/admin/jeux', label: 'Jeux' },
-  { href: '/admin/news', label: 'News' },
-  { href: '/admin/progression', label: 'Progression' },
-  { href: '/admin/recrutement', label: 'Recrutement' },
-  { href: '/admin/candidatures', label: 'Candidatures' },
-  { href: '/admin/calendrier', label: 'Calendrier' },
-  { href: '/admin/contenu', label: 'Contenu du site' },
-];
-
 /** Barre latérale de navigation de l'espace admin (responsive). */
-export function AdminNav({ username }: { username?: string | null }) {
+export function AdminNav({
+  username,
+  canContenu,
+  canManageGlobally,
+}: {
+  username?: string | null;
+  canContenu: boolean;
+  canManageGlobally: boolean;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
+  // Liens affichés selon les droits de l'utilisateur.
+  const ADMIN_LINKS = [
+    { href: '/admin', label: 'Tableau de bord', show: true },
+    { href: '/admin/jeux', label: 'Jeux', show: canManageGlobally },
+    { href: '/admin/news', label: 'News', show: true },
+    { href: '/admin/progression', label: 'Progression', show: true },
+    { href: '/admin/recrutement', label: 'Recrutement', show: true },
+    { href: '/admin/candidatures', label: 'Candidatures', show: true },
+    { href: '/admin/calendrier', label: 'Calendrier', show: true },
+    { href: '/admin/membres', label: 'Membres', show: canManageGlobally },
+    { href: '/admin/contenu', label: 'Contenu du site', show: canContenu },
+  ].filter((l) => l.show);
 
   const links = (
     <nav className="space-y-1">
@@ -81,7 +91,7 @@ export function AdminNav({ username }: { username?: string | null }) {
           <div className="px-3 text-xs text-muted">Connecté : {username}</div>
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: '/admin/login' })}
+            onClick={() => signOut({ callbackUrl: '/' })}
             className="btn-secondary w-full text-sm"
           >
             Se déconnecter

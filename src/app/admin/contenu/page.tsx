@@ -1,5 +1,8 @@
+import { redirect } from 'next/navigation';
 import { PageHeader } from '@/components/admin/page-header';
 import { getSiteContent } from '@/lib/site-content';
+import { getAppUser } from '@/lib/auth';
+import { canAccessContenu } from '@/lib/permissions';
 import { saveSiteContent } from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
@@ -22,6 +25,7 @@ const FIELDS: { key: string; label: string; help?: string; multiline?: boolean }
 ];
 
 export default async function AdminContentPage() {
+  if (!canAccessContenu(await getAppUser())) redirect('/admin');
   const content = await getSiteContent();
 
   return (

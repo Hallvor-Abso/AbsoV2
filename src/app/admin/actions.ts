@@ -13,16 +13,79 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { isAuthenticated } from '@/lib/auth';
+import { getAppUser } from '@/lib/auth';
+import { canAccessAdmin, canAccessContenu, canManageGlobally, allowedGameIds } from '@/lib/permissions';
+import type { Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { sanitizeHtml, sanitizeText } from '@/lib/sanitize';
 import { slugify } from '@/lib/utils';
 
-/** Bloque l'action si l'utilisateur n'est pas connecté. */
-async function requireAdmin() {
-  if (!(await isAuthenticated())) {
+/** Bloque l'action réservée au Super Admin (ex : Contenu du site). */
+async function requireSuperAdmin() {
+  const user = await getAppUser();
+  if (!canAccessContenu(user)) {
     throw new Error('Non autorisé');
   }
+}
+
+/** Réservé aux admins globaux (gestion des membres et des jeux). */
+async function requireManager() {
+  const user = await getAppUser();
+  if (!canManageGlobally(user)) throw new Error('Non autorisé');
+  return user!;
+}
+
+/**
+ * Vérifie que l'utilisateur a le droit d'agir sur CE jeu précis.
+ * Un admin global passe toujours ; un admin de jeu seulement pour ses jeux.
+ */
+async function requireGameAccess(gameId?: string | null) {
+  const user = await getAppUser();
+  if (!canAccessAdmin(user)) throw new Error('Non autorisé');
+  const scope = allowedGameIds(user);
+  if (scope === 'all') return;
+  if (!gameId || !scope.includes(gameId)) throw new Error('Non autorisé');
+}
+
+/** Résout le gameId d'un tier / boss / candidature pour vérifier le périmètre. */
+async function gameIdOfTier(tierId: string) {
+  const t = await prisma.raidTier.findUnique({ where: { id: tierId }, select: { gameId: true } });
+  return t?.gameId ?? null;
+}
+async function gameIdOfBoss(bossId: string) {
+  const b = await prisma.boss.findUnique({ where: { id: bossId }, select: { tier: { select: { gameId: true } } } });
+  return b?.tier.gameId ?? null;
+}
+
+// =============================================================================
+//  MEMBRES (gestion des rôles)
+// =============================================================================
+export async function updateMember(formData: FormData) {
+  const me = await requireManager();
+  const id = formData.get('id') as string;
+  const role = formData.get('role') as Role;
+  const gameIds = formData.getAll('gameIds').map(String);
+
+  // Seul un Super Admin peut accorder le rôle Super Admin.
+  if (role === 'SUPER_ADMIN' && me.role !== 'SUPER_ADMIN') {
+    throw new Error('Non autorisé');
+  }
+
+  await prisma.user.update({
+    where: { id },
+    data: {
+      role,
+      adminGames: { set: gameIds.map((g) => ({ id: g })) },
+    },
+  });
+  revalidatePath('/admin/membres');
+}
+
+export async function deleteMember(id: string) {
+  const me = await requireManager();
+  if (me.id === id) throw new Error('Vous ne pouvez pas supprimer votre propre compte.');
+  await prisma.user.delete({ where: { id } });
+  revalidatePath('/admin/membres');
 }
 
 /** Rafraîchit l'ensemble du site public après une modification. */
@@ -38,7 +101,7 @@ function revalidatePublic() {
 //  JEUX
 // =============================================================================
 export async function saveGame(formData: FormData) {
-  await requireAdmin();
+  await requireManager();
   const id = formData.get('id') as string | null;
   const name = sanitizeText(formData.get('name'), 80);
   const slug = slugify((formData.get('slug') as string) || name);
@@ -64,13 +127,13 @@ export async function saveGame(formData: FormData) {
 
 /** Active / désactive un jeu (le retire entièrement du site public si OFF). */
 export async function toggleGame(id: string, isActive: boolean) {
-  await requireAdmin();
+  await requireManager();
   await prisma.game.update({ where: { id }, data: { isActive } });
   revalidatePublic();
 }
 
 export async function deleteGame(id: string) {
-  await requireAdmin();
+  await requireManager();
   await prisma.game.delete({ where: { id } });
   revalidatePublic();
 }
@@ -79,11 +142,11 @@ export async function deleteGame(id: string) {
 //  NEWS
 // =============================================================================
 export async function saveNews(formData: FormData) {
-  await requireAdmin();
   const id = formData.get('id') as string | null;
   const title = sanitizeText(formData.get('title'), 180);
   const status = (formData.get('status') as 'DRAFT' | 'PUBLISHED') || 'DRAFT';
   const gameId = (formData.get('gameId') as string) || null;
+  await requireGameAccess(gameId);
 
   // Slug unique basé sur le titre.
   let slug = slugify(title);
@@ -128,7 +191,8 @@ export async function saveNews(formData: FormData) {
 }
 
 export async function deleteNews(id: string) {
-  await requireAdmin();
+  const n = await prisma.news.findUnique({ where: { id }, select: { gameId: true } });
+  await requireGameAccess(n?.gameId);
   await prisma.news.delete({ where: { id } });
   revalidatePublic();
 }
@@ -137,8 +201,8 @@ export async function deleteNews(id: string) {
 //  PROGRESSION (tiers & boss)
 // =============================================================================
 export async function createTier(formData: FormData) {
-  await requireAdmin();
   const gameId = formData.get('gameId') as string;
+  await requireGameAccess(gameId);
   const name = sanitizeText(formData.get('name'), 120);
   if (!gameId || !name) return;
   const count = await prisma.raidTier.count({ where: { gameId } });
@@ -149,8 +213,8 @@ export async function createTier(formData: FormData) {
 
 /** Met à jour le zoneId Warcraft Logs d'un tier (pour la synchro auto). */
 export async function updateTier(formData: FormData) {
-  await requireAdmin();
   const id = formData.get('id') as string;
+  await requireGameAccess(await gameIdOfTier(id));
   const zoneRaw = formData.get('zoneId') as string;
   const zoneId = zoneRaw && !Number.isNaN(Number(zoneRaw)) ? Number(zoneRaw) : null;
   await prisma.raidTier.update({ where: { id }, data: { zoneId } });
@@ -159,15 +223,15 @@ export async function updateTier(formData: FormData) {
 }
 
 export async function deleteTier(id: string) {
-  await requireAdmin();
+  await requireGameAccess(await gameIdOfTier(id));
   await prisma.raidTier.delete({ where: { id } });
   revalidatePublic();
   revalidatePath('/admin/progression');
 }
 
 export async function createBoss(formData: FormData) {
-  await requireAdmin();
   const tierId = formData.get('tierId') as string;
+  await requireGameAccess(await gameIdOfTier(tierId));
   const name = sanitizeText(formData.get('name'), 120);
   if (!tierId || !name) return;
   const count = await prisma.boss.count({ where: { tierId } });
@@ -178,8 +242,8 @@ export async function createBoss(formData: FormData) {
 
 /** Met à jour un boss : statut, date de premier kill et visuel. */
 export async function updateBoss(formData: FormData) {
-  await requireAdmin();
   const id = formData.get('id') as string;
+  await requireGameAccess(await gameIdOfBoss(id));
   const status = formData.get('status') as 'KILLED' | 'PROGRESSING' | 'UNTESTED';
   const dateStr = formData.get('firstKillDate') as string;
 
@@ -203,7 +267,7 @@ export async function updateBoss(formData: FormData) {
 }
 
 export async function deleteBoss(id: string) {
-  await requireAdmin();
+  await requireGameAccess(await gameIdOfBoss(id));
   await prisma.boss.delete({ where: { id } });
   revalidatePublic();
   revalidatePath('/admin/progression');
@@ -213,10 +277,11 @@ export async function deleteBoss(id: string) {
 //  RECRUTEMENT (postes)
 // =============================================================================
 export async function saveSlot(formData: FormData) {
-  await requireAdmin();
   const id = formData.get('id') as string | null;
+  const gameId = formData.get('gameId') as string;
+  await requireGameAccess(gameId);
   const data = {
-    gameId: formData.get('gameId') as string,
+    gameId,
     role: sanitizeText(formData.get('role'), 60),
     className: sanitizeText(formData.get('className'), 60),
     status: (formData.get('status') as 'OPEN' | 'LIMITED' | 'CLOSED') || 'OPEN',
@@ -232,7 +297,8 @@ export async function saveSlot(formData: FormData) {
 }
 
 export async function deleteSlot(id: string) {
-  await requireAdmin();
+  const s = await prisma.recruitmentSlot.findUnique({ where: { id }, select: { gameId: true } });
+  await requireGameAccess(s?.gameId);
   await prisma.recruitmentSlot.delete({ where: { id } });
   revalidatePublic();
   revalidatePath('/admin/recrutement');
@@ -242,8 +308,9 @@ export async function deleteSlot(id: string) {
 //  CANDIDATURES
 // =============================================================================
 export async function updateApplication(formData: FormData) {
-  await requireAdmin();
   const id = formData.get('id') as string;
+  const app = await prisma.application.findUnique({ where: { id }, select: { gameId: true } });
+  await requireGameAccess(app?.gameId);
   await prisma.application.update({
     where: { id },
     data: {
@@ -259,7 +326,8 @@ export async function updateApplication(formData: FormData) {
 }
 
 export async function deleteApplication(id: string) {
-  await requireAdmin();
+  const app = await prisma.application.findUnique({ where: { id }, select: { gameId: true } });
+  await requireGameAccess(app?.gameId);
   await prisma.application.delete({ where: { id } });
   revalidatePath('/admin/candidatures');
 }
@@ -268,13 +336,14 @@ export async function deleteApplication(id: string) {
 //  CALENDRIER (événements)
 // =============================================================================
 export async function saveEvent(formData: FormData) {
-  await requireAdmin();
   const id = formData.get('id') as string | null;
+  const gameId = formData.get('gameId') as string;
+  await requireGameAccess(gameId);
   const start = formData.get('startDate') as string;
   const end = formData.get('endDate') as string;
 
   const data = {
-    gameId: formData.get('gameId') as string,
+    gameId,
     title: sanitizeText(formData.get('title'), 180),
     description: sanitizeText(formData.get('description'), 2000) || null,
     type: (formData.get('type') as string) || 'RAID',
@@ -291,7 +360,8 @@ export async function saveEvent(formData: FormData) {
 }
 
 export async function deleteEvent(id: string) {
-  await requireAdmin();
+  const ev = await prisma.event.findUnique({ where: { id }, select: { gameId: true } });
+  await requireGameAccess(ev?.gameId);
   await prisma.event.delete({ where: { id } });
   revalidatePublic();
   revalidatePath('/admin/calendrier');
@@ -301,7 +371,7 @@ export async function deleteEvent(id: string) {
 //  CONTENU STATIQUE (textes homepage, logo)
 // =============================================================================
 export async function saveSiteContent(formData: FormData) {
-  await requireAdmin();
+  await requireSuperAdmin();
   // On parcourt toutes les paires clé/valeur soumises et on les enregistre.
   for (const [key, value] of formData.entries()) {
     if (typeof value !== 'string') continue;

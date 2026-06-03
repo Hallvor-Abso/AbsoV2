@@ -1,18 +1,14 @@
 import { withAuth } from 'next-auth/middleware';
 
 /**
- * Protection des routes admin.
- *
- * Intercepte toute requête vers /admin/* (sauf /admin/login) et redirige les
- * visiteurs non connectés vers la page de connexion.
+ * Protection des routes admin : redirige les visiteurs non connectés vers la
+ * page de connexion. Le contrôle fin des rôles (qui a le droit d'accéder à
+ * quoi) est fait côté serveur dans la mise en page de l'admin.
  */
 export default withAuth({
-  pages: {
-    signIn: '/admin/login',
-  },
+  pages: { signIn: '/connexion' },
 });
 
 export const config = {
-  // La page /admin elle-même + toutes ses sous-pages SAUF /admin/login
-  matcher: ['/admin', '/admin/((?!login).*)'],
+  matcher: ['/admin', '/admin/:path*'],
 };

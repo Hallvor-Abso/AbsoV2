@@ -16,14 +16,29 @@ datasource db {
 }
 
 // -----------------------------------------------------------------------------
-//  UTILISATEUR ADMIN
-//  Un seul rôle : administrateur. Sert à protéger l'espace /admin.
+//  UTILISATEUR
+//  Comptes des visiteurs inscrits + comptes d'administration.
+//  - role : niveau de base (Visiteur / Membre / Admin / Super Admin)
+//  - adminGames : jeux dont l'utilisateur est admin (= « Admin WoW », « Admin SWTOR »…)
+//    Permet de gérer n'importe quel futur jeu sans changer le code.
 // -----------------------------------------------------------------------------
 model User {
   id           String   @id @default(cuid())
-  username     String   @unique
+  username     String?  @unique // identifiant du super-admin « bootstrap » (.env)
+  email        String?  @unique // email de connexion des comptes inscrits
+  displayName  String? // pseudo affiché
+  discord      String? // identifiant Discord
   passwordHash String
+  role         Role     @default(VISITEUR)
+  adminGames   Game[]   @relation("GameAdmins")
   createdAt    DateTime @default(now())
+}
+
+enum Role {
+  VISITEUR    // inscrit : Accueil, Progression, News, Recrutement
+  MEMBRE      // membre de la guilde : tout le site public (dont Calendrier)
+  ADMIN       // panel admin complet sauf « Contenu du site »
+  SUPER_ADMIN // accès total
 }
 
 // -----------------------------------------------------------------------------
@@ -46,6 +61,7 @@ model Game {
   recruitmentSlots RecruitmentSlot[]
   applications    Application[]
   events          Event[]
+  admins          User[]    @relation("GameAdmins") // admins propres à ce jeu
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

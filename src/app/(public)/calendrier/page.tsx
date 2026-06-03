@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { SectionHeading } from '@/components/section-heading';
 import { CalendarView, type CalendarEvent } from '@/components/calendar-view';
 import { getVisibleGames, getEvents } from '@/lib/data';
-
-export const revalidate = 60;
+import { getAppUser } from '@/lib/auth';
+import { canAccessCalendar } from '@/lib/permissions';
 
 export const metadata: Metadata = {
   title: 'Calendrier',
@@ -11,6 +12,32 @@ export const metadata: Metadata = {
 };
 
 export default async function CalendarPage() {
+  // Le Calendrier est réservé aux membres (et plus).
+  const user = await getAppUser();
+  if (!canAccessCalendar(user)) {
+    return (
+      <div className="container-page flex min-h-[60vh] flex-col items-center justify-center py-16 text-center">
+        <SectionHeading
+          eyebrow="Accès réservé"
+          title="Calendrier réservé aux membres"
+          subtitle="Le calendrier des raids et événements est accessible aux membres de la guilde."
+          align="center"
+          className="mb-8"
+        />
+        <div className="flex gap-3">
+          {user ? (
+            <Link href="/recrutement" className="btn-primary">Devenir membre</Link>
+          ) : (
+            <>
+              <Link href="/connexion" className="btn-primary">Se connecter</Link>
+              <Link href="/inscription" className="btn-secondary">S'inscrire</Link>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const [games, events] = await Promise.all([getVisibleGames(), getEvents()]);
 
   const calendarEvents: CalendarEvent[] = events.map((ev) => ({

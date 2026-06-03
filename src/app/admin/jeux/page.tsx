@@ -1,11 +1,15 @@
+import { redirect } from 'next/navigation';
 import { PageHeader } from '@/components/admin/page-header';
 import { ConfirmButton } from '@/components/admin/confirm-button';
 import { prisma } from '@/lib/prisma';
+import { getAppUser } from '@/lib/auth';
+import { canManageGlobally } from '@/lib/permissions';
 import { saveGame, toggleGame, deleteGame } from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminGamesPage() {
+  if (!canManageGlobally(await getAppUser())) redirect('/admin');
   const games = await prisma.game.findMany({ orderBy: { order: 'asc' } });
 
   return (

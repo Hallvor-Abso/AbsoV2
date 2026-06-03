@@ -1,14 +1,17 @@
 import { PageHeader } from '@/components/admin/page-header';
 import { ConfirmButton } from '@/components/admin/confirm-button';
 import { prisma } from '@/lib/prisma';
+import { getAppUser } from '@/lib/auth';
+import { allowedGameIds } from '@/lib/permissions';
 import { SLOT_STATUS } from '@/lib/labels';
 import { saveSlot, deleteSlot } from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminRecruitmentPage() {
+  const scope = allowedGameIds(await getAppUser());
   const games = await prisma.game.findMany({
-    where: { status: 'ACTIVE' },
+    where: { status: 'ACTIVE', ...(scope !== 'all' ? { id: { in: scope } } : {}) },
     orderBy: { order: 'asc' },
     include: { recruitmentSlots: { orderBy: { order: 'asc' } } },
   });

@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { APPLICATION_STATUS } from '@/lib/labels';
 import { formatDate, cn } from '@/lib/utils';
 import { updateApplication, deleteApplication } from '@/app/admin/actions';
+import { getAppUser } from '@/lib/auth';
+import { allowedGameIds } from '@/lib/permissions';
 import type { ApplicationStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -23,9 +25,13 @@ export default async function AdminApplicationsPage({
   searchParams: { statut?: string };
 }) {
   const filter = (searchParams.statut ?? 'ALL').toUpperCase();
+  const scope = allowedGameIds(await getAppUser());
 
   const applications = await prisma.application.findMany({
-    where: filter !== 'ALL' ? { status: filter as ApplicationStatus } : {},
+    where: {
+      ...(filter !== 'ALL' ? { status: filter as ApplicationStatus } : {}),
+      ...(scope !== 'all' ? { gameId: { in: scope } } : {}),
+    },
     orderBy: { createdAt: 'desc' },
     include: { game: true },
   });

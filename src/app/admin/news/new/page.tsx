@@ -2,11 +2,17 @@ import Link from 'next/link';
 import { PageHeader } from '@/components/admin/page-header';
 import { NewsForm } from '@/components/admin/news-form';
 import { prisma } from '@/lib/prisma';
+import { getAppUser } from '@/lib/auth';
+import { allowedGameIds } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
 export default async function NewNewsPage() {
-  const games = await prisma.game.findMany({ orderBy: { order: 'asc' } });
+  const scope = allowedGameIds(await getAppUser());
+  const games = await prisma.game.findMany({
+    where: scope !== 'all' ? { id: { in: scope } } : {},
+    orderBy: { order: 'asc' },
+  });
 
   return (
     <div>

@@ -1,6 +1,8 @@
 import { PageHeader } from '@/components/admin/page-header';
 import { ConfirmButton } from '@/components/admin/confirm-button';
 import { prisma } from '@/lib/prisma';
+import { getAppUser } from '@/lib/auth';
+import { allowedGameIds } from '@/lib/permissions';
 import { BOSS_STATUS } from '@/lib/labels';
 import {
   createTier,
@@ -20,8 +22,9 @@ function toDateInput(d: Date | null): string {
 }
 
 export default async function AdminProgressionPage() {
+  const scope = allowedGameIds(await getAppUser());
   const games = await prisma.game.findMany({
-    where: { status: 'ACTIVE' },
+    where: { status: 'ACTIVE', ...(scope !== 'all' ? { id: { in: scope } } : {}) },
     orderBy: { order: 'asc' },
     include: {
       raidTiers: {

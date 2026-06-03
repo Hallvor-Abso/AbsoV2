@@ -5,11 +5,15 @@ import { prisma } from '@/lib/prisma';
 import { NEWS_STATUS } from '@/lib/labels';
 import { formatDate } from '@/lib/utils';
 import { deleteNews } from '@/app/admin/actions';
+import { getAppUser } from '@/lib/auth';
+import { allowedGameIds } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminNewsPage() {
+  const scope = allowedGameIds(await getAppUser());
   const news = await prisma.news.findMany({
+    where: scope !== 'all' ? { gameId: { in: scope } } : {},
     orderBy: { createdAt: 'desc' },
     include: { game: true },
   });

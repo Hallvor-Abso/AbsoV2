@@ -1,6 +1,8 @@
 import { PageHeader } from '@/components/admin/page-header';
 import { ConfirmButton } from '@/components/admin/confirm-button';
 import { prisma } from '@/lib/prisma';
+import { getAppUser } from '@/lib/auth';
+import { allowedGameIds } from '@/lib/permissions';
 import { saveEvent, deleteEvent } from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
@@ -15,9 +17,12 @@ function toDateTimeInput(d: Date | null): string {
 }
 
 export default async function AdminCalendarPage() {
+  const scope = allowedGameIds(await getAppUser());
+  const gameWhere = scope !== 'all' ? { id: { in: scope } } : {};
+  const eventWhere = scope !== 'all' ? { gameId: { in: scope } } : {};
   const [events, games] = await Promise.all([
-    prisma.event.findMany({ orderBy: { startDate: 'desc' }, include: { game: true } }),
-    prisma.game.findMany({ where: { status: 'ACTIVE' }, orderBy: { order: 'asc' } }),
+    prisma.event.findMany({ where: eventWhere, orderBy: { startDate: 'desc' }, include: { game: true } }),
+    prisma.game.findMany({ where: { status: 'ACTIVE', ...gameWhere }, orderBy: { order: 'asc' } }),
   ]);
 
   const gameOptions = games.map((g) => ({ id: g.id, name: g.name }));

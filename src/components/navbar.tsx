@@ -2,26 +2,36 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import { useState } from 'react';
 import { Logo } from './logo';
 import { cn } from '@/lib/utils';
+import { canAccessAdmin, canAccessCalendar, type SessionUser } from '@/lib/permissions';
 
-const NAV_LINKS = [
+const BASE_LINKS = [
   { href: '/', label: 'Accueil' },
   { href: '/progression', label: 'Progression' },
   { href: '/news', label: 'News' },
   { href: '/recrutement', label: 'Recrutement' },
-  { href: '/calendrier', label: 'Calendrier' },
 ];
 
-/**
- * Barre de navigation principale du site public.
- * - Fixe en haut, fond sombre translucide avec léger flou.
- * - Menu déroulant sur mobile.
- */
-export function Navbar({ logoUrl }: { logoUrl?: string }) {
+export function Navbar({
+  logoUrl,
+  user,
+}: {
+  logoUrl?: string;
+  user: SessionUser | null;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
+  // Le Calendrier n'est visible que par les membres (et plus).
+  const links = canAccessCalendar(user)
+    ? [...BASE_LINKS, { href: '/calendrier', label: 'Calendrier' }]
+    : BASE_LINKS;
+
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-ink/80 backdrop-blur-md">
@@ -32,29 +42,47 @@ export function Navbar({ logoUrl }: { logoUrl?: string }) {
 
         {/* Liens — bureau */}
         <div className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map((link) => {
-            const active =
-              link.href === '/'
-                ? pathname === '/'
-                : pathname.startsWith(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  'rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200',
-                  active
-                    ? 'text-accent'
-                    : 'text-foreground hover:text-title'
-                )}
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                'rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200',
+                isActive(link.href) ? 'text-accent' : 'text-foreground hover:text-title'
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+
+          <span className="mx-2 h-5 w-px bg-border" />
+
+          {user ? (
+            <div className="flex items-center gap-2">
+              {canAccessAdmin(user) && (
+                <Link href="/admin" className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:text-accent">
+                  Admin
+                </Link>
+              )}
+              <span className="hidden text-sm text-muted lg:inline">{user.name}</span>
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="btn-secondary px-3 py-1.5 text-sm"
               >
-                {link.label}
+                Déconnexion
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link href="/connexion" className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:text-accent">
+                Connexion
               </Link>
-            );
-          })}
-          <Link href="/recrutement" className="btn-primary ml-3 px-4 py-2 text-sm">
-            Nous rejoindre
-          </Link>
+              <Link href="/inscription" className="btn-primary ml-1 px-4 py-2 text-sm">
+                S'inscrire
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Bouton menu — mobile */}
@@ -65,11 +93,7 @@ export function Navbar({ logoUrl }: { logoUrl?: string }) {
           onClick={() => setOpen((v) => !v)}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            {open ? (
-              <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
-            ) : (
-              <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
-            )}
+            {open ? <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" /> : <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />}
           </svg>
         </button>
       </nav>
@@ -78,7 +102,7 @@ export function Navbar({ logoUrl }: { logoUrl?: string }) {
       {open && (
         <div className="border-t border-border/60 bg-ink md:hidden">
           <div className="container-page flex flex-col py-3">
-            {NAV_LINKS.map((link) => (
+            {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -88,6 +112,32 @@ export function Navbar({ logoUrl }: { logoUrl?: string }) {
                 {link.label}
               </Link>
             ))}
+            <div className="my-2 h-px bg-border" />
+            {user ? (
+              <>
+                {canAccessAdmin(user) && (
+                  <Link href="/admin" onClick={() => setOpen(false)} className="rounded-md px-3 py-3 text-sm font-medium text-foreground hover:text-accent">
+                    Admin
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="rounded-md px-3 py-3 text-left text-sm font-medium text-foreground hover:text-accent"
+                >
+                  Déconnexion ({user.name})
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/connexion" onClick={() => setOpen(false)} className="rounded-md px-3 py-3 text-sm font-medium text-foreground hover:text-accent">
+                  Connexion
+                </Link>
+                <Link href="/inscription" onClick={() => setOpen(false)} className="rounded-md px-3 py-3 text-sm font-medium text-accent">
+                  S'inscrire
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
