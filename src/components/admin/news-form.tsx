@@ -1,4 +1,5 @@
 import { RichTextEditor } from './rich-text-editor';
+import { ImageInput } from './image-input';
 import { saveNews } from '@/app/admin/actions';
 
 type NewsData = {
@@ -39,10 +40,7 @@ export function NewsForm({
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label className="label">URL de l'image de couverture</label>
-          <input name="imageUrl" defaultValue={news?.imageUrl ?? ''} className="field" placeholder="https://..." />
-        </div>
+        <ImageInput name="imageUrl" defaultValue={news?.imageUrl ?? ''} label="Image de couverture" />
         <div>
           <label className="label">Jeu associé</label>
           <select name="gameId" defaultValue={news?.gameId ?? presetGameId ?? ''} className="field">

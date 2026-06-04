@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { saveSiteContent } from '@/app/admin/actions';
 import { InlinePanelEditor } from './inline-panel-editor';
 import { ActionForm } from './action-form';
+import { ImageInput } from './image-input';
 
 // Libellés lisibles de chaque texte éditable de la page d'accueil.
 const LABELS: Record<string, string> = {
@@ -99,7 +100,7 @@ export function ContentEditor({ content }: { content: Record<string, string> }) 
         </summary>
         <ActionForm action={saveSiteContent} success="Réglages enregistrés" className="mt-4 space-y-5">
           <Section title="Identité">
-            <Text label="Logo de la guilde (URL)" name="site.logoUrl" value={content['site.logoUrl']} help="Vide = logo texte « ABSOLUTION »." />
+            <ImageInput name="site.logoUrl" defaultValue={content['site.logoUrl']} label="Logo de la guilde" help="Vide = logo texte « ABSOLUTION »." />
             <Text label="Lien d'invitation Discord" name="site.discordUrl" value={content['site.discordUrl']} />
           </Section>
 

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { GameTabBar, type GameTabInfo } from '@/components/game-tab-bar';
 import { ConfirmButton } from './confirm-button';
 import { ActionForm } from './action-form';
+import { ImageInput } from './image-input';
 import { BOSS_STATUS } from '@/lib/labels';
 import {
   createTier,
@@ -88,9 +89,8 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
                       <label className="mb-1 block text-xs text-muted">Encounter ID (WCL)</label>
                       <input name="encounterId" type="number" defaultValue={boss.encounterId ?? ''} placeholder="ex : 3009" className="field w-28 py-1.5 text-sm" />
                     </div>
-                    <div className="min-w-[200px] flex-1">
-                      <label className="mb-1 block text-xs text-muted">Image du boss (URL)</label>
-                      <input name="imageUrl" defaultValue={boss.imageUrl ?? ''} placeholder="https://..." className="field py-1.5 text-sm" />
+                    <div className="min-w-[240px] flex-1">
+                      <ImageInput name="imageUrl" defaultValue={boss.imageUrl ?? ''} label="Image du boss" />
                     </div>
                     <button type="submit" className="btn-secondary py-2 text-sm">Enregistrer</button>
                   </ActionForm>

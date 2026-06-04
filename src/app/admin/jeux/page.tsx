@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { PageHeader } from '@/components/admin/page-header';
 import { ConfirmButton } from '@/components/admin/confirm-button';
 import { ActionForm } from '@/components/admin/action-form';
+import { ImageInput } from '@/components/admin/image-input';
 import { prisma } from '@/lib/prisma';
 import { getAppUser } from '@/lib/auth';
 import { canManageGlobally } from '@/lib/permissions';
@@ -113,14 +114,8 @@ function GameForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="label">URL du logo</label>
-          <input name="logoUrl" defaultValue={game?.logoUrl ?? ''} className="field" placeholder="https://..." />
-        </div>
-        <div>
-          <label className="label">URL de l'image de fond (art officiel)</label>
-          <input name="coverImageUrl" defaultValue={game?.coverImageUrl ?? ''} className="field" placeholder="https://..." />
-        </div>
+        <ImageInput name="logoUrl" defaultValue={game?.logoUrl ?? ''} label="Logo du jeu" />
+        <ImageInput name="coverImageUrl" defaultValue={game?.coverImageUrl ?? ''} label="Image de fond (art officiel)" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">

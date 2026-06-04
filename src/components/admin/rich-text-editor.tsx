@@ -5,8 +5,10 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useToast } from './toast';
+import { uploadImage } from '@/lib/upload';
 
 /**
  * Éditeur de texte riche (Tiptap) pour rédiger les articles de news.
@@ -51,11 +53,27 @@ export function RichTextEditor({
 }
 
 function Toolbar({ editor }: { editor: Editor }) {
+  const toast = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
   const btn = (active: boolean) =>
     cn(
       'rounded px-2.5 py-1 text-sm font-medium transition-colors',
       active ? 'bg-accent/20 text-accent' : 'text-foreground hover:bg-white/5'
     );
+
+  async function onPickImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const url = await uploadImage(file);
+      editor.chain().focus().setImage({ src: url }).run();
+      toast('Image insérée');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Échec du téléversement.', 'error');
+    } finally {
+      e.target.value = '';
+    }
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-1 border-b border-border bg-ink p-2">
@@ -94,6 +112,9 @@ function Toolbar({ editor }: { editor: Editor }) {
       >
         Lien
       </button>
+      <button type="button" className={btn(false)} onClick={() => fileRef.current?.click()}>
+        ⬆ Image
+      </button>
       <button
         type="button"
         className={btn(false)}
@@ -102,8 +123,9 @@ function Toolbar({ editor }: { editor: Editor }) {
           if (url) editor.chain().focus().setImage({ src: url }).run();
         }}
       >
-        Image
+        Image (URL)
       </button>
+      <input ref={fileRef} type="file" accept="image/*" onChange={onPickImage} className="hidden" />
     </div>
   );
 }
