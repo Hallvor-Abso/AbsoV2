@@ -438,11 +438,18 @@ export async function deleteEvent(id: string) {
 // =============================================================================
 //  CONTENU STATIQUE (textes homepage, logo)
 // =============================================================================
+// Clés dont la valeur est du HTML riche (éditeur), à nettoyer en conséquence.
+const RICH_CONTENT_KEYS = new Set(['about.body', 'philosophy.body']);
+
 export async function saveSiteContent(formData: FormData) {
   await requireSuperAdmin();
-  // On parcourt toutes les paires clé/valeur soumises et on les enregistre.
-  for (const [key, value] of formData.entries()) {
-    if (typeof value !== 'string') continue;
+  // On parcourt toutes les paires clé/valeur soumises et on les enregistre,
+  // en nettoyant le HTML riche (anti-XSS) et le texte simple.
+  for (const [key, raw] of formData.entries()) {
+    if (typeof raw !== 'string') continue;
+    const value = RICH_CONTENT_KEYS.has(key)
+      ? sanitizeHtml(raw)
+      : sanitizeText(raw, 4000);
     await prisma.siteContent.upsert({
       where: { key },
       update: { value },

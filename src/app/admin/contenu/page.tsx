@@ -1,28 +1,11 @@
 import { redirect } from 'next/navigation';
 import { PageHeader } from '@/components/admin/page-header';
+import { ContentEditor } from '@/components/admin/content-editor';
 import { getSiteContent } from '@/lib/site-content';
 import { getAppUser } from '@/lib/auth';
 import { canAccessContenu } from '@/lib/permissions';
-import { saveSiteContent } from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
-
-// Description de chaque champ éditable (libellé + type d'affichage).
-const FIELDS: { key: string; label: string; help?: string; multiline?: boolean }[] = [
-  { key: 'site.logoUrl', label: 'Logo de la guilde (URL)', help: "Laisse vide pour afficher le logo texte « ABSOLUTION ». Colle l'URL d'une image (PNG/SVG)." },
-  { key: 'site.discordUrl', label: 'Lien d\'invitation Discord', help: 'Apparaît dans le pied de page.' },
-  { key: 'hero.tagline', label: 'Accroche principale (hero)' },
-  { key: 'hero.subtitle', label: 'Sous-titre du hero', multiline: true },
-  { key: 'about.title', label: 'Titre — section « Qui sommes-nous »' },
-  { key: 'about.body', label: 'Texte — section « Qui sommes-nous »', multiline: true },
-  { key: 'philosophy.title', label: 'Titre — section « Philosophie »' },
-  { key: 'philosophy.body', label: 'Texte — section « Philosophie »', multiline: true },
-  // --- Synchro Warcraft Logs (pulls / % automatiques sur la Progression) ---
-  { key: 'wcl.region', label: 'Warcraft Logs — Région', help: 'eu, us, kr, tw… (laisser vide pour désactiver la synchro)' },
-  { key: 'wcl.realm', label: 'Warcraft Logs — Royaume (slug)', help: 'Le royaume en minuscules sans espaces (ex : hyjal, tarren-mill).' },
-  { key: 'wcl.guild', label: 'Warcraft Logs — Nom de la guilde', help: 'Le nom exact de la guilde tel qu’il apparaît sur Warcraft Logs.' },
-  { key: 'wcl.difficulty', label: 'Warcraft Logs — Difficulté', help: '5 = Mythique, 4 = Héroïque, 3 = Normal.' },
-];
 
 export default async function AdminContentPage() {
   if (!canAccessContenu(await getAppUser())) redirect('/admin');
@@ -32,40 +15,9 @@ export default async function AdminContentPage() {
     <div>
       <PageHeader
         title="Contenu du site"
-        description="Modifie les textes de la page d'accueil et le logo. Les changements sont visibles immédiatement."
+        description="Modifie les textes de la page d'accueil et le logo, avec un aperçu en direct."
       />
-
-      <form action={saveSiteContent} className="card space-y-6 p-6">
-        {FIELDS.map((field) => (
-          <div key={field.key}>
-            <label className="label" htmlFor={field.key}>{field.label}</label>
-            {field.multiline ? (
-              <textarea
-                id={field.key}
-                name={field.key}
-                rows={4}
-                defaultValue={content[field.key] ?? ''}
-                className="field"
-              />
-            ) : (
-              <input
-                id={field.key}
-                name={field.key}
-                defaultValue={content[field.key] ?? ''}
-                className="field"
-              />
-            )}
-            {field.help && <p className="mt-1 text-xs text-muted">{field.help}</p>}
-          </div>
-        ))}
-
-        <button type="submit" className="btn-primary">Enregistrer</button>
-      </form>
-
-      <p className="mt-6 text-sm text-muted">
-        💡 Pour le logo, héberge ton image (ex : dans Supabase Storage ou un service
-        d'images) puis colle son URL publique dans le champ ci-dessus.
-      </p>
+      <ContentEditor content={content} />
     </div>
   );
 }

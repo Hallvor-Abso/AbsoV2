@@ -66,11 +66,18 @@ export default async function HomePage() {
       <section className="container-page py-20">
         <div className="grid gap-12 md:grid-cols-2">
           <Reveal>
-            <SectionHeading
-              eyebrow="La guilde"
-              title={content['about.title']}
-              subtitle={content['about.body']}
-            />
+            <div>
+              <span className="eyebrow">
+                <span className="h-px w-6 bg-accent" />
+                La guilde
+              </span>
+              <h2 className="text-3xl font-bold sm:text-4xl">{content['about.title']}</h2>
+              {/* Texte riche éditable depuis l'admin (déjà nettoyé à l'enregistrement) */}
+              <div
+                className="prose-absolution mt-3"
+                dangerouslySetInnerHTML={{ __html: content['about.body'] }}
+              />
+            </div>
           </Reveal>
           <Reveal delay={0.1}>
             <div className="card h-full p-8">
@@ -78,7 +85,10 @@ export default async function HomePage() {
                 <span className="h-px w-6 bg-accent" />
                 {content['philosophy.title']}
               </span>
-              <p className="text-foreground/90">{content['philosophy.body']}</p>
+              <div
+                className="prose-absolution"
+                dangerouslySetInnerHTML={{ __html: content['philosophy.body'] }}
+              />
             </div>
           </Reveal>
         </div>
