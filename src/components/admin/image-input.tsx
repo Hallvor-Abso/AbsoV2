@@ -5,6 +5,26 @@ import { useToast } from './toast';
 import { uploadImage } from '@/lib/upload';
 
 /**
+ * Corrige les erreurs de copier-coller fréquentes : un lien de page Google /
+ * Bing Images contient l'adresse réelle de l'image dans un paramètre
+ * (`imgurl`, `mediaurl`, `url`). On l'extrait pour ne garder que l'image.
+ */
+function extractImageUrl(input: string): string {
+  const value = input.trim();
+  try {
+    const u = new URL(value);
+    const real =
+      u.searchParams.get('imgurl') ||
+      u.searchParams.get('mediaurl') ||
+      u.searchParams.get('url');
+    if (real && /^https?:\/\//i.test(real)) return real;
+  } catch {
+    // pas une URL absolue : on laisse tel quel
+  }
+  return value;
+}
+
+/**
  * Champ image : aperçu + bouton « Téléverser » (Vercel Blob), avec la
  * possibilité de coller une URL manuellement. La valeur finale (URL) est
  * portée par un input nommé `name`, donc envoyée normalement avec le formulaire.
@@ -57,8 +77,8 @@ export function ImageInput({
           <input
             name={name}
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://… ou téléverse un fichier"
+            onChange={(e) => setUrl(extractImageUrl(e.target.value))}
+            placeholder="https://….jpg / .png / .webp — ou téléverse un fichier"
             className="field py-1.5 text-sm"
           />
           <div className="flex items-center gap-3">
@@ -80,6 +100,10 @@ export function ImageInput({
         </div>
       </div>
       {help && <p className="mt-1 text-xs text-muted">{help}</p>}
+      <p className="mt-1 text-xs text-muted">
+        Un lien Google Images ne fonctionne pas, et certains sites bloquent l’affichage de leurs images.
+        Le plus fiable : <strong>téléverser le fichier</strong>.
+      </p>
     </div>
   );
 }
