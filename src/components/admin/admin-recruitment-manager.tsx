@@ -4,6 +4,8 @@ import { useState, useOptimistic, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { GameTabBar, type GameTabInfo } from '@/components/game-tab-bar';
 import { ConfirmButton } from './confirm-button';
+import { ActionForm } from './action-form';
+import { useToast } from './toast';
 import {
   createRecruitRole,
   updateRecruitRole,
@@ -62,11 +64,10 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-muted">
             Nouveau rôle
           </p>
-          <form
-            action={async (fd) => {
-              await createRecruitRole(fd);
-              setCreating(false);
-            }}
+          <ActionForm
+            action={createRecruitRole}
+            success="Rôle créé"
+            onDone={() => setCreating(false)}
             className="space-y-3"
           >
             <input type="hidden" name="gameId" value={game.id} />
@@ -94,7 +95,7 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
                 Annuler
               </button>
             </div>
-          </form>
+          </ActionForm>
         </div>
       )}
 
@@ -119,7 +120,7 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
                 {/* Nom + notes : un seul formulaire (les spés ont leurs propres
                     formulaires, donc placées en dehors pour éviter l'imbrication). */}
                 {role ? (
-                  <form action={updateRecruitRole} className="space-y-4">
+                  <ActionForm action={updateRecruitRole} success="Rôle enregistré" className="space-y-4">
                     <input type="hidden" name="id" value={role.id} />
                     <div>
                       <label className="label">Nom du rôle *</label>
@@ -136,7 +137,7 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
                       />
                     </div>
                     <button type="submit" className="btn-primary py-2 text-sm">💾 Sauvegarder</button>
-                  </form>
+                  </ActionForm>
                 ) : (
                   <div>
                     <label className="label">Nom du rôle</label>
@@ -185,6 +186,7 @@ function SpecSection({
   slots: AdminSlot[];
 }) {
   const [, startTransition] = useTransition();
+  const toast = useToast();
   // Mise à jour optimiste : la couleur change instantanément, l'enregistrement
   // serveur se fait en arrière-plan (plus d'attente de 2-3 s).
   const [optimisticSlots, setOptimistic] = useOptimistic(
@@ -193,11 +195,14 @@ function SpecSection({
       state.map((s) => (s.id === next.id ? { ...s, status: next.status } : s)),
   );
 
+  const STATUS_LABEL: Record<Status, string> = { OPEN: 'Ouvert', CLOSED: 'Fermé', LIMITED: 'Limité' };
+
   const cycle = (slot: AdminSlot) => {
     const status = NEXT_STATUS[slot.status];
     startTransition(async () => {
       setOptimistic({ id: slot.id, status });
       await cycleSlotStatus(slot.id);
+      toast(`${slot.className} : ${STATUS_LABEL[status]}`);
     });
   };
 
@@ -238,7 +243,7 @@ function SpecSection({
       </div>
 
       {/* Ajouter une spécialisation */}
-      <form action={addRecruitClass} className="mt-3 flex flex-wrap gap-2">
+      <ActionForm action={addRecruitClass} success="Spécialisation ajoutée" className="mt-3 flex flex-wrap gap-2">
         <input type="hidden" name="gameId" value={gameId} />
         <input type="hidden" name="role" value={roleName} />
         <input
@@ -248,7 +253,7 @@ function SpecSection({
           className="field max-w-xs py-1.5 text-sm"
         />
         <button type="submit" className="btn-secondary py-1.5 text-sm">+ Ajouter</button>
-      </form>
+      </ActionForm>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { saveSiteContentField } from '@/app/admin/actions';
+import { useToast } from './toast';
 
 /**
  * Pour les textes « sur une ligne » (titres), on aplatit le HTML produit par
@@ -47,6 +48,7 @@ export function InlinePanelEditor({
 }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const toast = useToast();
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -79,8 +81,11 @@ export function InlinePanelEditor({
     try {
       await saveSiteContentField(contentKey, html);
       setSaved(true);
+      toast(`« ${label} » enregistré`);
       onSaved();
       window.setTimeout(() => setSaved(false), 1600);
+    } catch {
+      toast("Échec de l'enregistrement, réessaie.", 'error');
     } finally {
       setSaving(false);
     }

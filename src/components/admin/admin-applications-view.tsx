@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { GameTabBar, type GameTabInfo } from '@/components/game-tab-bar';
 import { ConfirmButton } from './confirm-button';
+import { ActionForm } from './action-form';
 import { updateApplication, deleteApplication } from '@/app/admin/actions';
 import { APPLICATION_STATUS } from '@/lib/labels';
 import { formatDate, cn } from '@/lib/utils';
@@ -109,7 +110,7 @@ export function AdminApplicationsView({
                 </dl>
               </details>
 
-              <form action={updateApplication} className="mt-4 space-y-3 border-t border-border pt-4">
+              <ActionForm action={updateApplication} success="Candidature mise à jour" className="mt-4 space-y-3 border-t border-border pt-4">
                 <input type="hidden" name="id" value={app.id} />
                 <div className="flex flex-wrap items-end gap-3">
                   <div>
@@ -127,7 +128,7 @@ export function AdminApplicationsView({
                   </div>
                   <button type="submit" className="btn-secondary py-2 text-sm">Enregistrer</button>
                 </div>
-              </form>
+              </ActionForm>
 
               <form action={deleteApplication.bind(null, app.id)} className="mt-2">
                 <ConfirmButton className="text-xs text-red-300 hover:text-red-200" message="Supprimer cette candidature ?">

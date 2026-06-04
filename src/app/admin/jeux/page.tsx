@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { PageHeader } from '@/components/admin/page-header';
 import { ConfirmButton } from '@/components/admin/confirm-button';
+import { ActionForm } from '@/components/admin/action-form';
 import { prisma } from '@/lib/prisma';
 import { getAppUser } from '@/lib/auth';
 import { canManageGlobally } from '@/lib/permissions';
@@ -97,7 +98,7 @@ function GameForm({
   };
 }) {
   return (
-    <form action={saveGame} className="mt-4 space-y-4">
+    <ActionForm action={saveGame} success={game ? 'Jeu enregistré' : 'Jeu ajouté'} className="mt-4 space-y-4">
       {game && <input type="hidden" name="id" value={game.id} />}
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -148,6 +149,6 @@ function GameForm({
       <button type="submit" className="btn-primary">
         {game ? 'Enregistrer' : 'Ajouter le jeu'}
       </button>
-    </form>
+    </ActionForm>
   );
 }

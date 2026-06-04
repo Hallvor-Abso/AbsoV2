@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { saveSiteContent } from '@/app/admin/actions';
 import { InlinePanelEditor } from './inline-panel-editor';
+import { ActionForm } from './action-form';
 
 // Libellés lisibles de chaque texte éditable de la page d'accueil.
 const LABELS: Record<string, string> = {
@@ -96,7 +97,7 @@ export function ContentEditor({ content }: { content: Record<string, string> }) 
         <summary className="cursor-pointer text-sm font-semibold text-foreground">
           Réglages avancés (logo, Discord, synchro Warcraft Logs)
         </summary>
-        <form action={saveSiteContent} className="mt-4 space-y-5">
+        <ActionForm action={saveSiteContent} success="Réglages enregistrés" className="mt-4 space-y-5">
           <Section title="Identité">
             <Text label="Logo de la guilde (URL)" name="site.logoUrl" value={content['site.logoUrl']} help="Vide = logo texte « ABSOLUTION »." />
             <Text label="Lien d'invitation Discord" name="site.discordUrl" value={content['site.discordUrl']} />
@@ -110,7 +111,7 @@ export function ContentEditor({ content }: { content: Record<string, string> }) 
           </Section>
 
           <button type="submit" className="btn-primary">Enregistrer les réglages</button>
-        </form>
+        </ActionForm>
       </details>
     </div>
   );

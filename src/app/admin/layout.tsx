@@ -3,6 +3,7 @@ import { getAppUser } from '@/lib/auth';
 import { canAccessAdmin, canAccessContenu, canManageGlobally } from '@/lib/permissions';
 import { AuthProvider } from '@/components/session-provider';
 import { AdminNav } from '@/components/admin/admin-nav';
+import { ToastProvider } from '@/components/admin/toast';
 
 /**
  * Mise en page de l'espace admin.
@@ -24,16 +25,18 @@ export default async function AdminLayout({
 
   return (
     <AuthProvider>
-      <div className="flex min-h-screen flex-col lg:flex-row">
-        <AdminNav
-          username={user.name}
-          canContenu={canAccessContenu(user)}
-          canManageGlobally={canManageGlobally(user)}
-        />
-        <div className="flex-1 overflow-x-hidden">
-          <div className="mx-auto max-w-7xl p-5 sm:p-8">{children}</div>
+      <ToastProvider>
+        <div className="flex min-h-screen flex-col lg:flex-row">
+          <AdminNav
+            username={user.name}
+            canContenu={canAccessContenu(user)}
+            canManageGlobally={canManageGlobally(user)}
+          />
+          <div className="flex-1 overflow-x-hidden">
+            <div className="mx-auto max-w-7xl p-5 sm:p-8">{children}</div>
+          </div>
         </div>
-      </div>
+      </ToastProvider>
     </AuthProvider>
   );
 }

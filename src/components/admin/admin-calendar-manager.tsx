@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { GameTabBar, type GameTabInfo } from '@/components/game-tab-bar';
 import { ConfirmButton } from './confirm-button';
+import { ActionForm } from './action-form';
 import { saveEvent, deleteEvent } from '@/app/admin/actions';
 
 export type AdminEvent = {
@@ -59,7 +60,7 @@ export function AdminCalendarManager({
 
 function EventForm({ gameId, event }: { gameId: string; event?: AdminEvent }) {
   return (
-    <form action={saveEvent} className="space-y-4">
+    <ActionForm action={saveEvent} success={event ? 'Événement enregistré' : 'Événement ajouté'} className="space-y-4">
       {event && <input type="hidden" name="id" value={event.id} />}
       {/* Le jeu est imposé par l'onglet courant */}
       <input type="hidden" name="gameId" value={gameId} />
@@ -98,6 +99,6 @@ function EventForm({ gameId, event }: { gameId: string; event?: AdminEvent }) {
       <button type="submit" className="btn-primary">
         {event ? 'Enregistrer' : "Ajouter l'événement"}
       </button>
-    </form>
+    </ActionForm>
   );
 }

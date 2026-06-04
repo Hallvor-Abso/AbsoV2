@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { PageHeader } from '@/components/admin/page-header';
 import { ConfirmButton } from '@/components/admin/confirm-button';
+import { ActionForm } from '@/components/admin/action-form';
 import { prisma } from '@/lib/prisma';
 import { getAppUser } from '@/lib/auth';
 import { canManageGlobally, ROLE_LABELS } from '@/lib/permissions';
@@ -49,7 +50,7 @@ export default async function AdminMembersPage() {
                 </span>
               </div>
 
-              <form action={updateMember} className="space-y-3 border-t border-border pt-4">
+              <ActionForm action={updateMember} success="Membre enregistré" className="space-y-3 border-t border-border pt-4">
                 <input type="hidden" name="id" value={u.id} />
                 <div className="flex flex-wrap items-end gap-4">
                   <div>
@@ -85,7 +86,7 @@ export default async function AdminMembersPage() {
 
                   <button type="submit" className="btn-secondary py-2 text-sm">Enregistrer</button>
                 </div>
-              </form>
+              </ActionForm>
 
               {me!.id !== u.id && (
                 <form action={deleteMember.bind(null, u.id)} className="mt-2">

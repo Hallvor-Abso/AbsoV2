@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { GameTabBar, type GameTabInfo } from '@/components/game-tab-bar';
 import { ConfirmButton } from './confirm-button';
+import { ActionForm } from './action-form';
 import { BOSS_STATUS } from '@/lib/labels';
 import {
   createTier,
@@ -35,11 +36,11 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
       <GameTabBar games={games} activeId={game.id} onSelect={setActiveId} />
 
       {/* Ajout d'un tier */}
-      <form action={createTier} className="mb-6 flex flex-wrap gap-3">
+      <ActionForm action={createTier} success="Tier ajouté" className="mb-6 flex flex-wrap gap-3">
         <input type="hidden" name="gameId" value={game.id} />
         <input name="name" required placeholder="Nom du tier (ex : Liberation of Undermine)" className="field max-w-md" />
         <button type="submit" className="btn-secondary">Ajouter un tier</button>
-      </form>
+      </ActionForm>
 
       <div className="space-y-6">
         {game.tiers.length === 0 && <p className="text-muted">Aucun tier pour ce jeu.</p>}
@@ -48,14 +49,14 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h3 className="font-semibold text-title">{tier.name}</h3>
               <div className="flex items-center gap-4">
-                <form action={updateTier} className="flex items-end gap-2">
+                <ActionForm action={updateTier} success="Tier enregistré" className="flex items-end gap-2">
                   <input type="hidden" name="id" value={tier.id} />
                   <div>
                     <label className="mb-1 block text-xs text-muted">Zone ID (Warcraft Logs)</label>
                     <input name="zoneId" type="number" defaultValue={tier.zoneId ?? ''} placeholder="ex : 38" className="field w-28 py-1.5 text-sm" />
                   </div>
                   <button type="submit" className="btn-secondary py-2 text-sm">OK</button>
-                </form>
+                </ActionForm>
                 <form action={deleteTier.bind(null, tier.id)}>
                   <ConfirmButton message="Supprimer ce tier et tous ses boss ?">Supprimer le tier</ConfirmButton>
                 </form>
@@ -69,7 +70,7 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
                     <span className={`h-2 w-2 rounded-full ${BOSS_STATUS[boss.status].dot}`} />
                     <span className="font-medium text-foreground">{boss.name}</span>
                   </div>
-                  <form action={updateBoss} className="mt-3 flex flex-wrap items-end gap-3">
+                  <ActionForm action={updateBoss} success="Boss enregistré" className="mt-3 flex flex-wrap items-end gap-3">
                     <input type="hidden" name="id" value={boss.id} />
                     <div>
                       <label className="mb-1 block text-xs text-muted">Statut</label>
@@ -92,7 +93,7 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
                       <input name="imageUrl" defaultValue={boss.imageUrl ?? ''} placeholder="https://..." className="field py-1.5 text-sm" />
                     </div>
                     <button type="submit" className="btn-secondary py-2 text-sm">Enregistrer</button>
-                  </form>
+                  </ActionForm>
                   <form action={deleteBoss.bind(null, boss.id)} className="mt-2">
                     <ConfirmButton className="text-xs text-red-300 hover:text-red-200" message="Supprimer ce boss ?">
                       Supprimer le boss
@@ -102,11 +103,11 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
               ))}
             </div>
 
-            <form action={createBoss} className="mt-4 flex flex-wrap gap-3">
+            <ActionForm action={createBoss} success="Boss ajouté" className="mt-4 flex flex-wrap gap-3">
               <input type="hidden" name="tierId" value={tier.id} />
               <input name="name" required placeholder="Nom du boss" className="field max-w-xs py-1.5 text-sm" />
               <button type="submit" className="btn-secondary py-2 text-sm">Ajouter un boss</button>
-            </form>
+            </ActionForm>
           </div>
         ))}
       </div>
