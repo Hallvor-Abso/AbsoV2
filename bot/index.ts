@@ -1,6 +1,8 @@
 import { Client, Events, GatewayIntentBits, MessageFlags, Routes } from 'discord.js';
 import { env } from './env';
 import { commands, handleInteraction } from './commands';
+import { handleRsvp } from './features/calendar';
+import { startHttpServer } from './server';
 import { prisma } from './prisma';
 
 /**
@@ -26,9 +28,25 @@ client.once(Events.ClientReady, async (c) => {
   } catch (err) {
     console.error('⚠️ Échec de l’enregistrement des commandes :', err);
   }
+
+  // Serveur HTTP (site → bot) pour les notifications instantanées.
+  startHttpServer(c);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  // Boutons (RSVP du calendrier, etc.)
+  if (interaction.isButton()) {
+    try {
+      if (interaction.customId.startsWith('rsvp:')) await handleRsvp(interaction);
+    } catch (err) {
+      console.error('Erreur bouton :', err);
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: 'Une erreur est survenue.', flags: MessageFlags.Ephemeral }).catch(() => {});
+      }
+    }
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) return;
   try {
     await handleInteraction(interaction);

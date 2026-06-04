@@ -28,4 +28,12 @@ export const env = {
   DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID || '',
   /** Base de données partagée avec le site (même valeur que DATABASE_URL du site). */
   DATABASE_URL: required('DATABASE_URL'),
+  /**
+   * Secret partagé avec le site pour authentifier les appels HTTP (site → bot).
+   * Optionnel : sans lui, l'endpoint HTTP refuse tout (le bot fonctionne quand
+   * même pour les commandes slash).
+   */
+  BOT_HTTP_SECRET: process.env.BOT_HTTP_SECRET || '',
+  /** Salon Discord où le bot publie les événements du calendrier. */
+  DISCORD_CALENDAR_CHANNEL_ID: process.env.DISCORD_CALENDAR_CHANNEL_ID || '',
 };

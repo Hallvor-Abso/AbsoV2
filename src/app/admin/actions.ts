@@ -20,6 +20,7 @@ import { prisma } from '@/lib/prisma';
 import { sanitizeHtml, sanitizeText } from '@/lib/sanitize';
 import { SITE_CONTENT_DEFAULTS } from '@/lib/site-content';
 import { slugify } from '@/lib/utils';
+import { syncEventToBot, removeEventFromBot } from '@/lib/bot';
 
 /** Bloque l'action réservée au Super Admin (ex : Contenu du site). */
 async function requireSuperAdmin() {
@@ -440,19 +441,28 @@ export async function saveEvent(formData: FormData) {
     startDate: new Date(start),
     endDate: end ? new Date(end) : null,
   };
+  let eventId = id;
   if (id) {
     await prisma.event.update({ where: { id }, data });
   } else {
-    await prisma.event.create({ data });
+    const created = await prisma.event.create({ data });
+    eventId = created.id;
   }
+  // Publie / met à jour le message Discord de l'événement (no-op si bot non configuré).
+  if (eventId) await syncEventToBot(eventId);
   revalidatePublic();
   revalidatePath('/admin/calendrier');
 }
 
 export async function deleteEvent(id: string) {
-  const ev = await prisma.event.findUnique({ where: { id }, select: { gameId: true } });
+  const ev = await prisma.event.findUnique({
+    where: { id },
+    select: { gameId: true, discordChannelId: true, discordMessageId: true },
+  });
   await requireGameAccess(ev?.gameId);
   await prisma.event.delete({ where: { id } });
+  // Retire le message Discord associé (no-op si bot non configuré).
+  await removeEventFromBot(ev?.discordChannelId ?? null, ev?.discordMessageId ?? null);
   revalidatePublic();
   revalidatePath('/admin/calendrier');
 }
