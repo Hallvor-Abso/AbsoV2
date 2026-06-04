@@ -13,7 +13,11 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "setup": "prisma generate && prisma migrate deploy && tsx prisma/seed.ts"
+    "setup": "prisma generate && prisma migrate deploy && tsx prisma/seed.ts",
+    "bot": "tsx bot/index.ts",
+    "bot:dev": "tsx --env-file=.env bot/index.ts",
+    "bot:register": "tsx --env-file=.env bot/register-commands.ts",
+    "bot:check": "tsc --noEmit --project bot/tsconfig.json"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -31,6 +35,8 @@
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "discord.js": "^14.26.4",
+    "dotenv": "^17.4.2",
     "framer-motion": "^11.11.17",
     "next": "14.2.18",
     "next-auth": "^4.24.10",
