@@ -149,6 +149,7 @@ function BossCard({ boss, color }: { boss: Boss; color: string }) {
             src={boss.imageUrl}
             alt={boss.name}
             fill
+            unoptimized
             sizes="180px"
             className={cn('object-cover transition', !killed && 'opacity-40 grayscale')}
           />

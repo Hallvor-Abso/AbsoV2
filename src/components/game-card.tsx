@@ -26,6 +26,7 @@ export function GameCard({ game }: { game: GameCardData }) {
           src={game.coverImageUrl}
           alt={game.name}
           fill
+          unoptimized
           sizes="(max-width: 768px) 100vw, 50vw"
           className="object-cover opacity-30 transition-all duration-500 group-hover:scale-105 group-hover:opacity-40"
         />

@@ -22,8 +22,9 @@ const wow = {
   id: 'demo-wow',
   name: 'World of Warcraft',
   slug: 'wow',
-  logoUrl:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/World_of_Warcraft_logo.svg/512px-World_of_Warcraft_logo.svg.png',
+  // Pas de logo en démo : l'ancienne URL Wikimedia renvoie 403 (hotlink bloqué).
+  // Sans logo, l'onglet retombe proprement sur la pastille de couleur.
+  logoUrl: '',
   coverImageUrl:
     'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=1600&auto=format&fit=crop',
   color: '#4A9EFF',

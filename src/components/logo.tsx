@@ -22,6 +22,7 @@ export function Logo({
         alt="Absolution"
         width={180}
         height={48}
+        unoptimized
         className={cn('h-auto w-auto object-contain', withGlow && 'drop-shadow-[0_0_18px_rgba(74,158,255,0.5)]', className)}
         priority
       />

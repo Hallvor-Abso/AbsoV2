@@ -151,7 +151,7 @@ export default async function HomePage() {
                   >
                     <div className="relative aspect-[16/10] overflow-hidden bg-ink">
                       {boss.imageUrl ? (
-                        <Image src={boss.imageUrl} alt={boss.name} fill sizes="224px" className="object-cover" />
+                        <Image src={boss.imageUrl} alt={boss.name} fill unoptimized sizes="224px" className="object-cover" />
                       ) : (
                         <div className="h-full w-full" style={{ background: `radial-gradient(circle at 50% 30%, ${color}40, #0C0E13)` }} />
                       )}

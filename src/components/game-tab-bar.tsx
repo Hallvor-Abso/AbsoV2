@@ -56,7 +56,7 @@ export function GameTabBar({
             {/* Logo ou pastille de couleur */}
             {game.logoUrl ? (
               <span className="relative h-6 w-10 shrink-0">
-                <Image src={game.logoUrl} alt="" fill className="object-contain" />
+                <Image src={game.logoUrl} alt="" fill unoptimized className="object-contain" />
               </span>
             ) : (
               <span
