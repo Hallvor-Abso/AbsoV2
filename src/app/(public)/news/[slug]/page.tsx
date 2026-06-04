@@ -71,6 +71,7 @@ export default async function NewsArticlePage({
             src={article.imageUrl}
             alt={article.title}
             fill
+            unoptimized
             sizes="(max-width: 768px) 100vw, 768px"
             className="object-cover"
             priority

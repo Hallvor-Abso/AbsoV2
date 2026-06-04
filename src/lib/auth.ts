@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { cache } from 'react';
 import { prisma } from './prisma';
+import { rateLimit, getClientIp } from './rate-limit';
 import type { SessionUser } from './permissions';
 import type { Role } from '@prisma/client';
 
@@ -23,9 +24,17 @@ export const authOptions: NextAuthOptions = {
         identifier: { label: 'Email ou identifiant', type: 'text' },
         password: { label: 'Mot de passe', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.identifier || !credentials?.password) return null;
         const id = credentials.identifier.trim();
+
+        // Anti brute-force : on limite les tentatives par IP (+ par identifiant).
+        const ip = getClientIp((req?.headers ?? {}) as Record<string, string | undefined>);
+        const ok = await rateLimit(`login:${ip}:${id.toLowerCase()}`, {
+          limit: 8,
+          windowMs: 10 * 60 * 1000,
+        });
+        if (!ok) throw new Error('Trop de tentatives de connexion. Réessaie dans quelques minutes.');
 
         const user = await prisma.user.findFirst({
           where: {

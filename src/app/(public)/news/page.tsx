@@ -46,6 +46,7 @@ export default async function NewsPage() {
                       src={featured.imageUrl}
                       alt={featured.title}
                       fill
+                      unoptimized
                       sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                       priority
@@ -102,6 +103,7 @@ export default async function NewsPage() {
                           src={article.imageUrl}
                           alt={article.title}
                           fill
+                          unoptimized
                           sizes="(max-width: 768px) 100vw, 33vw"
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />

@@ -11,7 +11,7 @@ import { sanitizeText } from '@/lib/sanitize';
  */
 export async function POST(request: Request) {
   const ip = getClientIp(request.headers);
-  if (!rateLimit(`register:${ip}`, { limit: 5, windowMs: 15 * 60 * 1000 })) {
+  if (!(await rateLimit(`register:${ip}`, { limit: 5, windowMs: 15 * 60 * 1000 }))) {
     return NextResponse.json({ error: 'Trop de tentatives. Réessaie plus tard.' }, { status: 429 });
   }
 

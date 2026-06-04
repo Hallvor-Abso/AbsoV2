@@ -17,7 +17,7 @@ import { notifyDiscord } from '@/lib/discord';
 export async function POST(request: Request) {
   // 1. Limitation de débit
   const ip = getClientIp(request.headers);
-  const allowed = rateLimit(`application:${ip}`, { limit: 3, windowMs: 10 * 60 * 1000 });
+  const allowed = await rateLimit(`application:${ip}`, { limit: 3, windowMs: 10 * 60 * 1000 });
   if (!allowed) {
     return NextResponse.json(
       { error: 'Trop de tentatives. Réessaie dans quelques minutes.' },
