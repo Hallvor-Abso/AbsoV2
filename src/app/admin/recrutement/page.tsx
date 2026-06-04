@@ -15,7 +15,10 @@ export default async function AdminRecruitmentPage() {
   const games = await prisma.game.findMany({
     where: scope !== 'all' ? { id: { in: scope } } : {},
     orderBy: [{ status: 'asc' }, { order: 'asc' }],
-    include: { recruitmentSlots: { orderBy: { order: 'asc' } } },
+    include: {
+      recruitmentRoles: { orderBy: { order: 'asc' } },
+      recruitmentSlots: { orderBy: { order: 'asc' } },
+    },
   });
 
   const data: AdminRecruitGame[] = games.map((g) => ({
@@ -24,12 +27,12 @@ export default async function AdminRecruitmentPage() {
     color: g.color,
     logoUrl: g.logoUrl,
     status: g.status,
+    roles: g.recruitmentRoles.map((r) => ({ id: r.id, name: r.name })),
     slots: g.recruitmentSlots.map((s) => ({
       id: s.id,
       role: s.role,
       className: s.className,
       status: s.status,
-      order: s.order,
     })),
   }));
 
@@ -37,7 +40,7 @@ export default async function AdminRecruitmentPage() {
     <div>
       <PageHeader
         title="Recrutement"
-        description="Définis les postes recherchés et leur statut, séparés par jeu (onglets)."
+        description="Crée des rôles par jeu, ajoute les classes, et clique pour changer leur statut."
       />
       {data.length === 0 ? (
         <p className="text-muted">Crée d'abord un jeu dans l'onglet « Jeux ».</p>

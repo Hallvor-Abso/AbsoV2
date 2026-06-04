@@ -81,6 +81,15 @@ export async function seedDatabase(prisma: PrismaClient) {
   });
 
   // --- 4. Postes de recrutement ------------------------------------------
+  await prisma.recruitmentRole.deleteMany({ where: { gameId: wow.id } });
+  await prisma.recruitmentRole.createMany({
+    data: [
+      { gameId: wow.id, name: 'Tank', order: 0 },
+      { gameId: wow.id, name: 'Heal', order: 1 },
+      { gameId: wow.id, name: 'DPS Distance', order: 2 },
+      { gameId: wow.id, name: 'DPS Mêlée', order: 3 },
+    ],
+  });
   await prisma.recruitmentSlot.deleteMany({ where: { gameId: wow.id } });
   await prisma.recruitmentSlot.createMany({
     data: [

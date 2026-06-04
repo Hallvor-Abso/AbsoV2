@@ -58,6 +58,7 @@ model Game {
 
   raidTiers       RaidTier[]
   news            News[]
+  recruitmentRoles RecruitmentRole[]
   recruitmentSlots RecruitmentSlot[]
   applications    Application[]
   events          Event[]
@@ -139,7 +140,24 @@ enum NewsStatus {
 }
 
 // -----------------------------------------------------------------------------
-//  POSTE DE RECRUTEMENT — une classe/rôle recherché, avec son statut.
+//  RÔLE DE RECRUTEMENT (Tank, Heal, DPS Distance... nommage libre).
+//  Regroupe des classes/spécialisations. Peut exister sans aucune classe.
+// -----------------------------------------------------------------------------
+model RecruitmentRole {
+  id        String   @id @default(cuid())
+  name      String // libellé libre du rôle
+  order     Int      @default(0)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([gameId, name]) // un rôle est unique par jeu
+}
+
+// -----------------------------------------------------------------------------
+//  POSTE DE RECRUTEMENT — une classe/spécialisation recherchée, avec son statut.
+//  `role` correspond au nom d'un RecruitmentRole du même jeu.
 // -----------------------------------------------------------------------------
 model RecruitmentSlot {
   id        String     @id @default(cuid())

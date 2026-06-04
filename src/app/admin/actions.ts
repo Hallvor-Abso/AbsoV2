@@ -318,6 +318,60 @@ export async function deleteSlot(id: string) {
   revalidatePath('/admin/recrutement');
 }
 
+/** Crée un rôle de recrutement (Tank, Heal...) pour un jeu. */
+export async function createRecruitRole(formData: FormData) {
+  const gameId = formData.get('gameId') as string;
+  await requireGameAccess(gameId);
+  const name = sanitizeText(formData.get('name'), 60);
+  if (!name) return;
+  const count = await prisma.recruitmentRole.count({ where: { gameId } });
+  await prisma.recruitmentRole.upsert({
+    where: { gameId_name: { gameId, name } },
+    update: {},
+    create: { gameId, name, order: count },
+  });
+  revalidatePublic();
+  revalidatePath('/admin/recrutement');
+}
+
+/** Supprime un rôle et toutes ses classes. */
+export async function deleteRecruitRole(id: string) {
+  const role = await prisma.recruitmentRole.findUnique({ where: { id } });
+  await requireGameAccess(role?.gameId);
+  if (role) {
+    await prisma.recruitmentSlot.deleteMany({ where: { gameId: role.gameId, role: role.name } });
+    await prisma.recruitmentRole.delete({ where: { id } });
+  }
+  revalidatePublic();
+  revalidatePath('/admin/recrutement');
+}
+
+/** Ajoute une classe/spécialisation à un rôle (statut « Ouvert » par défaut). */
+export async function addRecruitClass(formData: FormData) {
+  const gameId = formData.get('gameId') as string;
+  await requireGameAccess(gameId);
+  const role = sanitizeText(formData.get('role'), 60);
+  const className = sanitizeText(formData.get('className'), 60);
+  if (!role || !className) return;
+  const count = await prisma.recruitmentSlot.count({ where: { gameId, role } });
+  await prisma.recruitmentSlot.create({
+    data: { gameId, role, className, status: 'OPEN', order: count },
+  });
+  revalidatePublic();
+  revalidatePath('/admin/recrutement');
+}
+
+/** Fait défiler le statut d'une classe au clic : Ouvert → Fermé → Limité → ... */
+export async function cycleSlotStatus(id: string) {
+  const slot = await prisma.recruitmentSlot.findUnique({ where: { id }, select: { gameId: true, status: true } });
+  await requireGameAccess(slot?.gameId);
+  const next =
+    slot?.status === 'OPEN' ? 'CLOSED' : slot?.status === 'CLOSED' ? 'LIMITED' : 'OPEN';
+  await prisma.recruitmentSlot.update({ where: { id }, data: { status: next } });
+  revalidatePublic();
+  revalidatePath('/admin/recrutement');
+}
+
 // =============================================================================
 //  CANDIDATURES
 // =============================================================================
