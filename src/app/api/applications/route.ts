@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { applicationSchema } from '@/lib/validation';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { sanitizeText } from '@/lib/sanitize';
+import { notifyDiscord } from '@/lib/discord';
 
 /**
  * POST /api/applications — réception d'une candidature publique.
@@ -51,19 +52,32 @@ export async function POST(request: Request) {
   }
 
   // 4. Enregistrement (textes nettoyés)
-  await prisma.application.create({
-    data: {
-      pseudo: sanitizeText(data.pseudo, 60),
-      characterId: sanitizeText(data.characterId, 80) || null,
-      className: sanitizeText(data.className, 60),
-      role: sanitizeText(data.role, 60),
-      server: sanitizeText(data.server, 80),
-      experience: sanitizeText(data.experience, 4000),
-      availability: sanitizeText(data.availability, 1000),
-      logsUrl: sanitizeText(data.logsUrl, 500) || null,
-      motivation: sanitizeText(data.motivation, 4000),
-      gameId: game.id,
-    },
+  const clean = {
+    pseudo: sanitizeText(data.pseudo, 60),
+    characterId: sanitizeText(data.characterId, 80) || null,
+    className: sanitizeText(data.className, 60),
+    role: sanitizeText(data.role, 60),
+    server: sanitizeText(data.server, 80),
+    experience: sanitizeText(data.experience, 4000),
+    availability: sanitizeText(data.availability, 1000),
+    logsUrl: sanitizeText(data.logsUrl, 500) || null,
+    motivation: sanitizeText(data.motivation, 4000),
+    gameId: game.id,
+  };
+  await prisma.application.create({ data: clean });
+
+  // 5. Notification Discord (no-op si non configuré, n'échoue jamais le flux).
+  const base = process.env.NEXTAUTH_URL?.replace(/\/$/, '');
+  await notifyDiscord({
+    title: '📥 Nouvelle candidature',
+    description: `**${clean.pseudo}** a postulé pour **${game.name}**`,
+    url: base ? `${base}/admin/candidatures` : undefined,
+    fields: [
+      { name: 'Classe / Rôle', value: `${clean.className} · ${clean.role}`, inline: true },
+      { name: 'Serveur', value: clean.server, inline: true },
+      { name: 'Disponibilités', value: clean.availability },
+      ...(clean.logsUrl ? [{ name: 'Logs', value: clean.logsUrl }] : []),
+    ],
   });
 
   return NextResponse.json({ ok: true });
