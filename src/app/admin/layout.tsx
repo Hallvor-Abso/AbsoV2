@@ -31,7 +31,7 @@ export default async function AdminLayout({
           canManageGlobally={canManageGlobally(user)}
         />
         <div className="flex-1 overflow-x-hidden">
-          <div className="mx-auto max-w-5xl p-5 sm:p-8">{children}</div>
+          <div className="mx-auto max-w-7xl p-5 sm:p-8">{children}</div>
         </div>
       </div>
     </AuthProvider>
