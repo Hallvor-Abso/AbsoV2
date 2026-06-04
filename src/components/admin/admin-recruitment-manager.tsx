@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useOptimistic, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { GameTabBar, type GameTabInfo } from '@/components/game-tab-bar';
 import { ConfirmButton } from './confirm-button';
@@ -106,7 +106,7 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
           Aucun rôle pour ce jeu. Clique sur « + Nouveau rôle » pour en créer un.
         </p>
       ) : (
-        <div className="space-y-5">
+        <div className="grid items-start gap-5 lg:grid-cols-2">
           {uniqueRoles.map((roleName) => {
             const role = game.roles.find((r) => r.name === roleName);
             const slots = game.slots.filter((s) => s.role === roleName);
@@ -171,6 +171,9 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
   );
 }
 
+// Cycle de statut côté client (identique au serveur) : Ouvert → Fermé → Limité → …
+const NEXT_STATUS: Record<Status, Status> = { OPEN: 'CLOSED', CLOSED: 'LIMITED', LIMITED: 'OPEN' };
+
 /** Section « Spécialisations » : légende, boutons cliquables (cycle), ajout. */
 function SpecSection({
   gameId,
@@ -181,6 +184,23 @@ function SpecSection({
   roleName: string;
   slots: AdminSlot[];
 }) {
+  const [, startTransition] = useTransition();
+  // Mise à jour optimiste : la couleur change instantanément, l'enregistrement
+  // serveur se fait en arrière-plan (plus d'attente de 2-3 s).
+  const [optimisticSlots, setOptimistic] = useOptimistic(
+    slots,
+    (state, next: { id: string; status: Status }) =>
+      state.map((s) => (s.id === next.id ? { ...s, status: next.status } : s)),
+  );
+
+  const cycle = (slot: AdminSlot) => {
+    const status = NEXT_STATUS[slot.status];
+    startTransition(async () => {
+      setOptimistic({ id: slot.id, status });
+      await cycleSlotStatus(slot.id);
+    });
+  };
+
   return (
     <div>
       <label className="label">Spécialisations</label>
@@ -191,17 +211,16 @@ function SpecSection({
       </p>
 
       <div className="flex flex-wrap items-center gap-2.5">
-        {slots.map((slot) => (
+        {optimisticSlots.map((slot) => (
           <div key={slot.id} className="flex items-center">
-            <form action={cycleSlotStatus.bind(null, slot.id)}>
-              <button
-                type="submit"
-                title="Cliquer pour changer le statut"
-                className={`rounded-l-lg border py-2 pl-3.5 pr-2.5 text-sm font-semibold transition-colors ${BTN[slot.status]}`}
-              >
-                {slot.className}
-              </button>
-            </form>
+            <button
+              type="button"
+              onClick={() => cycle(slot)}
+              title="Cliquer pour changer le statut"
+              className={`rounded-l-lg border py-2 pl-3.5 pr-2.5 text-sm font-semibold transition-colors ${BTN[slot.status]}`}
+            >
+              {slot.className}
+            </button>
             <form action={deleteSlot.bind(null, slot.id)}>
               <button
                 type="submit"
@@ -213,7 +232,7 @@ function SpecSection({
             </form>
           </div>
         ))}
-        {slots.length === 0 && (
+        {optimisticSlots.length === 0 && (
           <span className="text-sm text-muted">Aucune spécialisation pour le moment.</span>
         )}
       </div>

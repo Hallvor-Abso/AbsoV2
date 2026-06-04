@@ -5,6 +5,7 @@ import { Logo } from '@/components/logo';
 import { Reveal } from '@/components/reveal';
 import { SectionHeading } from '@/components/section-heading';
 import { GameCard } from '@/components/game-card';
+import { InlineEdit } from '@/components/inline-edit';
 import { formatDate } from '@/lib/utils';
 import { getSiteContent } from '@/lib/site-content';
 import {
@@ -30,6 +31,8 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Active l'édition en place quand la page est ouverte dans l'éditeur admin. */}
+      <InlineEdit />
       {/* ============================== HERO ============================== */}
       <section className="relative flex min-h-[88vh] items-center overflow-hidden">
         {/* Arc électrique en fond */}
@@ -44,10 +47,13 @@ export default async function HomePage() {
             <div className="mb-8 flex justify-center">
               <Logo logoUrl={content['site.logoUrl'] || undefined} withGlow className="text-3xl" />
             </div>
-            <h1 className="font-display text-4xl font-bold leading-tight text-title sm:text-6xl">
+            <h1
+              data-edit-key="hero.tagline"
+              className="font-display text-4xl font-bold leading-tight text-title sm:text-6xl"
+            >
               {content['hero.tagline']}
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-foreground/90">
+            <p data-edit-key="hero.subtitle" className="mx-auto mt-6 max-w-2xl text-lg text-foreground/90">
               {content['hero.subtitle']}
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -71,9 +77,10 @@ export default async function HomePage() {
                 <span className="h-px w-6 bg-accent" />
                 La guilde
               </span>
-              <h2 className="text-3xl font-bold sm:text-4xl">{content['about.title']}</h2>
+              <h2 data-edit-key="about.title" className="text-3xl font-bold sm:text-4xl">{content['about.title']}</h2>
               {/* Texte riche éditable depuis l'admin (déjà nettoyé à l'enregistrement) */}
               <div
+                data-edit-key="about.body"
                 className="prose-absolution mt-3"
                 dangerouslySetInnerHTML={{ __html: content['about.body'] }}
               />
@@ -83,9 +90,10 @@ export default async function HomePage() {
             <div className="card h-full p-8">
               <span className="eyebrow">
                 <span className="h-px w-6 bg-accent" />
-                {content['philosophy.title']}
+                <span data-edit-key="philosophy.title">{content['philosophy.title']}</span>
               </span>
               <div
+                data-edit-key="philosophy.body"
                 className="prose-absolution"
                 dangerouslySetInnerHTML={{ __html: content['philosophy.body'] }}
               />

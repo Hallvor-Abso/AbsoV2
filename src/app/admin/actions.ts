@@ -18,6 +18,7 @@ import { canAccessAdmin, canAccessContenu, canManageGlobally, allowedGameIds } f
 import type { Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { sanitizeHtml, sanitizeText } from '@/lib/sanitize';
+import { SITE_CONTENT_DEFAULTS } from '@/lib/site-content';
 import { slugify } from '@/lib/utils';
 
 /** Bloque l'action réservée au Super Admin (ex : Contenu du site). */
@@ -477,6 +478,24 @@ export async function saveSiteContent(formData: FormData) {
       create: { key, value },
     });
   }
+  revalidatePublic();
+  revalidatePath('/admin/contenu');
+}
+
+/**
+ * Enregistre UNE seule clé de contenu (édition en place depuis l'aperçu).
+ * Appelée par l'éditeur visuel quand on clique sur un texte de la homepage.
+ */
+export async function saveSiteContentField(key: string, raw: string) {
+  await requireSuperAdmin();
+  // On n'accepte que les clés de contenu connues (anti-abus).
+  if (!(key in SITE_CONTENT_DEFAULTS)) throw new Error('Clé de contenu inconnue');
+  const value = RICH_CONTENT_KEYS.has(key) ? sanitizeHtml(raw) : sanitizeText(raw, 4000);
+  await prisma.siteContent.upsert({
+    where: { key },
+    update: { value },
+    create: { key, value },
+  });
   revalidatePublic();
   revalidatePath('/admin/contenu');
 }
