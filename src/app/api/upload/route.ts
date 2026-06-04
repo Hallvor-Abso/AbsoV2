@@ -17,13 +17,6 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return Response.json(
-      { error: "Stockage d'images non configuré (BLOB_READ_WRITE_TOKEN manquant). Colle une URL à la place." },
-      { status: 503 },
-    );
-  }
-
   const form = await req.formData();
   const file = form.get('file');
   if (!(file instanceof File)) {
@@ -38,7 +31,21 @@ export async function POST(req: Request) {
 
   const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
   const key = `uploads/${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`;
-  const blob = await put(key, file, { access: 'public', contentType: file.type });
 
-  return Response.json({ url: blob.url });
+  // Pas de vérif de BLOB_READ_WRITE_TOKEN : Vercel connecte désormais le store
+  // via OIDC (variables BLOB_STORE_ID), et @vercel/blob récupère le jeton tout
+  // seul à l'exécution. On laisse `put` agir, et on gère proprement l'échec.
+  try {
+    const blob = await put(key, file, { access: 'public', contentType: file.type });
+    return Response.json({ url: blob.url });
+  } catch (err) {
+    console.error('Échec upload Blob :', err);
+    return Response.json(
+      {
+        error:
+          "Stockage d'images indisponible. Vérifie que le store Blob est bien connecté au projet (puis redéploie), ou colle une URL.",
+      },
+      { status: 503 },
+    );
+  }
 }
