@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { saveSiteContent } from '@/app/admin/actions';
 import { InlinePanelEditor } from './inline-panel-editor';
 
@@ -28,6 +28,15 @@ type Selection = { key: string; html: string };
 export function ContentEditor({ content }: { content: Record<string, string> }) {
   const [iframeKey, setIframeKey] = useState(0);
   const [selection, setSelection] = useState<Selection | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  // Envoie le HTML en cours d'édition à l'aperçu pour un rendu en direct.
+  const sendPreview = (key: string, html: string) => {
+    iframeRef.current?.contentWindow?.postMessage(
+      { type: 'abso-edit-preview', key, html },
+      window.location.origin,
+    );
+  };
 
   // Réception du texte cliqué dans l'aperçu.
   useEffect(() => {
@@ -61,6 +70,7 @@ export function ContentEditor({ content }: { content: Record<string, string> }) 
       {/* Aperçu + panneau d'édition */}
       <div className={selection ? 'grid gap-5 lg:grid-cols-[1.6fr_1fr]' : ''}>
         <iframe
+          ref={iframeRef}
           key={iframeKey}
           src="/?edit=1"
           title="Aperçu de la page d'accueil"
@@ -74,6 +84,7 @@ export function ContentEditor({ content }: { content: Record<string, string> }) 
             label={LABELS[selection.key]}
             initialHtml={selection.html}
             inline={INLINE_KEYS.has(selection.key)}
+            onPreview={(html) => sendPreview(selection.key, html)}
             onSaved={() => setIframeKey((k) => k + 1)}
             onClose={() => setSelection(null)}
           />

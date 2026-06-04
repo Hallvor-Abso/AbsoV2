@@ -32,6 +32,7 @@ export function InlinePanelEditor({
   label,
   initialHtml,
   inline,
+  onPreview,
   onSaved,
   onClose,
 }: {
@@ -39,6 +40,8 @@ export function InlinePanelEditor({
   label: string;
   initialHtml: string;
   inline: boolean;
+  /** Appelé à chaque frappe avec le HTML rendu, pour l'aperçu en direct. */
+  onPreview?: (html: string) => void;
   onSaved: () => void;
   onClose: () => void;
 }) {
@@ -61,6 +64,10 @@ export function InlinePanelEditor({
           inline ? 'min-h-[90px]' : 'min-h-[260px]',
         ),
       },
+    },
+    onUpdate: ({ editor }) => {
+      const raw = editor.getHTML();
+      onPreview?.(inline ? flattenInline(raw) : raw);
     },
   });
 

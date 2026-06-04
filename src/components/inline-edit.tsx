@@ -42,9 +42,20 @@ export function InlineEdit() {
       if (target?.closest('a')) e.preventDefault();
     };
 
+    // Aperçu en direct : la page admin envoie le HTML en cours d'édition.
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== origin) return;
+      const data = e.data;
+      if (!data || data.type !== 'abso-edit-preview' || typeof data.key !== 'string') return;
+      const el = document.querySelector<HTMLElement>(`[data-edit-key="${data.key}"]`);
+      if (el) el.innerHTML = String(data.html ?? '');
+    };
+
     document.addEventListener('click', onClick, true);
+    window.addEventListener('message', onMessage);
     return () => {
       document.removeEventListener('click', onClick, true);
+      window.removeEventListener('message', onMessage);
       document.body.classList.remove('abso-edit-mode');
     };
   }, []);
