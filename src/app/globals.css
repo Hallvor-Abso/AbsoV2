@@ -122,19 +122,19 @@
 }
 .prose-absolution hr { @apply my-8 border-border; }
 
-/* -------- Édition en place (aperçu admin dans l'iframe) -------- */
+/* -------- Sélection d'un texte à éditer (aperçu admin dans l'iframe) -------- */
 .abso-edit-mode [data-edit-key] {
   outline: 1px dashed rgba(56, 160, 255, 0.5);
   outline-offset: 4px;
   border-radius: 4px;
-  cursor: text;
+  cursor: pointer;
   transition: outline-color 0.15s, background-color 0.15s;
 }
 .abso-edit-mode [data-edit-key]:hover {
   outline-color: rgba(56, 160, 255, 0.9);
   background-color: rgba(56, 160, 255, 0.06);
 }
-.abso-edit-mode [data-edit-key]:focus {
+.abso-edit-mode [data-edit-key].abso-edit-selected {
   outline: 2px solid #38a0ff;
   background-color: rgba(56, 160, 255, 0.08);
 }

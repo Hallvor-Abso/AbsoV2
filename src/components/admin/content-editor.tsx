@@ -1,37 +1,42 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { saveSiteContent, saveSiteContentField } from '@/app/admin/actions';
+import { saveSiteContent } from '@/app/admin/actions';
+import { InlinePanelEditor } from './inline-panel-editor';
 
-type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+// Libellés lisibles de chaque texte éditable de la page d'accueil.
+const LABELS: Record<string, string> = {
+  'hero.tagline': 'Accroche principale',
+  'hero.subtitle': 'Sous-titre',
+  'about.title': 'Titre « Qui sommes-nous »',
+  'about.body': 'Texte « Qui sommes-nous »',
+  'philosophy.title': 'Titre « Notre philosophie »',
+  'philosophy.body': 'Texte « Notre philosophie »',
+};
+// Textes sur une seule ligne (titres) : éditeur en ligne, sans blocs.
+const INLINE_KEYS = new Set(['hero.tagline', 'about.title', 'philosophy.title']);
+
+type Selection = { key: string; html: string };
 
 /**
  * Éditeur « Contenu du site ».
  *
- * L'aperçu de la page d'accueil est affiché en grand dans une iframe ; il suffit
- * de cliquer directement sur un texte pour le modifier en place. Chaque
- * modification est enregistrée automatiquement (message envoyé par l'iframe).
- *
- * Les réglages qui ne sont pas du « texte sur la page » (logo, Discord, synchro
- * Warcraft Logs) restent dans un panneau dépliable en dessous.
+ * Grand aperçu de la page d'accueil (iframe) ; on clique sur un texte pour
+ * ouvrir le véritable éditeur Tiptap dans un panneau à droite. Les réglages
+ * non visuels (logo, Discord, Warcraft Logs) restent en bas, dépliables.
  */
 export function ContentEditor({ content }: { content: Record<string, string> }) {
   const [iframeKey, setIframeKey] = useState(0);
-  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [selection, setSelection] = useState<Selection | null>(null);
 
-  // Écoute les modifications envoyées par l'aperçu (édition en place).
+  // Réception du texte cliqué dans l'aperçu.
   useEffect(() => {
     function onMessage(e: MessageEvent) {
       if (e.origin !== window.location.origin) return;
       const data = e.data;
-      if (!data || data.type !== 'abso-edit' || typeof data.key !== 'string') return;
-      setSaveState('saving');
-      saveSiteContentField(data.key, String(data.value ?? ''))
-        .then(() => {
-          setSaveState('saved');
-          window.setTimeout(() => setSaveState('idle'), 1600);
-        })
-        .catch(() => setSaveState('error'));
+      if (!data || data.type !== 'abso-edit-select' || typeof data.key !== 'string') return;
+      if (!(data.key in LABELS)) return;
+      setSelection({ key: data.key, html: String(data.html ?? '') });
     }
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
@@ -42,28 +47,38 @@ export function ContentEditor({ content }: { content: Record<string, string> }) 
       {/* Barre d'info / actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">
-          Clique sur n'importe quel texte de l'aperçu pour le modifier. Les
-          changements sont enregistrés automatiquement.
+          Clique sur un texte de l'aperçu pour l'éditer dans le panneau.
         </p>
-        <div className="flex items-center gap-3">
-          <SavePill state={saveState} />
-          <button
-            type="button"
-            onClick={() => setIframeKey((k) => k + 1)}
-            className="btn-secondary px-3 py-1.5 text-sm"
-          >
-            ↻ Recharger l'aperçu
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setIframeKey((k) => k + 1)}
+          className="btn-secondary px-3 py-1.5 text-sm"
+        >
+          ↻ Recharger l'aperçu
+        </button>
       </div>
 
-      {/* Aperçu éditable */}
-      <iframe
-        key={iframeKey}
-        src="/?edit=1"
-        title="Aperçu éditable de la page d'accueil"
-        className="h-[80vh] w-full rounded-xl border border-border bg-ink"
-      />
+      {/* Aperçu + panneau d'édition */}
+      <div className={selection ? 'grid gap-5 lg:grid-cols-[1.6fr_1fr]' : ''}>
+        <iframe
+          key={iframeKey}
+          src="/?edit=1"
+          title="Aperçu de la page d'accueil"
+          className="h-[80vh] w-full rounded-xl border border-border bg-ink"
+        />
+
+        {selection && (
+          <InlinePanelEditor
+            key={selection.key}
+            contentKey={selection.key}
+            label={LABELS[selection.key]}
+            initialHtml={selection.html}
+            inline={INLINE_KEYS.has(selection.key)}
+            onSaved={() => setIframeKey((k) => k + 1)}
+            onClose={() => setSelection(null)}
+          />
+        )}
+      </div>
 
       {/* Réglages non visuels (pas du texte cliquable sur la page) */}
       <details className="card p-5">
@@ -88,17 +103,6 @@ export function ContentEditor({ content }: { content: Record<string, string> }) 
       </details>
     </div>
   );
-}
-
-function SavePill({ state }: { state: SaveState }) {
-  if (state === 'idle') return null;
-  const map: Record<Exclude<SaveState, 'idle'>, { label: string; cls: string }> = {
-    saving: { label: 'Enregistrement…', cls: 'text-muted' },
-    saved: { label: '✓ Enregistré', cls: 'text-emerald-300' },
-    error: { label: '✕ Échec de l’enregistrement', cls: 'text-red-300' },
-  };
-  const { label, cls } = map[state];
-  return <span className={`text-sm font-medium ${cls}`}>{label}</span>;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

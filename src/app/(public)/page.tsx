@@ -52,9 +52,9 @@ export default async function HomePage() {
               className="font-display text-4xl font-bold leading-tight text-title sm:text-6xl"
               dangerouslySetInnerHTML={{ __html: content['hero.tagline'] }}
             />
-            <p
+            <div
               data-edit-key="hero.subtitle"
-              className="mx-auto mt-6 max-w-2xl text-lg text-foreground/90"
+              className="prose-absolution mx-auto mt-6 max-w-2xl text-lg text-foreground/90"
               dangerouslySetInnerHTML={{ __html: content['hero.subtitle'] }}
             />
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
