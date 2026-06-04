@@ -40,10 +40,11 @@ export async function POST(req: Request) {
     return Response.json({ url: blob.url });
   } catch (err) {
     console.error('Échec upload Blob :', err);
+    const detail = err instanceof Error ? err.message : String(err);
     return Response.json(
       {
-        error:
-          "Stockage d'images indisponible. Vérifie que le store Blob est bien connecté au projet (puis redéploie), ou colle une URL.",
+        error: `Stockage d'images indisponible : ${detail}`,
+        hint: 'Vérifie que le store Blob est connecté au projet (puis redéploie), ou ajoute un token BLOB_READ_WRITE_TOKEN.',
       },
       { status: 503 },
     );
