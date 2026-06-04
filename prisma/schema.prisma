@@ -27,7 +27,8 @@ model User {
   username     String?  @unique // identifiant du super-admin « bootstrap » (.env)
   email        String?  @unique // email de connexion des comptes inscrits
   displayName  String? // pseudo affiché
-  discord      String? // identifiant Discord
+  discord      String? // identifiant Discord (texte libre, informatif)
+  discordId    String?  @unique // ID Discord réel (rempli via « Connexion Discord »)
   passwordHash String
   role         Role     @default(VISITEUR)
   adminGames   Game[]   @relation("GameAdmins")
@@ -214,17 +215,50 @@ enum ApplicationStatus {
 //  ÉVÉNEMENT DU CALENDRIER (raid, soirée, événement spécial...).
 // -----------------------------------------------------------------------------
 model Event {
-  id          String    @id @default(cuid())
-  title       String
-  description String?
-  startDate   DateTime
-  endDate     DateTime?
-  type        String    @default("RAID") // RAID, EVENT, OTHER
-  game        Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  gameId      String
+  id               String    @id @default(cuid())
+  title            String
+  description      String?
+  startDate        DateTime
+  endDate          DateTime?
+  type             String    @default("RAID") // RAID, EVENT, OTHER
+  game             Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId           String
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  // Synchro Discord (bot) : salon + message à mettre à jour quand les
+  // inscriptions changent.
+  discordChannelId String?
+  discordMessageId String?
+
+  signups          EventSignup[]
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+//  INSCRIPTION À UN ÉVÉNEMENT (RSVP) — alimentée par le site (via Discord OAuth)
+//  ET par les boutons Discord. L'identité pivot est l'ID Discord, ce qui
+//  déduplique automatiquement les inscriptions des deux côtés.
+// -----------------------------------------------------------------------------
+model EventSignup {
+  id          String       @id @default(cuid())
+  event       Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     String
+  discordId   String // identité pivot (site connecté via Discord OU clic Discord)
+  displayName String // pseudo affiché (dénormalisé)
+  status      SignupStatus @default(GOING)
+  source      String       @default("discord") // "site" ou "discord" (informatif)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([eventId, discordId])
+}
+
+enum SignupStatus {
+  GOING    // présent
+  MAYBE    // peut-être
+  DECLINED // absent
 }
 
 // -----------------------------------------------------------------------------
