@@ -50,12 +50,13 @@ export default async function HomePage() {
             <h1
               data-edit-key="hero.tagline"
               className="font-display text-4xl font-bold leading-tight text-title sm:text-6xl"
-            >
-              {content['hero.tagline']}
-            </h1>
-            <p data-edit-key="hero.subtitle" className="mx-auto mt-6 max-w-2xl text-lg text-foreground/90">
-              {content['hero.subtitle']}
-            </p>
+              dangerouslySetInnerHTML={{ __html: content['hero.tagline'] }}
+            />
+            <p
+              data-edit-key="hero.subtitle"
+              className="mx-auto mt-6 max-w-2xl text-lg text-foreground/90"
+              dangerouslySetInnerHTML={{ __html: content['hero.subtitle'] }}
+            />
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
               <Link href="/recrutement" className="btn-primary">
                 Nous rejoindre
@@ -77,7 +78,11 @@ export default async function HomePage() {
                 <span className="h-px w-6 bg-accent" />
                 La guilde
               </span>
-              <h2 data-edit-key="about.title" className="text-3xl font-bold sm:text-4xl">{content['about.title']}</h2>
+              <h2
+                data-edit-key="about.title"
+                className="text-3xl font-bold sm:text-4xl"
+                dangerouslySetInnerHTML={{ __html: content['about.title'] }}
+              />
               {/* Texte riche éditable depuis l'admin (déjà nettoyé à l'enregistrement) */}
               <div
                 data-edit-key="about.body"
@@ -90,7 +95,7 @@ export default async function HomePage() {
             <div className="card h-full p-8">
               <span className="eyebrow">
                 <span className="h-px w-6 bg-accent" />
-                <span data-edit-key="philosophy.title">{content['philosophy.title']}</span>
+                <span data-edit-key="philosophy.title" dangerouslySetInnerHTML={{ __html: content['philosophy.title'] }} />
               </span>
               <div
                 data-edit-key="philosophy.body"

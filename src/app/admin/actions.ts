@@ -460,8 +460,17 @@ export async function deleteEvent(id: string) {
 // =============================================================================
 //  CONTENU STATIQUE (textes homepage, logo)
 // =============================================================================
-// Clés dont la valeur est du HTML riche (éditeur), à nettoyer en conséquence.
-const RICH_CONTENT_KEYS = new Set(['about.body', 'philosophy.body']);
+// Clés dont la valeur est du HTML riche (éditeur en place + texte riche),
+// à nettoyer en conséquence. Tous les textes éditables sur la page en font
+// partie, car ils acceptent désormais la mise en forme (gras, listes…).
+const RICH_CONTENT_KEYS = new Set([
+  'hero.tagline',
+  'hero.subtitle',
+  'about.title',
+  'about.body',
+  'philosophy.title',
+  'philosophy.body',
+]);
 
 export async function saveSiteContent(formData: FormData) {
   await requireSuperAdmin();

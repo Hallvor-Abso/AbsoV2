@@ -12,7 +12,7 @@ import sanitizeHtmlLib from 'sanitize-html';
 export function sanitizeHtml(dirty: string): string {
   return sanitizeHtmlLib(dirty, {
     allowedTags: [
-      'p', 'br', 'strong', 'em', 'u', 's', 'a', 'ul', 'ol', 'li',
+      'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'a', 'ul', 'ol', 'li',
       'h1', 'h2', 'h3', 'h4', 'blockquote', 'code', 'pre', 'img', 'hr',
     ],
     allowedAttributes: {
