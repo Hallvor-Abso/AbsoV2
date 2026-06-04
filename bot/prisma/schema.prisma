@@ -1,0 +1,199 @@
+// =============================================================================
+//  SCHÉMA PRISMA DU BOT — copie de ../../prisma/schema.prisma
+// =============================================================================
+//  ⚠️  À GARDER SYNCHRONISÉ avec le schéma du site (prisma/schema.prisma).
+//  Le bot ne fait que LIRE la base ; ce fichier sert uniquement à générer le
+//  client Prisma du bot. Pas de `directUrl` (aucune migration côté bot).
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String?  @unique
+  email        String?  @unique
+  displayName  String?
+  discord      String?
+  passwordHash String
+  role         Role     @default(VISITEUR)
+  adminGames   Game[]   @relation("GameAdmins")
+  createdAt    DateTime @default(now())
+}
+
+enum Role {
+  VISITEUR
+  MEMBRE
+  ADMIN
+  SUPER_ADMIN
+}
+
+model Game {
+  id               String     @id @default(cuid())
+  name             String
+  slug             String     @unique
+  logoUrl          String?
+  coverImageUrl    String?
+  color            String     @default("#4A9EFF")
+  isActive         Boolean    @default(true)
+  status           GameStatus @default(ACTIVE)
+  order            Int        @default(0)
+
+  raidTiers        RaidTier[]
+  news             News[]
+  recruitmentRoles RecruitmentRole[]
+  recruitmentSlots RecruitmentSlot[]
+  applications     Application[]
+  events           Event[]
+  admins           User[]     @relation("GameAdmins")
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+enum GameStatus {
+  ACTIVE
+  UPCOMING
+}
+
+model RaidTier {
+  id        String   @id @default(cuid())
+  name      String
+  order     Int      @default(0)
+  zoneId    Int?
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId    String
+  bosses    Boss[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Boss {
+  id            String     @id @default(cuid())
+  name          String
+  status        BossStatus @default(UNTESTED)
+  firstKillDate DateTime?
+  imageUrl      String?
+  encounterId   Int?
+  order         Int        @default(0)
+  tier          RaidTier   @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  tierId        String
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+enum BossStatus {
+  KILLED
+  PROGRESSING
+  UNTESTED
+}
+
+model News {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique
+  excerpt     String?
+  content     String
+  imageUrl    String?
+  featured    Boolean    @default(false)
+  status      NewsStatus @default(DRAFT)
+  publishedAt DateTime?
+  game        Game?      @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  gameId      String?
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+enum NewsStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model RecruitmentRole {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  order       Int      @default(0)
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([gameId, name])
+}
+
+model RecruitmentSlot {
+  id        String     @id @default(cuid())
+  role      String
+  className String
+  status    SlotStatus @default(OPEN)
+  note      String?
+  order     Int        @default(0)
+  game      Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId    String
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+enum SlotStatus {
+  OPEN
+  LIMITED
+  CLOSED
+}
+
+model Application {
+  id            String            @id @default(cuid())
+  pseudo        String
+  characterId   String?
+  className     String
+  role          String
+  server        String
+  experience    String
+  availability  String
+  logsUrl       String?
+  motivation    String
+  status        ApplicationStatus @default(PENDING)
+  internalNotes String?
+  game          Game?             @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  gameId        String?
+
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+enum ApplicationStatus {
+  PENDING
+  DISCUSSING
+  ACCEPTED
+  REJECTED
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  type        String    @default("RAID")
+  game        Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId      String
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model SiteContent {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

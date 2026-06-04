@@ -1,0 +1,22 @@
+{
+  "name": "absolution-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bot Discord de la guilde Absolution (lit la base du site via Prisma)",
+  "scripts": {
+    "postinstall": "prisma generate",
+    "start": "tsx index.ts",
+    "register": "tsx register-commands.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "discord.js": "^14.26.4",
+    "dotenv": "^17.4.2",
+    "tsx": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "prisma": "^5.22.0",
+    "typescript": "^5.6.3"
+  }
+}

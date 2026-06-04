@@ -41,16 +41,26 @@ npm run bot:check   # typecheck du dossier bot/
 Le bot maintient une connexion permanente à Discord : il lui faut un hébergeur
 de process continu (le site, lui, reste sur Vercel).
 
+Le dossier `bot/` a son **propre `package.json`** (sans Next ni les dépendances
+du site) : le bot est autonome et léger, et le scan de sécurité ne voit que ses
+dépendances.
+
 **Exemple Railway :**
 1. *New Project* → *Deploy from GitHub repo* → ce dépôt, branche du bot.
-2. Variables (onglet **Variables**) : `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`,
+2. **Settings → Source → Root Directory = `bot`** ⚠️ (indispensable : Railway ne
+   construit alors que le bot, pas le site).
+3. Variables (onglet **Variables**) : `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`,
    `DISCORD_GUILD_ID` (recommandé), `DATABASE_URL` (la même que le site).
-3. C'est tout : `railway.json` configure le build et la commande de démarrage
-   (`npm run bot`). **Les commandes slash s'enregistrent automatiquement** au
-   démarrage du bot — aucune étape manuelle.
+4. C'est tout : `npm install` génère le client Prisma (postinstall), puis le
+   service démarre via `npm start`. **Les commandes slash s'enregistrent
+   automatiquement** au démarrage — aucune étape manuelle.
 
-> `register-commands.ts` reste disponible (`npm run bot:register`) pour un
-> enregistrement manuel, mais ce n'est pas nécessaire sur Railway.
+> ⚠️ **Schéma Prisma** : `bot/prisma/schema.prisma` est une **copie** de
+> `prisma/schema.prisma` (le bot ne fait que lire). Si tu modifies le schéma du
+> site, reporte le changement ici aussi.
+
+> `register-commands.ts` reste disponible (`npm run bot:register` en local) pour
+> un enregistrement manuel, mais ce n'est pas nécessaire.
 
 ## Prochaines briques (idées)
 
