@@ -28,7 +28,12 @@ export const authOptions: NextAuthOptions = {
         const id = credentials.identifier.trim();
 
         const user = await prisma.user.findFirst({
-          where: { OR: [{ email: id.toLowerCase() }, { username: id }] },
+          where: {
+            OR: [
+              { email: id.toLowerCase() },
+              { username: { equals: id, mode: 'insensitive' } },
+            ],
+          },
           include: { adminGames: { select: { id: true } } },
         });
         if (!user) return null;
