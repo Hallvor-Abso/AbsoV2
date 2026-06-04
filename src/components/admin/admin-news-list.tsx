@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { GameTabBar, type GameTabInfo } from '@/components/game-tab-bar';
 import { ConfirmButton } from './confirm-button';
+import { ActionForm } from './action-form';
 import { toggleFeatured, deleteNews } from '@/app/admin/actions';
 import { formatDate } from '@/lib/utils';
 
@@ -94,7 +95,10 @@ export function AdminNewsList({
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <form action={toggleFeatured.bind(null, article.id)}>
+                  <ActionForm
+                    action={toggleFeatured.bind(null, article.id)}
+                    success={article.featured ? 'Retiré de la Une' : 'Mis à la Une'}
+                  >
                     <button
                       type="submit"
                       className={`text-sm font-medium ${
@@ -103,13 +107,13 @@ export function AdminNewsList({
                     >
                       {article.featured ? 'Retirer de la Une' : 'Mettre à la Une'}
                     </button>
-                  </form>
+                  </ActionForm>
                   <Link href={`/admin/news/${article.id}`} className="text-sm font-medium text-foreground hover:text-accent">
                     Modifier
                   </Link>
-                  <form action={deleteNews.bind(null, article.id)}>
+                  <ActionForm action={deleteNews.bind(null, article.id)} success="Article supprimé">
                     <ConfirmButton message="Supprimer définitivement cet article ?">Supprimer</ConfirmButton>
-                  </form>
+                  </ActionForm>
                 </div>
               </div>
             );

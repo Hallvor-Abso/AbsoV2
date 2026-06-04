@@ -153,14 +153,14 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
                 {/* Suppression du rôle */}
                 {role && (
                   <div className="mt-5 border-t border-border pt-4">
-                    <form action={deleteRecruitRole.bind(null, role.id)}>
+                    <ActionForm action={deleteRecruitRole.bind(null, role.id)} success="Rôle supprimé">
                       <ConfirmButton
                         className="text-xs text-red-300 hover:text-red-200"
                         message={`Supprimer le rôle « ${roleName} » et ses spécialisations ?`}
                       >
                         Supprimer le rôle
                       </ConfirmButton>
-                    </form>
+                    </ActionForm>
                   </div>
                 )}
               </div>
@@ -226,7 +226,7 @@ function SpecSection({
             >
               {slot.className}
             </button>
-            <form action={deleteSlot.bind(null, slot.id)}>
+            <ActionForm action={deleteSlot.bind(null, slot.id)} success="Spécialisation supprimée">
               <button
                 type="submit"
                 title="Supprimer cette spécialisation"
@@ -234,7 +234,7 @@ function SpecSection({
               >
                 ✕
               </button>
-            </form>
+            </ActionForm>
           </div>
         ))}
         {optimisticSlots.length === 0 && (

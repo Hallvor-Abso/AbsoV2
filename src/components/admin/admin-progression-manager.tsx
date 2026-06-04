@@ -57,9 +57,9 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
                   </div>
                   <button type="submit" className="btn-secondary py-2 text-sm">OK</button>
                 </ActionForm>
-                <form action={deleteTier.bind(null, tier.id)}>
+                <ActionForm action={deleteTier.bind(null, tier.id)} success="Tier supprimé">
                   <ConfirmButton message="Supprimer ce tier et tous ses boss ?">Supprimer le tier</ConfirmButton>
-                </form>
+                </ActionForm>
               </div>
             </div>
 
@@ -94,11 +94,11 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
                     </div>
                     <button type="submit" className="btn-secondary py-2 text-sm">Enregistrer</button>
                   </ActionForm>
-                  <form action={deleteBoss.bind(null, boss.id)} className="mt-2">
+                  <ActionForm action={deleteBoss.bind(null, boss.id)} success="Boss supprimé" className="mt-2">
                     <ConfirmButton className="text-xs text-red-300 hover:text-red-200" message="Supprimer ce boss ?">
                       Supprimer le boss
                     </ConfirmButton>
-                  </form>
+                  </ActionForm>
                 </div>
               ))}
             </div>

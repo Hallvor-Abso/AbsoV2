@@ -25,7 +25,7 @@ export function ActionForm({
   onDone?: () => void;
 }) {
   const toast = useToast();
-  const [, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
 
   return (
     <form
@@ -47,7 +47,14 @@ export function ActionForm({
         });
       }}
     >
-      {children}
+      {/* fieldset display:contents → désactive tous les champs pendant la
+          sauvegarde (anti double-clic) sans changer la mise en page. */}
+      <fieldset
+        disabled={pending}
+        className={pending ? 'contents [&_button[type=submit]]:opacity-60' : 'contents'}
+      >
+        {children}
+      </fieldset>
     </form>
   );
 }

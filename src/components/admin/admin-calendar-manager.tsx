@@ -46,9 +46,9 @@ export function AdminCalendarManager({
           <div key={ev.id} className="card p-5">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-semibold text-title">{ev.title}</h3>
-              <form action={deleteEvent.bind(null, ev.id)}>
+              <ActionForm action={deleteEvent.bind(null, ev.id)} success="Événement supprimé">
                 <ConfirmButton message="Supprimer cet événement ?">Supprimer</ConfirmButton>
-              </form>
+              </ActionForm>
             </div>
             <EventForm gameId={activeGame} event={ev} />
           </div>

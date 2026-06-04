@@ -130,11 +130,11 @@ export function AdminApplicationsView({
                 </div>
               </ActionForm>
 
-              <form action={deleteApplication.bind(null, app.id)} className="mt-2">
+              <ActionForm action={deleteApplication.bind(null, app.id)} success="Candidature supprimée" className="mt-2">
                 <ConfirmButton className="text-xs text-red-300 hover:text-red-200" message="Supprimer cette candidature ?">
                   Supprimer la candidature
                 </ConfirmButton>
-              </form>
+              </ActionForm>
             </div>
           ))}
         </div>

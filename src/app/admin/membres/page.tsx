@@ -89,11 +89,11 @@ export default async function AdminMembersPage() {
               </ActionForm>
 
               {me!.id !== u.id && (
-                <form action={deleteMember.bind(null, u.id)} className="mt-2">
+                <ActionForm action={deleteMember.bind(null, u.id)} success="Compte supprimé" className="mt-2">
                   <ConfirmButton message="Supprimer définitivement ce compte ?">
                     Supprimer le compte
                   </ConfirmButton>
-                </form>
+                </ActionForm>
               )}
             </div>
           );

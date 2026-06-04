@@ -60,11 +60,11 @@ export default async function AdminGamesPage() {
               </summary>
               <GameForm game={game} />
               {/* Suppression — formulaire séparé (jamais imbriqué dans l'autre) */}
-              <form action={deleteGame.bind(null, game.id)} className="mt-3">
+              <ActionForm action={deleteGame.bind(null, game.id)} success="Jeu supprimé" className="mt-3">
                 <ConfirmButton message="Supprimer ce jeu supprimera aussi sa progression, ses postes et ses événements. Continuer ?">
                   Supprimer ce jeu
                 </ConfirmButton>
-              </form>
+              </ActionForm>
             </details>
           </div>
         ))}
