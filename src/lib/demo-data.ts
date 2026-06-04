@@ -77,6 +77,13 @@ const slots = [
   { id: 's5', role: 'DPS Mêlée', className: 'Chasseur de démons', status: 'LIMITED' as const, note: null, order: 4, gameId: wow.id, game: wow, createdAt: now, updatedAt: now },
 ];
 
+const roles = [
+  { id: 'r1', name: 'Tank', description: 'Roster complet — nous gardons les candidatures d’exception.', order: 0, gameId: wow.id },
+  { id: 'r2', name: 'Heal', description: 'Une place à pourvoir pour compléter le pool de soigneurs mythique.', order: 1, gameId: wow.id },
+  { id: 'r3', name: 'DPS Distance', description: null, order: 2, gameId: wow.id },
+  { id: 'r4', name: 'DPS Mêlée', description: null, order: 3, gameId: wow.id },
+];
+
 const news = [
   {
     id: 'n1',
@@ -131,6 +138,7 @@ export const demoRecentKills = (limit: number) =>
     .slice(0, limit)
     .map((b) => ({ ...b, tier: { ...wowTier, game: wow } }));
 export const demoSlots = () => slots;
+export const demoRoles = () => roles;
 export const demoNews = (gameSlug?: string) =>
   gameSlug ? news.filter((n) => n.game?.slug === gameSlug) : news;
 export const demoNewsBySlug = (slug: string) => news.find((n) => n.slug === slug) ?? null;

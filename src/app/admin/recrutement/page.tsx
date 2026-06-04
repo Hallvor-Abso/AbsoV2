@@ -27,7 +27,7 @@ export default async function AdminRecruitmentPage() {
     color: g.color,
     logoUrl: g.logoUrl,
     status: g.status,
-    roles: g.recruitmentRoles.map((r) => ({ id: r.id, name: r.name })),
+    roles: g.recruitmentRoles.map((r) => ({ id: r.id, name: r.name, description: r.description })),
     slots: g.recruitmentSlots.map((s) => ({
       id: s.id,
       role: s.role,

@@ -5,6 +5,7 @@ import { GameTabBar, type GameTabInfo } from '@/components/game-tab-bar';
 import { ConfirmButton } from './confirm-button';
 import {
   createRecruitRole,
+  updateRecruitRole,
   deleteRecruitRole,
   addRecruitClass,
   cycleSlotStatus,
@@ -13,7 +14,7 @@ import {
 
 type Status = 'OPEN' | 'LIMITED' | 'CLOSED';
 export type AdminSlot = { id: string; role: string; className: string; status: Status };
-export type AdminRole = { id: string; name: string };
+export type AdminRole = { id: string; name: string; description: string | null };
 export type AdminRecruitGame = GameTabInfo & { roles: AdminRole[]; slots: AdminSlot[] };
 
 // Couleurs des boutons de classe selon le statut (cycle au clic).
@@ -54,7 +55,7 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
           const slots = game.slots.filter((s) => s.role === roleName);
           return (
             <div key={roleName} className="card p-5">
-              <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="mb-4 flex items-start justify-between gap-3">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-foreground">{roleName}</h3>
                 {role && (
                   <form action={deleteRecruitRole.bind(null, role.id)}>
@@ -64,6 +65,25 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
                   </form>
                 )}
               </div>
+
+              {/* Description de la catégorie (éditable) */}
+              {role && (
+                <form action={updateRecruitRole} className="mb-4">
+                  <input type="hidden" name="id" value={role.id} />
+                  <input type="hidden" name="name" value={role.name} />
+                  <label className="label">Description de la catégorie</label>
+                  <textarea
+                    name="description"
+                    rows={2}
+                    defaultValue={role.description ?? ''}
+                    placeholder="Ex : Nous cherchons un tank principal fiable pour le roster mythique…"
+                    className="field text-sm"
+                  />
+                  <button type="submit" className="btn-secondary mt-2 py-1.5 text-sm">
+                    Enregistrer la description
+                  </button>
+                </form>
+              )}
 
               {/* Classes en boutons cliquables */}
               <div className="flex flex-wrap items-center gap-2.5">
@@ -103,14 +123,18 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
         })}
       </div>
 
-      {/* Créer un nouveau rôle */}
+      {/* Créer une nouvelle catégorie de rôle */}
       <div className="card mt-6 p-5">
-        <p className="mb-3 text-sm font-medium text-foreground">Créer un rôle</p>
-        <form action={createRecruitRole} className="flex flex-wrap gap-2">
+        <p className="mb-3 text-sm font-medium text-foreground">Créer une catégorie de rôle</p>
+        <form action={createRecruitRole} className="space-y-2">
           <input type="hidden" name="gameId" value={game.id} />
-          <input name="name" required placeholder="Nom du rôle (Tank, Heal, DPS Distance...)" className="field max-w-xs py-1.5 text-sm" />
-          <button type="submit" className="btn-primary py-2 text-sm">Créer le rôle</button>
+          <input name="name" required placeholder="Nom de la catégorie (Tank, Heal, DPS Distance...)" className="field max-w-xs py-1.5 text-sm" />
+          <textarea name="description" rows={2} placeholder="Description (optionnelle) de la catégorie" className="field text-sm" />
+          <button type="submit" className="btn-primary py-2 text-sm">Créer la catégorie</button>
         </form>
+        <p className="mt-2 text-xs text-muted">
+          Une fois créée, ajoute des classes/spés dans son cadre : ce sont des boutons cliquables qui font défiler le statut.
+        </p>
       </div>
     </div>
   );

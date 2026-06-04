@@ -144,13 +144,14 @@ enum NewsStatus {
 //  Regroupe des classes/spécialisations. Peut exister sans aucune classe.
 // -----------------------------------------------------------------------------
 model RecruitmentRole {
-  id        String   @id @default(cuid())
-  name      String // libellé libre du rôle
-  order     Int      @default(0)
-  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  gameId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String // libellé libre du rôle (catégorie : Tank, Heal, DPS...)
+  description String? // description de la catégorie, affichée dans son cadre
+  order       Int      @default(0)
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@unique([gameId, name]) // un rôle est unique par jeu
 }

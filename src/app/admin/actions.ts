@@ -323,13 +323,34 @@ export async function createRecruitRole(formData: FormData) {
   const gameId = formData.get('gameId') as string;
   await requireGameAccess(gameId);
   const name = sanitizeText(formData.get('name'), 60);
+  const description = sanitizeText(formData.get('description'), 500) || null;
   if (!name) return;
   const count = await prisma.recruitmentRole.count({ where: { gameId } });
   await prisma.recruitmentRole.upsert({
     where: { gameId_name: { gameId, name } },
-    update: {},
-    create: { gameId, name, order: count },
+    update: { description },
+    create: { gameId, name, description, order: count },
   });
+  revalidatePublic();
+  revalidatePath('/admin/recrutement');
+}
+
+// Met à jour la description (et le nom) d'une catégorie de rôle.
+export async function updateRecruitRole(formData: FormData) {
+  const id = formData.get('id') as string;
+  const role = await prisma.recruitmentRole.findUnique({ where: { id } });
+  await requireGameAccess(role?.gameId);
+  if (!role) return;
+  const name = sanitizeText(formData.get('name'), 60) || role.name;
+  const description = sanitizeText(formData.get('description'), 500) || null;
+  // Si le nom change, on répercute sur les classes rattachées (liées par nom).
+  if (name !== role.name) {
+    await prisma.recruitmentSlot.updateMany({
+      where: { gameId: role.gameId, role: role.name },
+      data: { role: name },
+    });
+  }
+  await prisma.recruitmentRole.update({ where: { id }, data: { name, description } });
   revalidatePublic();
   revalidatePath('/admin/recrutement');
 }

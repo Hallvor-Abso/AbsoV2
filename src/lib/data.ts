@@ -86,6 +86,15 @@ export function getRecruitmentSlots() {
   });
 }
 
+/** Catégories de rôle (avec description) des jeux actifs. */
+export function getRecruitmentRoles() {
+  if (IS_DEMO) return Promise.resolve(demo.demoRoles());
+  return prisma.recruitmentRole.findMany({
+    where: { game: { isActive: true } },
+    orderBy: { order: 'asc' },
+  });
+}
+
 /** Liste des news publiées (optionnellement filtrées par jeu). */
 export function getPublishedNews(gameSlug?: string) {
   if (IS_DEMO) return Promise.resolve(demo.demoNews(gameSlug));

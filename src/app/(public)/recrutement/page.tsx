@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { SectionHeading } from '@/components/section-heading';
-import { RecruitmentView, type RecruitSlot } from '@/components/recruitment-view';
-import { getVisibleGames, getRecruitmentSlots } from '@/lib/data';
+import { RecruitmentView, type RecruitSlot, type RecruitRole } from '@/components/recruitment-view';
+import { getVisibleGames, getRecruitmentSlots, getRecruitmentRoles } from '@/lib/data';
 
 export const revalidate = 60;
 
@@ -11,9 +11,10 @@ export const metadata: Metadata = {
 };
 
 export default async function RecruitmentPage() {
-  const [games, slots] = await Promise.all([
+  const [games, slots, roles] = await Promise.all([
     getVisibleGames(),
     getRecruitmentSlots(),
+    getRecruitmentRoles(),
   ]);
 
   return (
@@ -37,6 +38,7 @@ export default async function RecruitmentPage() {
             status: g.status,
           }))}
           slots={slots as RecruitSlot[]}
+          roles={roles as RecruitRole[]}
         />
       )}
     </div>
