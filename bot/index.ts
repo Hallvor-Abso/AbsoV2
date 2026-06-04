@@ -1,6 +1,6 @@
-import { Client, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
+import { Client, Events, GatewayIntentBits, MessageFlags, Routes } from 'discord.js';
 import { env } from './env';
-import { handleInteraction } from './commands';
+import { commands, handleInteraction } from './commands';
 import { prisma } from './prisma';
 
 /**
@@ -10,8 +10,22 @@ import { prisma } from './prisma';
  */
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-client.once(Events.ClientReady, (c) => {
+client.once(Events.ClientReady, async (c) => {
   console.log(`✅ Bot connecté en tant que ${c.user.tag}`);
+
+  // Enregistrement automatique des commandes au démarrage : aucune étape
+  // manuelle nécessaire (pratique pour un hébergement type Railway).
+  try {
+    const route = env.DISCORD_GUILD_ID
+      ? Routes.applicationGuildCommands(c.application.id, env.DISCORD_GUILD_ID)
+      : Routes.applicationCommands(c.application.id);
+    await c.rest.put(route, { body: commands });
+    console.log(
+      `✅ ${commands.length} commande(s) enregistrée(s) ${env.DISCORD_GUILD_ID ? '(guilde)' : '(global)'}.`,
+    );
+  } catch (err) {
+    console.error('⚠️ Échec de l’enregistrement des commandes :', err);
+  }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {

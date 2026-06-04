@@ -42,11 +42,15 @@ Le bot maintient une connexion permanente à Discord : il lui faut un hébergeur
 de process continu (le site, lui, reste sur Vercel).
 
 **Exemple Railway :**
-1. *New Project* → *Deploy from GitHub repo* → ce dépôt.
-2. Variables : `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`
-   (optionnel), `DATABASE_URL` (la même que le site).
-3. **Start command** : `npm run bot`
-   (lance une fois `tsx bot/register-commands.ts` pour publier les commandes).
+1. *New Project* → *Deploy from GitHub repo* → ce dépôt, branche du bot.
+2. Variables (onglet **Variables**) : `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`,
+   `DISCORD_GUILD_ID` (recommandé), `DATABASE_URL` (la même que le site).
+3. C'est tout : `railway.json` configure le build et la commande de démarrage
+   (`npm run bot`). **Les commandes slash s'enregistrent automatiquement** au
+   démarrage du bot — aucune étape manuelle.
+
+> `register-commands.ts` reste disponible (`npm run bot:register`) pour un
+> enregistrement manuel, mais ce n'est pas nécessaire sur Railway.
 
 ## Prochaines briques (idées)
 
