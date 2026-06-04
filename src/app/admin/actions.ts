@@ -117,6 +117,7 @@ export async function saveGame(formData: FormData) {
     status: (formData.get('status') as 'ACTIVE' | 'UPCOMING') || 'ACTIVE',
     isActive: formData.get('isActive') === 'on',
     order: Number(formData.get('order') || 0),
+    discordCalendarChannelId: sanitizeText(formData.get('discordCalendarChannelId'), 40) || null,
   };
 
   if (id) {

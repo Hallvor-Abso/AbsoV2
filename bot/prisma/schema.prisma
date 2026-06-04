@@ -45,6 +45,7 @@ model Game {
   isActive         Boolean    @default(true)
   status           GameStatus @default(ACTIVE)
   order            Int        @default(0)
+  discordCalendarChannelId String?
 
   raidTiers        RaidTier[]
   news             News[]

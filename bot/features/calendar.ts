@@ -68,8 +68,13 @@ export async function syncEvent(client: Client, eventId: string): Promise<void> 
   if (!built) return;
   const { embed, row, event } = built;
 
-  const channelId = event.discordChannelId || env.DISCORD_CALENDAR_CHANNEL_ID;
-  if (!channelId) throw new Error('DISCORD_CALENDAR_CHANNEL_ID non configuré.');
+  // Priorité : salon déjà utilisé pour cet event > salon configuré pour le jeu >
+  // salon global de secours (env).
+  const channelId =
+    event.discordChannelId || event.game.discordCalendarChannelId || env.DISCORD_CALENDAR_CHANNEL_ID;
+  if (!channelId) {
+    throw new Error(`Aucun salon calendrier configuré pour le jeu « ${event.game.name} ».`);
+  }
 
   const channel = await client.channels.fetch(channelId);
   if (!channel || !channel.isTextBased() || channel.isDMBased()) {

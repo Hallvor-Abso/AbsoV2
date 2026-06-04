@@ -57,6 +57,9 @@ model Game {
   status          GameStatus @default(ACTIVE) // ACTIVE = jouable, UPCOMING = à venir
   order           Int      @default(0) // ordre d'affichage
 
+  // Salon Discord où le bot publie le calendrier de CE jeu (un par jeu).
+  discordCalendarChannelId String?
+
   raidTiers       RaidTier[]
   news            News[]
   recruitmentRoles RecruitmentRole[]

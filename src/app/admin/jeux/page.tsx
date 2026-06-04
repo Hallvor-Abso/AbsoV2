@@ -96,6 +96,7 @@ function GameForm({
     status: string;
     isActive: boolean;
     order: number;
+    discordCalendarChannelId: string | null;
   };
 }) {
   return (
@@ -140,6 +141,20 @@ function GameForm({
         <input type="checkbox" name="isActive" defaultChecked={game?.isActive ?? true} className="h-4 w-4 accent-[#4A9EFF]" />
         Visible sur le site public
       </label>
+
+      <div>
+        <label className="label">Salon Discord du calendrier (ID)</label>
+        <input
+          name="discordCalendarChannelId"
+          defaultValue={game?.discordCalendarChannelId ?? ''}
+          className="field"
+          placeholder="ex : 123456789012345678 (laisser vide = pas de publication Discord)"
+        />
+        <p className="mt-1 text-xs text-muted">
+          Le bot publie les événements de ce jeu dans ce salon. Mode développeur Discord →
+          clic droit sur le salon → « Copier l'identifiant ».
+        </p>
+      </div>
 
       <button type="submit" className="btn-primary">
         {game ? 'Enregistrer' : 'Ajouter le jeu'}
