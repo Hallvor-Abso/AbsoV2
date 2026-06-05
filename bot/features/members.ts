@@ -148,7 +148,11 @@ export async function setMemberRoles(client: Client, discordId: string, assigned
   const wanted = normalizeKeys(assignedKeys, structured); // applique la hiérarchie
   const warnings: string[] = [];
   const applied: string[] = []; // clés réellement attribuées après application
+  const toAdd: string[] = [];
+  const toRemove: string[] = [];
 
+  // On calcule d'abord le diff, puis on l'applique en 1 seul add + 1 seul remove
+  // (au lieu d'un appel Discord par rôle → bien plus rapide, évite les timeouts).
   for (const r of structured) {
     const want = wanted.has(r.key);
     if (!r.roleId) {
@@ -156,14 +160,16 @@ export async function setMemberRoles(client: Client, discordId: string, assigned
       continue;
     }
     const has = member.roles.cache.has(r.roleId);
-    try {
-      if (want && !has) await member.roles.add(r.roleId, 'Rôle assigné depuis le site Absolution');
-      else if (!want && has) await member.roles.remove(r.roleId, 'Rôle retiré depuis le site Absolution');
-      if (want) applied.push(r.key);
-    } catch {
-      warnings.push(`Impossible de modifier « ${r.name} » — vérifie les permissions du bot.`);
-      if (has) applied.push(r.key); // inchangé : on reflète l'état réel
-    }
+    if (want && !has) toAdd.push(r.roleId);
+    else if (!want && has) toRemove.push(r.roleId);
+    if (want) applied.push(r.key); // état souhaité (résultat attendu)
+  }
+
+  try {
+    if (toAdd.length) await member.roles.add(toAdd, 'Rôles assignés depuis le site Absolution');
+    if (toRemove.length) await member.roles.remove(toRemove, 'Rôles retirés depuis le site Absolution');
+  } catch {
+    warnings.push('Impossible de modifier certains rôles — vérifie les permissions du bot.');
   }
   return { ok: true, warnings, assignedKeys: applied };
 }

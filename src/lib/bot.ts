@@ -29,7 +29,9 @@ async function callBotJson<T>(path: string, payload: unknown): Promise<T | null>
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.secret}` },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(8000),
+      // Plus large que le fire-and-forget : ces appels attendent que le bot
+      // termine son travail (lecture/écriture de rôles via l'API Discord).
+      signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) {
       // Visible dans les logs du site (Vercel) : 401 = secret différent,
