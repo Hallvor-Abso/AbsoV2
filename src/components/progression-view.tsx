@@ -69,16 +69,25 @@ export function ProgressionView({
           </p>
         </div>
       ) : (
-        <ProgressionTiers game={activeGame} />
+        <ProgressionTiers key={activeGame.id} game={activeGame} />
       )}
     </div>
   );
 }
 
+/** Au-delà de ce nombre d'extensions, on passe en sous-onglets pour rester compact. */
+const EXPANSION_TAB_THRESHOLD = 3;
+
 /** Liste des tiers regroupés par extension (récent → ancien). */
 function ProgressionTiers({ game }: { game: ProgressionGame }) {
   const groups = groupByExpansion(game.tiers);
   const showTimer = game.slug === 'swtor';
+
+  // Beaucoup d'extensions → sous-onglets (n'affiche qu'une extension à la fois).
+  if (groups.length > EXPANSION_TAB_THRESHOLD) {
+    return <ExpansionTabs game={game} groups={groups} showTimer={showTimer} />;
+  }
+
   let first = true; // ouvre le tout premier tier par défaut
 
   return (
@@ -122,6 +131,66 @@ function ProgressionTiers({ game }: { game: ProgressionGame }) {
     </div>
   );
 }
+
+type ExpGroup = { expansion: string | null; tiers: Tier[] };
+
+/** Sélecteur d'extension (pastilles) + affichage d'une seule extension à la fois. */
+function ExpansionTabs({
+  game,
+  groups,
+  showTimer,
+}: {
+  game: ProgressionGame;
+  groups: ExpGroup[];
+  showTimer: boolean;
+}) {
+  const [activeKey, setActiveKey] = useState(groups[0]?.expansion ?? '—');
+  const active = groups.find((g) => (g.expansion ?? '—') === activeKey) ?? groups[0];
+  const activeColor = active.expansion ? expansionColor(active.expansion) : game.color;
+
+  return (
+    <div className="space-y-6">
+      {/* Pastilles d'extension */}
+      <div className="flex flex-wrap gap-2">
+        {groups.map((g) => {
+          const key = g.expansion ?? '—';
+          const c = g.expansion ? expansionColor(g.expansion) : game.color;
+          const isActive = key === activeKey;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveKey(key)}
+              className={cn(
+                'rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
+                !isActive && 'border-border text-muted hover:text-foreground'
+              )}
+              style={isActive ? { borderColor: `${c}80`, color: c, backgroundColor: `${c}1a` } : undefined}
+            >
+              {g.expansion ?? 'Autres'}
+              <span className="ml-1.5 text-xs opacity-70">{g.tiers.length}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tiers de l'extension sélectionnée */}
+      <div className="space-y-4">
+        {active.tiers.map((tier, i) => (
+          <TierBlock
+            key={tier.id}
+            tier={tier}
+            color={activeColor}
+            defaultOpen={i === 0}
+            showTimer={showTimer}
+            hideExpansion={Boolean(active.expansion)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 function TierBlock({
   tier,

@@ -37,6 +37,9 @@ export type AdminTier = {
 };
 export type AdminProgGame = GameTabInfo & { slug: string; tiers: AdminTier[] };
 
+/** Au-delà de ce nombre d'extensions, on passe en sous-onglets pour rester compact. */
+const EXPANSION_TAB_THRESHOLD = 3;
+
 /** Regroupe les tiers par extension, en conservant l'ordre (récent → ancien). */
 function groupByExpansion(tiers: AdminTier[]) {
   const groups: { expansion: string | null; tiers: AdminTier[] }[] = [];
@@ -87,45 +90,111 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
         </ActionForm>
       </Modal>
 
-      <div className="space-y-6">
-        {game.tiers.length === 0 && <p className="text-muted">Aucun tier pour ce jeu.</p>}
-        {groups.map((group) => {
-          const grouped = group.expansion != null && group.tiers.length > 1;
-          // Couleur propre à l'extension (à défaut, la couleur du jeu).
-          const color = group.expansion ? expansionColor(group.expansion) : game.color;
-          const body = (
-            <div className={grouped ? 'space-y-3 border-l-2 pl-4' : 'space-y-3'} style={grouped ? { borderColor: `${color}55` } : undefined}>
-              {group.tiers.map((tier) => {
-                const open = firstTier;
-                firstTier = false;
-                return (
-                  <TierEditor
-                    key={tier.id}
-                    tier={tier}
-                    color={color}
-                    showWcl={showWcl}
-                    showTimer={showTimer}
-                    hideExpansion={grouped}
-                    defaultOpen={open}
-                  />
-                );
-              })}
-            </div>
-          );
-
-          if (!grouped) return <div key={group.expansion ?? '—'}>{body}</div>;
-          return (
-            <section key={group.expansion} className="space-y-3">
-              <div className="flex items-baseline gap-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color }}>
-                  {group.expansion}
-                </h2>
-                <span className="text-xs text-muted">{group.tiers.length} tiers</span>
+      {game.tiers.length === 0 ? (
+        <p className="text-muted">Aucun tier pour ce jeu.</p>
+      ) : groups.length > EXPANSION_TAB_THRESHOLD ? (
+        // Beaucoup d'extensions → sous-onglets (une extension à la fois).
+        <AdminExpansionTabs key={game.id} game={game} groups={groups} showWcl={showWcl} showTimer={showTimer} />
+      ) : (
+        <div className="space-y-6">
+          {groups.map((group) => {
+            const grouped = group.expansion != null && group.tiers.length > 1;
+            // Couleur propre à l'extension (à défaut, la couleur du jeu).
+            const color = group.expansion ? expansionColor(group.expansion) : game.color;
+            const body = (
+              <div className={grouped ? 'space-y-3 border-l-2 pl-4' : 'space-y-3'} style={grouped ? { borderColor: `${color}55` } : undefined}>
+                {group.tiers.map((tier) => {
+                  const open = firstTier;
+                  firstTier = false;
+                  return (
+                    <TierEditor
+                      key={tier.id}
+                      tier={tier}
+                      color={color}
+                      showWcl={showWcl}
+                      showTimer={showTimer}
+                      hideExpansion={grouped}
+                      defaultOpen={open}
+                    />
+                  );
+                })}
               </div>
-              {body}
-            </section>
+            );
+
+            if (!grouped) return <div key={group.expansion ?? '—'}>{body}</div>;
+            return (
+              <section key={group.expansion} className="space-y-3">
+                <div className="flex items-baseline gap-3">
+                  <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color }}>
+                    {group.expansion}
+                  </h2>
+                  <span className="text-xs text-muted">{group.tiers.length} tiers</span>
+                </div>
+                {body}
+              </section>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type ExpGroup = { expansion: string | null; tiers: AdminTier[] };
+
+/** Sélecteur d'extension (pastilles) + édition d'une seule extension à la fois. */
+function AdminExpansionTabs({
+  game,
+  groups,
+  showWcl,
+  showTimer,
+}: {
+  game: AdminProgGame;
+  groups: ExpGroup[];
+  showWcl: boolean;
+  showTimer: boolean;
+}) {
+  const [activeKey, setActiveKey] = useState(groups[0]?.expansion ?? '—');
+  const active = groups.find((g) => (g.expansion ?? '—') === activeKey) ?? groups[0];
+  const activeColor = active.expansion ? expansionColor(active.expansion) : game.color;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-2">
+        {groups.map((g) => {
+          const key = g.expansion ?? '—';
+          const c = g.expansion ? expansionColor(g.expansion) : game.color;
+          const isActive = key === activeKey;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveKey(key)}
+              className={cn(
+                'rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
+                !isActive && 'border-border text-muted hover:text-foreground'
+              )}
+              style={isActive ? { borderColor: `${c}80`, color: c, backgroundColor: `${c}1a` } : undefined}
+            >
+              {g.expansion ?? 'Autres'}
+              <span className="ml-1.5 text-xs opacity-70">{g.tiers.length}</span>
+            </button>
           );
         })}
+      </div>
+
+      <div className="space-y-3">
+        {active.tiers.map((tier, i) => (
+          <TierEditor
+            key={tier.id}
+            tier={tier}
+            color={activeColor}
+            showWcl={showWcl}
+            showTimer={showTimer}
+            hideExpansion={Boolean(active.expansion)}
+            defaultOpen={i === 0}
+          />
+        ))}
       </div>
     </div>
   );
