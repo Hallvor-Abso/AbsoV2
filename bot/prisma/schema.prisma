@@ -47,6 +47,7 @@ model Game {
   order            Int        @default(0)
   discordCalendarChannelId    String?
   discordRecruitmentChannelId String?
+  discordRecruitmentCategoryId String?
 
   raidTiers        RaidTier[]
   news             News[]

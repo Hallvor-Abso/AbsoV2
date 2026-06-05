@@ -59,7 +59,8 @@ model Game {
 
   // Salons Discord où le bot publie, pour CE jeu (un par jeu).
   discordCalendarChannelId    String? // calendrier / événements
-  discordRecruitmentChannelId String? // nouvelles candidatures
+  discordRecruitmentChannelId String? // salon unique des candidatures (mode simple)
+  discordRecruitmentCategoryId String? // catégorie : le bot crée un salon « candid-pseudo » dedans
 
   raidTiers       RaidTier[]
   news            News[]

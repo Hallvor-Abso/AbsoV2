@@ -98,6 +98,7 @@ function GameForm({
     order: number;
     discordCalendarChannelId: string | null;
     discordRecruitmentChannelId: string | null;
+    discordRecruitmentCategoryId: string | null;
   };
 }) {
   return (
@@ -158,15 +159,31 @@ function GameForm({
       </div>
 
       <div>
-        <label className="label">Salon Discord des candidatures (ID)</label>
+        <label className="label">Catégorie Discord des candidatures (ID)</label>
+        <input
+          name="discordRecruitmentCategoryId"
+          defaultValue={game?.discordRecruitmentCategoryId ?? ''}
+          className="field"
+          placeholder="ex : 123456789012345678 (ID d'une CATÉGORIE)"
+        />
+        <p className="mt-1 text-xs text-muted">
+          <strong>Recommandé.</strong> Pour chaque candidature, le bot crée un salon dédié
+          « candid-pseudo » dans cette catégorie. (Le bot doit avoir la permission
+          « Gérer les salons ».)
+        </p>
+      </div>
+
+      <div>
+        <label className="label">…ou salon unique des candidatures (ID)</label>
         <input
           name="discordRecruitmentChannelId"
           defaultValue={game?.discordRecruitmentChannelId ?? ''}
           className="field"
-          placeholder="ex : 123456789012345678 (laisser vide = pas de publication Discord)"
+          placeholder="ex : 123456789012345678 (utilisé si aucune catégorie ci-dessus)"
         />
         <p className="mt-1 text-xs text-muted">
-          Le bot publie les nouvelles candidatures de ce jeu dans ce salon.
+          Mode simple : toutes les candidatures sont publiées dans ce salon unique.
+          Ignoré si une catégorie est renseignée au-dessus.
         </p>
       </div>
 

@@ -119,6 +119,7 @@ export async function saveGame(formData: FormData) {
     order: Number(formData.get('order') || 0),
     discordCalendarChannelId: sanitizeText(formData.get('discordCalendarChannelId'), 40) || null,
     discordRecruitmentChannelId: sanitizeText(formData.get('discordRecruitmentChannelId'), 40) || null,
+    discordRecruitmentCategoryId: sanitizeText(formData.get('discordRecruitmentCategoryId'), 40) || null,
   };
 
   if (id) {
