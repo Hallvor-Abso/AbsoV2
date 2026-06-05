@@ -285,6 +285,7 @@ export async function updateBoss(formData: FormData) {
   await requireGameAccess(await gameIdOfBoss(id));
   const status = formData.get('status') as 'KILLED' | 'PROGRESSING' | 'UNTESTED';
   const dateStr = formData.get('firstKillDate') as string;
+  const name = sanitizeText(formData.get('name'), 120);
 
   const encounterRaw = formData.get('encounterId') as string;
   const encounterId = encounterRaw && !Number.isNaN(Number(encounterRaw))
@@ -294,6 +295,7 @@ export async function updateBoss(formData: FormData) {
   await prisma.boss.update({
     where: { id },
     data: {
+      ...(name ? { name } : {}),
       status,
       firstKillDate:
         status === 'KILLED' && dateStr ? new Date(dateStr) : null,

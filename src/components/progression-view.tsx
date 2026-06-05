@@ -16,6 +16,18 @@ type Boss = {
   bestPercent: number | null; // meilleur % de vie restante atteint
 };
 type Tier = { id: string; name: string; expansion: string | null; timerDone: boolean; bosses: Boss[] };
+
+/** Regroupe les tiers par extension, en conservant l'ordre (récent → ancien). */
+function groupByExpansion(tiers: Tier[]) {
+  const groups: { expansion: string | null; tiers: Tier[] }[] = [];
+  for (const t of tiers) {
+    const key = t.expansion?.trim() || null;
+    const existing = key ? groups.find((g) => g.expansion === key) : null;
+    if (existing) existing.tiers.push(t);
+    else groups.push({ expansion: key, tiers: [t] });
+  }
+  return groups;
+}
 export type ProgressionGame = {
   id: string;
   name: string;
@@ -57,18 +69,54 @@ export function ProgressionView({
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {activeGame.tiers.map((tier, index) => (
-            <TierBlock
-              key={tier.id}
-              tier={tier}
-              color={activeGame.color}
-              defaultOpen={index === 0}
-              showTimer={activeGame.slug === 'swtor'}
-            />
-          ))}
-        </div>
+        <ProgressionTiers game={activeGame} />
       )}
+    </div>
+  );
+}
+
+/** Liste des tiers regroupés par extension (récent → ancien). */
+function ProgressionTiers({ game }: { game: ProgressionGame }) {
+  const groups = groupByExpansion(game.tiers);
+  const showTimer = game.slug === 'swtor';
+  let first = true; // ouvre le tout premier tier par défaut
+
+  return (
+    <div className="space-y-8">
+      {groups.map((group) => {
+        const grouped = group.expansion != null && group.tiers.length > 1;
+        const body = (
+          <div className={grouped ? 'space-y-4 border-l-2 pl-4' : 'space-y-4'} style={grouped ? { borderColor: `${game.color}55` } : undefined}>
+            {group.tiers.map((tier) => {
+              const open = first;
+              first = false;
+              return (
+                <TierBlock
+                  key={tier.id}
+                  tier={tier}
+                  color={game.color}
+                  defaultOpen={open}
+                  showTimer={showTimer}
+                  hideExpansion={grouped}
+                />
+              );
+            })}
+          </div>
+        );
+
+        if (!grouped) return <div key={group.expansion ?? '—'}>{body}</div>;
+        return (
+          <section key={group.expansion} className="space-y-4">
+            <div className="flex items-baseline gap-3">
+              <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: game.color }}>
+                {group.expansion}
+              </h2>
+              <span className="text-xs text-muted">{group.tiers.length} tiers</span>
+            </div>
+            {body}
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -78,11 +126,13 @@ function TierBlock({
   color,
   defaultOpen,
   showTimer,
+  hideExpansion,
 }: {
   tier: Tier;
   color: string;
   defaultOpen: boolean;
   showTimer: boolean;
+  hideExpansion: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const total = tier.bosses.length;
@@ -100,7 +150,7 @@ function TierBlock({
           <div className="flex items-baseline justify-between gap-3">
             <h3 className="flex min-w-0 items-baseline gap-2 text-lg font-semibold text-title">
               <span className="truncate">{tier.name}</span>
-              {tier.expansion && (
+              {!hideExpansion && tier.expansion && (
                 <span className="shrink-0 text-sm font-normal text-muted">{tier.expansion}</span>
               )}
             </h3>

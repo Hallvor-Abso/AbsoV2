@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useToast } from './toast';
+import { useAutoSave } from './auto-save-form';
 import { uploadImage } from '@/lib/upload';
 
 /**
@@ -34,16 +35,27 @@ export function ImageInput({
   defaultValue = '',
   label,
   help,
+  compact = false,
 }: {
   name: string;
   defaultValue?: string;
   label?: string;
   help?: string;
+  /** Variante condensée : masque le texte d'aide (utile dans les listes denses). */
+  compact?: boolean;
 }) {
   const toast = useToast();
+  const autoSave = useAutoSave();
   const [url, setUrl] = useState(defaultValue);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Met à jour la valeur ET prévient le formulaire auto-save (les changements
+  // par téléversement / « Retirer » ne déclenchent pas d'événement DOM natif).
+  const changeUrl = (value: string) => {
+    setUrl(value);
+    autoSave?.requestSave();
+  };
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -51,7 +63,7 @@ export function ImageInput({
     setUploading(true);
     try {
       const uploaded = await uploadImage(file);
-      setUrl(uploaded);
+      changeUrl(uploaded);
       toast('Image téléversée');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Échec du téléversement.', 'error');
@@ -91,7 +103,7 @@ export function ImageInput({
               {uploading ? 'Téléversement…' : '⬆ Téléverser une image'}
             </button>
             {url && (
-              <button type="button" onClick={() => setUrl('')} className="text-xs text-muted hover:text-foreground">
+              <button type="button" onClick={() => changeUrl('')} className="text-xs text-muted hover:text-foreground">
                 Retirer
               </button>
             )}
@@ -100,10 +112,12 @@ export function ImageInput({
         </div>
       </div>
       {help && <p className="mt-1 text-xs text-muted">{help}</p>}
-      <p className="mt-1 text-xs text-muted">
-        Un lien Google Images ne fonctionne pas, et certains sites bloquent l’affichage de leurs images.
-        Le plus fiable : <strong>téléverser le fichier</strong>.
-      </p>
+      {!compact && (
+        <p className="mt-1 text-xs text-muted">
+          Un lien Google Images ne fonctionne pas, et certains sites bloquent l’affichage de leurs images.
+          Le plus fiable : <strong>téléverser le fichier</strong>.
+        </p>
+      )}
     </div>
   );
 }
