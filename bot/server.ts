@@ -21,9 +21,10 @@ export function startHttpServer(client: Client): void {
       res.end(JSON.stringify(payload));
     };
 
-    // Sonde de santé (Railway / vérifs).
+    // Sonde de santé (Railway / vérifs). « features » permet de confirmer que
+    // CE déploiement du bot contient bien la gestion des rôles membres.
     if (req.method === 'GET' && (req.url === '/' || req.url === '/health')) {
-      return json(200, { ok: true });
+      return json(200, { ok: true, features: ['member-roles'] });
     }
     if (req.method !== 'POST') return json(404, { error: 'not found' });
 
@@ -73,12 +74,16 @@ export function startHttpServer(client: Client): void {
         // Rôles Discord d'un membre (lecture/écriture synchrones : on attend
         // la réponse pour la renvoyer au site).
         case '/member/roles/get': {
+          const t = Date.now();
           const data = await getMemberRoles(client, String(body.discordId));
+          console.log(`✅ /member/roles/get (${body.discordId}) → ${Date.now() - t}ms`);
           return json(200, { ok: true, ...data });
         }
         case '/member/roles/set': {
+          const t = Date.now();
           const keys = Array.isArray(body.assignedKeys) ? body.assignedKeys.map(String) : [];
           const data = await setMemberRoles(client, String(body.discordId), keys);
+          console.log(`✅ /member/roles/set (${body.discordId}) → ${Date.now() - t}ms`);
           return json(200, data);
         }
         default:
