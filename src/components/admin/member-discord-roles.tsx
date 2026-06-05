@@ -7,6 +7,7 @@ import type { DiscordRoleItem } from '@/lib/bot';
 
 const KIND_LABEL: Record<DiscordRoleItem['kind'], string> = {
   gm: 'GM',
+  visiteur: 'Visiteur',
   officier: 'Officier',
   roster: 'Roster',
   membre: 'Membre',
@@ -49,23 +50,29 @@ export function MemberDiscordRoles({ discordId }: { discordId: string }) {
 
   function setAssigned(key: string, value: boolean) {
     if (!state) return;
-    const roles = state.roles.map((r) => (r.key === key ? { ...r, assigned: value } : r));
-    setState({ ...state, roles });
-    const assignedKeys = roles.filter((r) => r.assigned).map((r) => r.key);
+    // Changement optimiste, puis on reflète l'état NORMALISÉ renvoyé par le bot
+    // (cumul des grades + exclusions Recrue/Visiteur).
+    const optimistic = state.roles.map((r) => (r.key === key ? { ...r, assigned: value } : r));
+    setState({ ...state, roles: optimistic });
+    const assignedKeys = optimistic.filter((r) => r.assigned).map((r) => r.key);
     startTransition(async () => {
       try {
         const res = await saveMemberDiscordRoles(discordId, assignedKeys);
+        if (res.assignedKeys) {
+          const final = new Set(res.assignedKeys);
+          setState((s) => (s ? { ...s, roles: s.roles.map((r) => ({ ...r, assigned: final.has(r.key) })) } : s));
+        }
         if (res.warnings && res.warnings.length > 0) toast(res.warnings[0], 'error');
         else toast('Rôles Discord mis à jour');
       } catch {
-        toast("Échec de la mise à jour, réessaie.", 'error');
+        toast('Échec de la mise à jour, réessaie.', 'error');
         void load(); // resynchronise l'affichage avec l'état réel
       }
     });
   }
 
-  // Regroupe : GM en premier, puis par jeu.
-  const gm = state?.roles.filter((r) => r.kind === 'gm') ?? [];
+  // Regroupe : rôles globaux (GM, Visiteur) en premier, puis par jeu.
+  const globals = state?.roles.filter((r) => !r.gameId) ?? [];
   const byGame = new Map<string, { gameName: string; roles: DiscordRoleItem[] }>();
   for (const r of state?.roles ?? []) {
     if (!r.gameId) continue;
@@ -98,9 +105,13 @@ export function MemberDiscordRoles({ discordId }: { discordId: string }) {
 
           {!loading && state?.configured && state.found && (
             <div className={`space-y-4 ${pending ? 'opacity-70' : ''}`}>
-              {gm.map((r) => (
-                <RoleCheckbox key={r.key} role={r} label="GM" onChange={setAssigned} />
-              ))}
+              {globals.length > 0 && (
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                  {globals.map((r) => (
+                    <RoleCheckbox key={r.key} role={r} label={KIND_LABEL[r.kind]} onChange={setAssigned} />
+                  ))}
+                </div>
+              )}
               {[...byGame.entries()].map(([gameId, g]) => (
                 <div key={gameId}>
                   <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">{g.gameName}</p>

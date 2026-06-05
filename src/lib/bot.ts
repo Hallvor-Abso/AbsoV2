@@ -37,7 +37,7 @@ async function callBotJson<T>(path: string, payload: unknown): Promise<T | null>
 export type DiscordRoleItem = {
   key: string;
   name: string;
-  kind: 'gm' | 'officier' | 'roster' | 'membre' | 'recrue';
+  kind: 'gm' | 'visiteur' | 'officier' | 'roster' | 'membre' | 'recrue';
   gameId: string | null;
   gameName: string | null;
   roleId: string | null; // null = rôle pas encore créé sur le serveur Discord
@@ -54,10 +54,10 @@ export function getMemberDiscordRoles(discordId: string) {
 
 /** Applique l'état souhaité des rôles Discord structurés d'un membre (via le bot). */
 export function setMemberDiscordRoles(discordId: string, assignedKeys: string[]) {
-  return callBotJson<{ ok: boolean; warnings?: string[] }>('/member/roles/set', {
-    discordId,
-    assignedKeys,
-  });
+  return callBotJson<{ ok: boolean; warnings?: string[]; assignedKeys?: string[] }>(
+    '/member/roles/set',
+    { discordId, assignedKeys },
+  );
 }
 
 async function callBot(path: string, payload: unknown): Promise<void> {
