@@ -5,9 +5,13 @@
  * un échec ne casse jamais l'action côté site (le bot resynchronisera plus tard).
  */
 function botConfig() {
-  const url = process.env.BOT_URL?.replace(/\/$/, '');
+  let url = process.env.BOT_URL?.trim();
   const secret = process.env.BOT_HTTP_SECRET;
   if (!url || !secret) return null;
+  // Tolérance : si on a oublié le schéma (ex : "xxx.up.railway.app"), on
+  // préfixe en https. On retire aussi un éventuel "/" final.
+  if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+  url = url.replace(/\/$/, '');
   return { url, secret };
 }
 
