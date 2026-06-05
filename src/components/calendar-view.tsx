@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useState, useTransition, useOptimistic } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { EVENT_TYPE } from '@/lib/labels';
@@ -240,9 +240,15 @@ function EventRsvp({
     ? event.signups.find((s) => s.discordId === myDiscordId)?.status ?? null
     : null;
 
-  const run = (fn: () => Promise<{ ok: true } | { error: string }>) =>
+  // Surbrillance instantanée : on affiche tout de suite le statut choisi, sans
+  // attendre l'aller-retour serveur (réconcilié au rafraîchissement).
+  const [shownStatus, setOptimisticStatus] = useOptimistic<string | null>(myStatus);
+
+  // `next` = nouveau statut optimiste (ou null pour une désinscription).
+  const run = (next: string | null, fn: () => Promise<{ ok: true } | { error: string }>) =>
     startTransition(async () => {
       setError(null);
+      setOptimisticStatus(next);
       const res = await fn();
       if ('error' in res) setError(res.error);
       else router.refresh();
@@ -260,10 +266,10 @@ function EventRsvp({
                 key={opt.key}
                 type="button"
                 disabled={pending}
-                onClick={() => run(() => rsvpEvent(event.id, opt.key))}
+                onClick={() => run(opt.key, () => rsvpEvent(event.id, opt.key))}
                 className={cn(
                   'rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50',
-                  myStatus === opt.key
+                  shownStatus === opt.key
                     ? 'border-accent bg-accent/15 text-accent'
                     : 'border-border text-foreground hover:border-accent/60'
                 )}
@@ -271,11 +277,11 @@ function EventRsvp({
                 {opt.emoji} {opt.label}
               </button>
             ))}
-            {myStatus && (
+            {shownStatus && (
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => run(() => cancelRsvp(event.id))}
+                onClick={() => run(null, () => cancelRsvp(event.id))}
                 className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:text-title disabled:opacity-50"
               >
                 Me retirer

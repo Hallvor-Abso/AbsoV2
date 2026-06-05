@@ -42,10 +42,15 @@ export function startHttpServer(client: Client): void {
     try {
       switch (req.url) {
         case '/sync/event':
-          await syncEvent(client, body.eventId);
+          // On répond TOUT DE SUITE : la mise à jour Discord (appels API,
+          // édition du message) se fait en arrière-plan pour ne pas faire
+          // attendre le site.
+          void syncEvent(client, body.eventId).catch((e) => console.error('syncEvent (bg) :', e));
           return json(200, { ok: true });
         case '/sync/event-deleted':
-          await removeEventMessage(client, body.channelId ?? null, body.messageId ?? null);
+          void removeEventMessage(client, body.channelId ?? null, body.messageId ?? null).catch((e) =>
+            console.error('removeEventMessage (bg) :', e),
+          );
           return json(200, { ok: true });
         default:
           return json(404, { error: 'not found' });
