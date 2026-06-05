@@ -5,6 +5,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { sanitizeText } from '@/lib/sanitize';
 import { notifyDiscord } from '@/lib/discord';
 import { syncApplicationToBot } from '@/lib/bot';
+import { getAppUser } from '@/lib/auth';
 
 /**
  * POST /api/applications — réception d'une candidature publique.
@@ -23,6 +24,22 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: 'Trop de tentatives. Réessaie dans quelques minutes.' },
       { status: 429 }
+    );
+  }
+
+  // 1bis. Connexion obligatoire + compte Discord lié (pour le suivi de candidature).
+  const appUser = await getAppUser();
+  if (!appUser) {
+    return NextResponse.json({ error: 'Connecte-toi pour postuler.' }, { status: 401 });
+  }
+  const me = await prisma.user.findUnique({
+    where: { id: appUser.id },
+    select: { discordId: true },
+  });
+  if (!me?.discordId) {
+    return NextResponse.json(
+      { error: 'Lie ton compte Discord avant de postuler.' },
+      { status: 403 }
     );
   }
 
@@ -65,6 +82,7 @@ export async function POST(request: Request) {
     logsUrl: sanitizeText(data.logsUrl, 500) || null,
     motivation: sanitizeText(data.motivation, 4000),
     gameId: game.id,
+    userId: appUser.id,
   };
   const application = await prisma.application.create({ data: clean });
 

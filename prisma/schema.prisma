@@ -32,6 +32,7 @@ model User {
   passwordHash String
   role         Role     @default(VISITEUR)
   adminGames   Game[]   @relation("GameAdmins")
+  applications Application[]
   createdAt    DateTime @default(now())
 }
 
@@ -204,6 +205,13 @@ model Application {
   status        ApplicationStatus @default(PENDING)
   internalNotes String? // notes internes (admin only)
   discordChannelId String? // salon « candid-pseudo » créé par le bot (mode catégorie)
+
+  // Suivi côté candidat (connexion obligatoire pour postuler).
+  user          User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId        String?
+  lastOfficerMessageAt DateTime? // dernier message d'un officier dans le salon
+  candidateSeenAt      DateTime? // dernière consultation par le candidat
+
   game          Game?             @relation(fields: [gameId], references: [id], onDelete: SetNull)
   gameId        String?
 

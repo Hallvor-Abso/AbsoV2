@@ -2,8 +2,11 @@ import type { Metadata } from 'next';
 import { SectionHeading } from '@/components/section-heading';
 import { RecruitmentView, type RecruitSlot, type RecruitRole } from '@/components/recruitment-view';
 import { getVisibleGames, getRecruitmentSlots, getRecruitmentRoles } from '@/lib/data';
+import { getAppUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
-export const revalidate = 60;
+// Dépend de la session (connexion + Discord lié) → pas de cache statique.
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Recrutement',
@@ -11,11 +14,20 @@ export const metadata: Metadata = {
 };
 
 export default async function RecruitmentPage() {
-  const [games, slots, roles] = await Promise.all([
+  const [games, slots, roles, user] = await Promise.all([
     getVisibleGames(),
     getRecruitmentSlots(),
     getRecruitmentRoles(),
+    getAppUser(),
   ]);
+  const me = user
+    ? await prisma.user.findUnique({ where: { id: user.id }, select: { discordId: true, discord: true } })
+    : null;
+  const auth = {
+    loggedIn: Boolean(user),
+    discordLinked: Boolean(me?.discordId),
+    discord: me?.discord ?? null,
+  };
 
   return (
     <div className="container-page py-16">
@@ -39,6 +51,7 @@ export default async function RecruitmentPage() {
           }))}
           slots={slots as RecruitSlot[]}
           roles={roles as RecruitRole[]}
+          auth={auth}
         />
       )}
     </div>

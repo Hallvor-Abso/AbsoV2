@@ -26,14 +26,18 @@ export type RecruitRole = {
  * - onglets pour distinguer les jeux
  * - postes regroupés par RÔLE, avec une pastille de statut claire par classe
  */
+export type RecruitAuth = { loggedIn: boolean; discordLinked: boolean; discord: string | null };
+
 export function RecruitmentView({
   games,
   slots,
   roles: roleCategories = [],
+  auth,
 }: {
   games: GameTabInfo[];
   slots: RecruitSlot[];
   roles?: RecruitRole[];
+  auth: RecruitAuth;
 }) {
   const [activeId, setActiveId] = useState(games[0]?.id);
   const activeGame = games.find((g) => g.id === activeId) ?? games[0];
@@ -114,7 +118,7 @@ export function RecruitmentView({
           className="mb-8"
         />
         {activeGame.status === 'ACTIVE' ? (
-          <ApplicationForm gameId={activeGame.id} gameName={activeGame.name} />
+          <ApplicationForm gameId={activeGame.id} gameName={activeGame.name} auth={auth} />
         ) : (
           <div className="card p-10 text-center text-muted">
             Les candidatures pour {activeGame.name} ouvriront au lancement du projet.

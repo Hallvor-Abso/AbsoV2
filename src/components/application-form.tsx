@@ -10,9 +10,52 @@ import { useState } from 'react';
 export function ApplicationForm({
   gameId,
   gameName,
+  auth,
 }: {
   gameId: string;
   gameName: string;
+  auth: { loggedIn: boolean; discordLinked: boolean; discord: string | null };
+}) {
+  // Connexion + Discord lié obligatoires pour postuler (suivi de candidature).
+  if (!auth.loggedIn) {
+    return (
+      <div className="card p-8 text-center">
+        <h3 className="text-xl font-semibold text-title">Connecte-toi pour postuler</h3>
+        <p className="mt-2 text-muted">
+          La candidature est liée à ton compte pour que tu puisses en suivre le statut.
+        </p>
+        <div className="mt-6 flex justify-center gap-3">
+          <a href="/connexion" className="btn-primary">Se connecter</a>
+          <a href="/inscription" className="btn-secondary">S'inscrire</a>
+        </div>
+      </div>
+    );
+  }
+  if (!auth.discordLinked) {
+    return (
+      <div className="card p-8 text-center">
+        <h3 className="text-xl font-semibold text-title">Lie ton compte Discord</h3>
+        <p className="mt-2 text-muted">
+          Pour postuler, relie ton compte Discord (une seule fois) : c'est ainsi qu'on te
+          recontacte et que tu suis ta candidature.
+        </p>
+        <a href="/api/discord/link" className="btn-primary mt-6 inline-flex">
+          Lier mon compte Discord
+        </a>
+      </div>
+    );
+  }
+  return <ApplicationFormFields gameId={gameId} gameName={gameName} discord={auth.discord} />;
+}
+
+function ApplicationFormFields({
+  gameId,
+  gameName,
+  discord,
+}: {
+  gameId: string;
+  gameName: string;
+  discord: string | null;
 }) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string>('');
@@ -80,7 +123,14 @@ export function ApplicationForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Pseudo *" name="pseudo" required placeholder="Ton pseudo en jeu" />
-        <Field label="Discord *" name="discord" required placeholder="ton_pseudo_discord" />
+        <Field
+          label="Discord *"
+          name="discord"
+          required
+          placeholder="ton_pseudo_discord"
+          defaultValue={discord ?? ''}
+          readOnly={Boolean(discord)}
+        />
       </div>
 
       <Field label="BattleTag / ID" name="characterId" placeholder="Pseudo#1234" />
@@ -132,13 +182,15 @@ export function ApplicationForm({
 }
 
 function Field({
-  label, name, type = 'text', required, placeholder,
+  label, name, type = 'text', required, placeholder, defaultValue, readOnly,
 }: {
   label: string;
   name: string;
   type?: string;
   required?: boolean;
   placeholder?: string;
+  defaultValue?: string;
+  readOnly?: boolean;
 }) {
   return (
     <div>
@@ -146,6 +198,7 @@ function Field({
       <input
         id={name} name={name} type={type} required={required}
         placeholder={placeholder} className="field"
+        defaultValue={defaultValue} readOnly={readOnly}
       />
     </div>
   );

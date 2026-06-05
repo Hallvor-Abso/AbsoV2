@@ -24,10 +24,11 @@ export function Navbar({ logoUrl }: { logoUrl?: string }) {
   const su = session?.user as { role?: string } | undefined;
   const user = (su?.role ? su : null) as SessionUser | null;
 
-  // Le Calendrier n'est visible que par les membres (et plus).
-  const links = canAccessCalendar(user)
-    ? [...BASE_LINKS, { href: '/calendrier', label: 'Calendrier' }]
-    : BASE_LINKS;
+  // Le Calendrier n'est visible que par les membres (et plus) ; « Mes
+  // candidatures » apparaît pour tout utilisateur connecté.
+  const links = [...BASE_LINKS];
+  if (canAccessCalendar(user)) links.push({ href: '/calendrier', label: 'Calendrier' });
+  if (user) links.push({ href: '/mes-candidatures', label: 'Mes candidatures' });
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);

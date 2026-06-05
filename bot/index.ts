@@ -10,7 +10,9 @@ import { prisma } from './prisma';
  * Process long-running (passerelle Discord) → à héberger hors Vercel
  * (Railway / Fly.io / VPS). Voir bot/README.md.
  */
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+});
 
 client.once(Events.ClientReady, async (c) => {
   console.log(`✅ Bot connecté en tant que ${c.user.tag}`);
@@ -58,6 +60,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } else {
       await interaction.reply({ content, flags: MessageFlags.Ephemeral }).catch(() => {});
     }
+  }
+});
+
+// Message d'un officier dans un salon « candid-… » → on note la date pour
+// afficher un badge de notification au candidat sur le site.
+client.on(Events.MessageCreate, async (message) => {
+  if (message.author.bot) return; // on ignore les messages du bot lui-même
+  try {
+    await prisma.application.updateMany({
+      where: { discordChannelId: message.channelId },
+      data: { lastOfficerMessageAt: new Date() },
+    });
+  } catch (err) {
+    console.error('MessageCreate → notification candidat :', err);
   }
 });
 
