@@ -282,6 +282,9 @@ function EventRsvp({
               </button>
             )}
           </div>
+          <a href="/api/discord/link" className="mt-2 inline-block text-xs text-muted underline hover:text-accent">
+            Mettre à jour mon pseudo Discord
+          </a>
         </>
       ) : (
         <div className="rounded-lg border border-border bg-ink-soft/40 p-3 text-sm">
