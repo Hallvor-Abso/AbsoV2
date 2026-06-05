@@ -15,7 +15,13 @@ export const metadata: Metadata = {
 const DISCORD_NOTICE: Record<string, { ok: boolean; text: string }> = {
   ok: { ok: true, text: 'Compte Discord lié ! Tu peux maintenant t’inscrire aux événements depuis le site.' },
   taken: { ok: false, text: 'Ce compte Discord est déjà relié à un autre membre.' },
-  config: { ok: false, text: 'La connexion Discord n’est pas encore configurée sur le site.' },
+  config: { ok: false, text: 'La connexion Discord n’est pas encore configurée sur le site (variables manquantes).' },
+  err_state: { ok: false, text: 'Session de liaison expirée ou invalide. Réessaie depuis le bouton.' },
+  err_token: {
+    ok: false,
+    text: 'Échec de l’échange avec Discord : vérifie le DISCORD_CLIENT_SECRET et l’URL de redirection (OAuth2 → Redirects) = https://abso-v2.vercel.app/api/discord/callback',
+  },
+  err_user: { ok: false, text: 'Discord a refusé la lecture du profil. Réessaie.' },
   error: { ok: false, text: 'La liaison Discord a échoué. Réessaie.' },
 };
 

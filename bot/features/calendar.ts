@@ -3,6 +3,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  MessageFlags,
   type ButtonInteraction,
   type Client,
   type GuildTextBasedChannel,
@@ -12,6 +13,12 @@ import { prisma } from '../prisma';
 import { env } from '../env';
 
 const ACCENT = 0x4a9eff;
+
+const STATUS_LABEL: Record<SignupStatus, string> = {
+  GOING: 'Présent ✅',
+  MAYBE: 'Peut-être ❓',
+  DECLINED: 'Absent ❌',
+};
 
 function toColor(hex: string): number {
   const n = Number.parseInt(hex.replace('#', ''), 16);
@@ -106,15 +113,25 @@ export async function handleRsvp(interaction: ButtonInteraction): Promise<void> 
   const status = rawStatus as SignupStatus;
   const displayName = interaction.user.globalName ?? interaction.user.username;
 
+  // Réponse éphémère (visible par toi seul) qui confirme — ou explique l'échec.
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   await prisma.eventSignup.upsert({
     where: { eventId_discordId: { eventId, discordId: interaction.user.id } },
     create: { eventId, discordId: interaction.user.id, displayName, status, source: 'discord' },
     update: { status, displayName },
   });
 
-  // Accuse réception sans nouveau message, puis on rafraîchit l'embed.
-  await interaction.deferUpdate();
-  await syncEvent(interaction.client, eventId);
+  try {
+    await syncEvent(interaction.client, eventId);
+    await interaction.editReply(`Réponse enregistrée : **${STATUS_LABEL[status]}**`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('syncEvent (RSVP) a échoué :', err);
+    await interaction.editReply(
+      `Ton inscription est enregistrée (**${STATUS_LABEL[status]}**), mais je n'ai pas pu mettre à jour le message : ${msg}`,
+    );
+  }
 }
 
 /** Supprime le message Discord d'un événement (appelé quand on supprime l'event). */

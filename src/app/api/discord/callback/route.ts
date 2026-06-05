@@ -18,27 +18,44 @@ export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code');
   const state = req.nextUrl.searchParams.get('state');
   const cookieState = req.cookies.get('discord_oauth_state')?.value;
-  if (!code || !state || !cookieState || state !== cookieState) return back('error');
+  if (!code || !state || !cookieState || state !== cookieState) return back('err_state');
 
+  const redirectUri = `${base}/api/discord/callback`;
+
+  // Étape 1 : échanger le code contre un token (échoue si secret ou redirect_uri faux).
+  let accessToken: string;
   try {
-    const redirectUri = `${base}/api/discord/callback`;
     const token = await exchangeCode(code, redirectUri);
-    const dUser = await fetchDiscordUser(token.access_token);
+    accessToken = token.access_token;
+  } catch (err) {
+    console.error('Discord token exchange:', err);
+    return back('err_token');
+  }
 
+  // Étape 2 : lire le profil Discord.
+  let dUser: { id: string; username: string; global_name: string | null };
+  try {
+    dUser = await fetchDiscordUser(accessToken);
+  } catch (err) {
+    console.error('Discord user fetch:', err);
+    return back('err_user');
+  }
+
+  // Étape 3 : enregistrer l'ID sur le compte courant.
+  try {
     await prisma.user.update({
       where: { id: user.id },
       data: { discordId: dUser.id, discord: dUser.global_name || dUser.username },
     });
-
-    const res = back('ok');
-    res.cookies.delete('discord_oauth_state');
-    return res;
   } catch (err) {
-    // P2002 = cet ID Discord est déjà relié à un autre compte.
     if (err && typeof err === 'object' && 'code' in err && (err as { code?: string }).code === 'P2002') {
-      return back('taken');
+      return back('taken'); // cet ID Discord est déjà relié à un autre compte
     }
-    console.error('Liaison Discord échouée :', err);
+    console.error('Discord link save:', err);
     return back('error');
   }
+
+  const res = back('ok');
+  res.cookies.delete('discord_oauth_state');
+  return res;
 }
