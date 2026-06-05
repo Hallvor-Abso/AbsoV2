@@ -116,21 +116,18 @@ export async function handleRsvp(interaction: ButtonInteraction): Promise<void> 
   // Réponse éphémère (visible par toi seul) qui confirme — ou explique l'échec.
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  await prisma.eventSignup.upsert({
-    where: { eventId_discordId: { eventId, discordId: interaction.user.id } },
-    create: { eventId, discordId: interaction.user.id, displayName, status, source: 'discord' },
-    update: { status, displayName },
-  });
-
   try {
+    await prisma.eventSignup.upsert({
+      where: { eventId_discordId: { eventId, discordId: interaction.user.id } },
+      create: { eventId, discordId: interaction.user.id, displayName, status, source: 'discord' },
+      update: { status, displayName },
+    });
     await syncEvent(interaction.client, eventId);
     await interaction.editReply(`Réponse enregistrée : **${STATUS_LABEL[status]}**`);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('syncEvent (RSVP) a échoué :', err);
-    await interaction.editReply(
-      `Ton inscription est enregistrée (**${STATUS_LABEL[status]}**), mais je n'ai pas pu mettre à jour le message : ${msg}`,
-    );
+    console.error('handleRsvp a échoué :', err);
+    await interaction.editReply(`Impossible d'enregistrer ta réponse : ${msg}`).catch(() => {});
   }
 }
 

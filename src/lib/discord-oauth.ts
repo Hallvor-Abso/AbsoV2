@@ -7,6 +7,35 @@
  */
 const DISCORD_API = 'https://discord.com/api';
 
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+
+function stateSecret(): string {
+  return process.env.NEXTAUTH_SECRET || 'dev-secret-change-me';
+}
+
+/**
+ * State anti-CSRF **signé** (sans cookie) : robuste aux allers-retours
+ * Discord ↔ Vercel. Contient un horodatage signé en HMAC.
+ */
+export function makeState(): string {
+  const payload = `${Date.now()}_${randomBytes(8).toString('hex')}`;
+  const sig = createHmac('sha256', stateSecret()).update(payload).digest('base64url');
+  return `${Buffer.from(payload).toString('base64url')}.${sig}`;
+}
+
+export function verifyState(state: string, maxAgeMs = 10 * 60 * 1000): boolean {
+  const [b64, sig] = state.split('.');
+  if (!b64 || !sig) return false;
+  const payload = Buffer.from(b64, 'base64url').toString();
+  const expected = createHmac('sha256', stateSecret()).update(payload).digest('base64url');
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
+  const ts = Number(payload.split('_')[0]);
+  return Number.isFinite(ts) && Date.now() - ts < maxAgeMs;
+}
+
+
 export function discordOauthConfigured(): boolean {
   return Boolean(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET);
 }

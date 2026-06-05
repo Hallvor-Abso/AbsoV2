@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAppUser } from '@/lib/auth';
-import { exchangeCode, fetchDiscordUser } from '@/lib/discord-oauth';
+import { exchangeCode, fetchDiscordUser, verifyState } from '@/lib/discord-oauth';
 import { prisma } from '@/lib/prisma';
 
 function baseUrl(req: NextRequest): string {
@@ -17,8 +17,7 @@ export async function GET(req: NextRequest) {
 
   const code = req.nextUrl.searchParams.get('code');
   const state = req.nextUrl.searchParams.get('state');
-  const cookieState = req.cookies.get('discord_oauth_state')?.value;
-  if (!code || !state || !cookieState || state !== cookieState) return back('err_state');
+  if (!code || !state || !verifyState(state)) return back('err_state');
 
   const redirectUri = `${base}/api/discord/callback`;
 
@@ -55,7 +54,5 @@ export async function GET(req: NextRequest) {
     return back('error');
   }
 
-  const res = back('ok');
-  res.cookies.delete('discord_oauth_state');
-  return res;
+  return back('ok');
 }
