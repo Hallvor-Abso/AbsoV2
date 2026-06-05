@@ -87,6 +87,39 @@ function normalizeKeys(keys: Iterable<string>, structured: StructuredRole[]): Se
   return out;
 }
 
+/**
+ * Re-normalise les rôles d'un membre directement sur Discord : si quelqu'un
+ * attribue un grade incohérent à la main (ex. Officier sans Membre), le bot
+ * ajoute ce qui manque et retire ce qui doit l'être. Idempotent → pas de boucle
+ * (un changement déclenché par le bot lui-même ne produit aucun nouveau diff).
+ */
+export async function reconcileMember(member: GuildMember): Promise<void> {
+  const structured = await buildStructuredRoles(member.guild);
+  const currentKeys = structured
+    .filter((r) => r.roleId && member.roles.cache.has(r.roleId))
+    .map((r) => r.key);
+  const normalized = normalizeKeys(currentKeys, structured);
+
+  const toAdd: string[] = [];
+  const toRemove: string[] = [];
+  for (const r of structured) {
+    if (!r.roleId) continue;
+    const has = member.roles.cache.has(r.roleId);
+    const want = normalized.has(r.key);
+    if (want && !has) toAdd.push(r.roleId);
+    else if (!want && has) toRemove.push(r.roleId);
+  }
+  if (toAdd.length === 0 && toRemove.length === 0) return; // déjà cohérent
+
+  try {
+    if (toAdd.length) await member.roles.add(toAdd, 'Hiérarchie des grades (auto)');
+    if (toRemove.length) await member.roles.remove(toRemove, 'Hiérarchie des grades (auto)');
+    console.log(`🔧 Grades normalisés pour ${member.user.tag} (+${toAdd.length} / -${toRemove.length}).`);
+  } catch (err) {
+    console.error('reconcileMember a échoué (permissions du bot ?) :', err);
+  }
+}
+
 /** Rôles structurés d'un membre + s'ils lui sont attribués (lecture en direct). */
 export async function getMemberRoles(client: Client, discordId: string) {
   const guild = getGuild(client);

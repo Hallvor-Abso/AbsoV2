@@ -2,6 +2,7 @@ import { Client, Events, GatewayIntentBits, MessageFlags, Routes } from 'discord
 import { env } from './env';
 import { commands, handleInteraction } from './commands';
 import { handleRsvp } from './features/calendar';
+import { reconcileMember } from './features/members';
 import { startHttpServer } from './server';
 import { prisma } from './prisma';
 
@@ -9,9 +10,17 @@ import { prisma } from './prisma';
  * Point d'entrée du bot Discord d'Absolution.
  * Process long-running (passerelle Discord) → à héberger hors Vercel
  * (Railway / Fly.io / VPS). Voir bot/README.md.
+ *
+ * NB : l'intent GuildMembers est PRIVILÉGIÉ → il faut activer « Server Members
+ * Intent » dans le Discord Developer Portal (onglet Bot), sinon la connexion
+ * échoue. Il sert à corriger automatiquement la hiérarchie des grades.
  */
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMembers,
+  ],
 });
 
 client.once(Events.ClientReady, async (c) => {
@@ -74,6 +83,20 @@ client.on(Events.MessageCreate, async (message) => {
     });
   } catch (err) {
     console.error('MessageCreate → notification candidat :', err);
+  }
+});
+
+// Changement de rôles d'un membre sur Discord → on re-normalise la hiérarchie
+// des grades (cumul + exclusions). Idempotent : aucun effet si déjà cohérent.
+client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
+  const before = new Set(oldMember.roles?.cache?.keys() ?? []);
+  const after = new Set(newMember.roles.cache.keys());
+  const sameRoles = before.size === after.size && [...after].every((id) => before.has(id));
+  if (sameRoles) return; // ce n'est pas un changement de rôles (pseudo, etc.)
+  try {
+    await reconcileMember(newMember);
+  } catch (err) {
+    console.error('GuildMemberUpdate → reconcileMember :', err);
   }
 });
 
