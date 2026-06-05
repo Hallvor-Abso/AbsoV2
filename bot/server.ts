@@ -3,6 +3,7 @@ import type { Client } from 'discord.js';
 import { env } from './env';
 import { syncEvent, removeEventMessage } from './features/calendar';
 import { postApplication, postApplicationStatus, deleteApplicationChannel } from './features/recruitment';
+import { getMemberRoles, setMemberRoles } from './features/members';
 
 /**
  * Petit serveur HTTP du bot : reçoit les notifications du site (site → bot)
@@ -33,7 +34,8 @@ export function startHttpServer(client: Client): void {
 
     let raw = '';
     for await (const chunk of req) raw += chunk;
-    let body: Record<string, string> = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: Record<string, any> = {};
     try {
       body = raw ? JSON.parse(raw) : {};
     } catch {
@@ -68,6 +70,17 @@ export function startHttpServer(client: Client): void {
             console.error('deleteApplicationChannel (bg) :', e),
           );
           return json(200, { ok: true });
+        // Rôles Discord d'un membre (lecture/écriture synchrones : on attend
+        // la réponse pour la renvoyer au site).
+        case '/member/roles/get': {
+          const data = await getMemberRoles(client, String(body.discordId));
+          return json(200, { ok: true, ...data });
+        }
+        case '/member/roles/set': {
+          const keys = Array.isArray(body.assignedKeys) ? body.assignedKeys.map(String) : [];
+          const data = await setMemberRoles(client, String(body.discordId), keys);
+          return json(200, data);
+        }
         default:
           return json(404, { error: 'not found' });
       }

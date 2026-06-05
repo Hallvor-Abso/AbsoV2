@@ -15,6 +15,51 @@ function botConfig() {
   return { url, secret };
 }
 
+/** Variante qui ATTEND la réponse du bot et la renvoie (lecture/écriture synchrone). */
+async function callBotJson<T>(path: string, payload: unknown): Promise<T | null> {
+  const cfg = botConfig();
+  if (!cfg) return null;
+  try {
+    const res = await fetch(`${cfg.url}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.secret}` },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch (err) {
+    console.error(`Appel bot ${path} échoué :`, err);
+    return null;
+  }
+}
+
+export type DiscordRoleItem = {
+  key: string;
+  name: string;
+  kind: 'gm' | 'officier' | 'roster' | 'membre' | 'recrue';
+  gameId: string | null;
+  gameName: string | null;
+  roleId: string | null; // null = rôle pas encore créé sur le serveur Discord
+  assigned: boolean;
+};
+
+/** Lit en direct les rôles Discord structurés d'un membre (via le bot). */
+export function getMemberDiscordRoles(discordId: string) {
+  return callBotJson<{ ok: boolean; found: boolean; roles: DiscordRoleItem[] }>(
+    '/member/roles/get',
+    { discordId },
+  );
+}
+
+/** Applique l'état souhaité des rôles Discord structurés d'un membre (via le bot). */
+export function setMemberDiscordRoles(discordId: string, assignedKeys: string[]) {
+  return callBotJson<{ ok: boolean; warnings?: string[] }>('/member/roles/set', {
+    discordId,
+    assignedKeys,
+  });
+}
+
 async function callBot(path: string, payload: unknown): Promise<void> {
   const cfg = botConfig();
   if (!cfg) return;

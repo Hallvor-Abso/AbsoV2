@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { PageHeader } from '@/components/admin/page-header';
 import { ConfirmButton } from '@/components/admin/confirm-button';
 import { ActionForm } from '@/components/admin/action-form';
+import { MemberDiscordRoles } from '@/components/admin/member-discord-roles';
 import { prisma } from '@/lib/prisma';
 import { getAppUser } from '@/lib/auth';
 import { canManageGlobally, ROLE_LABELS } from '@/lib/permissions';
@@ -87,6 +88,15 @@ export default async function AdminMembersPage() {
                   <button type="submit" className="btn-secondary py-2 text-sm">Enregistrer</button>
                 </div>
               </ActionForm>
+
+              {/* Rôles Discord — indépendants des grades du site ci-dessus */}
+              {u.discordId ? (
+                <MemberDiscordRoles discordId={u.discordId} />
+              ) : (
+                <p className="mt-3 border-t border-border pt-3 text-xs text-muted">
+                  Compte non lié à Discord — la « Connexion Discord » est requise pour gérer ses rôles.
+                </p>
+              )}
 
               {me!.id !== u.id && (
                 <ActionForm action={deleteMember.bind(null, u.id)} success="Compte supprimé" className="mt-2">

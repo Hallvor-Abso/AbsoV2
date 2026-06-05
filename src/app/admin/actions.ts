@@ -25,6 +25,8 @@ import {
   removeEventFromBot,
   syncApplicationStatusToBot,
   deleteApplicationChannelFromBot,
+  getMemberDiscordRoles,
+  setMemberDiscordRoles,
 } from '@/lib/bot';
 
 /** Bloque l'action réservée au Super Admin (ex : Contenu du site). */
@@ -93,6 +95,24 @@ export async function deleteMember(id: string) {
   if (me.id === id) throw new Error('Vous ne pouvez pas supprimer votre propre compte.');
   await prisma.user.delete({ where: { id } });
   revalidatePath('/admin/membres');
+}
+
+// --- Rôles Discord d'un membre (indépendants des grades du site) -------------
+
+/** Lit en direct les rôles Discord structurés d'un membre (via le bot). */
+export async function fetchMemberDiscordRoles(discordId: string) {
+  await requireManager();
+  const data = await getMemberDiscordRoles(discordId);
+  if (!data) return { configured: false as const };
+  return { configured: true as const, found: data.found, roles: data.roles };
+}
+
+/** Applique les rôles Discord souhaités d'un membre (via le bot). */
+export async function saveMemberDiscordRoles(discordId: string, assignedKeys: string[]) {
+  await requireManager();
+  const data = await setMemberDiscordRoles(discordId, assignedKeys);
+  if (!data) throw new Error('Bot Discord non configuré ou injoignable.');
+  return data;
 }
 
 /** Rafraîchit l'ensemble du site public après une modification. */
