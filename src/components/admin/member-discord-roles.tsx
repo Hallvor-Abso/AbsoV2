@@ -24,7 +24,7 @@ export function MemberDiscordRoles({ discordId }: { discordId: string }) {
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [state, setState] = useState<
-    { configured: boolean; found: boolean; roles: DiscordRoleItem[] } | null
+    { status: 'unconfigured' | 'unreachable' | 'ok'; found: boolean; roles: DiscordRoleItem[] } | null
   >(null);
   const [pending, startTransition] = useTransition();
 
@@ -32,8 +32,8 @@ export function MemberDiscordRoles({ discordId }: { discordId: string }) {
     setLoading(true);
     try {
       const data = await fetchMemberDiscordRoles(discordId);
-      if (!data.configured) setState({ configured: false, found: false, roles: [] });
-      else setState({ configured: true, found: data.found, roles: data.roles });
+      if (data.status !== 'ok') setState({ status: data.status, found: false, roles: [] });
+      else setState({ status: 'ok', found: data.found, roles: data.roles });
     } catch {
       toast('Impossible de charger les rôles Discord.', 'error');
     } finally {
@@ -95,15 +95,26 @@ export function MemberDiscordRoles({ discordId }: { discordId: string }) {
         <div className="mt-3">
           {loading && <p className="text-sm text-muted">Chargement…</p>}
 
-          {!loading && state && !state.configured && (
-            <p className="text-sm text-muted">Bot Discord non configuré ou injoignable.</p>
+          {!loading && state?.status === 'unconfigured' && (
+            <p className="text-sm text-muted">
+              Canal site → bot non configuré : ajoute <code>BOT_URL</code> et{' '}
+              <code>BOT_HTTP_SECRET</code> dans les variables d'environnement du site.
+            </p>
           )}
 
-          {!loading && state?.configured && !state.found && (
+          {!loading && state?.status === 'unreachable' && (
+            <p className="text-sm text-amber-300">
+              Bot injoignable en HTTP. Vérifie que le service bot expose une URL publique
+              (<code>BOT_URL</code>), que le port HTTP est ouvert, et que{' '}
+              <code>BOT_HTTP_SECRET</code> est identique côté site et côté bot.
+            </p>
+          )}
+
+          {!loading && state?.status === 'ok' && !state.found && (
             <p className="text-sm text-amber-300">Ce membre n'est pas présent sur le serveur Discord.</p>
           )}
 
-          {!loading && state?.configured && state.found && (
+          {!loading && state?.status === 'ok' && state.found && (
             <div className={`space-y-4 ${pending ? 'opacity-70' : ''}`}>
               {globals.length > 0 && (
                 <div className="flex flex-wrap gap-x-5 gap-y-2">

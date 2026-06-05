@@ -27,6 +27,7 @@ import {
   deleteApplicationChannelFromBot,
   getMemberDiscordRoles,
   setMemberDiscordRoles,
+  isBotConfigured,
 } from '@/lib/bot';
 
 /** Bloque l'action réservée au Super Admin (ex : Contenu du site). */
@@ -102,16 +103,20 @@ export async function deleteMember(id: string) {
 /** Lit en direct les rôles Discord structurés d'un membre (via le bot). */
 export async function fetchMemberDiscordRoles(discordId: string) {
   await requireManager();
+  if (!isBotConfigured()) return { status: 'unconfigured' as const };
   const data = await getMemberDiscordRoles(discordId);
-  if (!data) return { configured: false as const };
-  return { configured: true as const, found: data.found, roles: data.roles };
+  if (!data) return { status: 'unreachable' as const };
+  return { status: 'ok' as const, found: data.found, roles: data.roles };
 }
 
 /** Applique les rôles Discord souhaités d'un membre (via le bot). */
 export async function saveMemberDiscordRoles(discordId: string, assignedKeys: string[]) {
   await requireManager();
+  if (!isBotConfigured()) {
+    throw new Error('Canal site → bot non configuré (BOT_URL / BOT_HTTP_SECRET manquants côté site).');
+  }
   const data = await setMemberDiscordRoles(discordId, assignedKeys);
-  if (!data) throw new Error('Bot Discord non configuré ou injoignable.');
+  if (!data) throw new Error('Bot injoignable en HTTP (URL publique / port / secret ?).');
   return data;
 }
 

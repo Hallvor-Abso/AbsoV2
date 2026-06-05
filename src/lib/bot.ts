@@ -15,6 +15,11 @@ function botConfig() {
   return { url, secret };
 }
 
+/** Le canal HTTP site → bot est-il configuré ? (BOT_URL + BOT_HTTP_SECRET) */
+export function isBotConfigured() {
+  return botConfig() !== null;
+}
+
 /** Variante qui ATTEND la réponse du bot et la renvoie (lecture/écriture synchrone). */
 async function callBotJson<T>(path: string, payload: unknown): Promise<T | null> {
   const cfg = botConfig();
