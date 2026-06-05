@@ -8,7 +8,7 @@ import { AutoSaveForm } from './auto-save-form';
 import { ImageInput } from './image-input';
 import { Modal } from './modal';
 import { BOSS_STATUS } from '@/lib/labels';
-import { cn } from '@/lib/utils';
+import { cn, expansionColor } from '@/lib/utils';
 import {
   createTier,
   updateTier,
@@ -91,8 +91,10 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
         {game.tiers.length === 0 && <p className="text-muted">Aucun tier pour ce jeu.</p>}
         {groups.map((group) => {
           const grouped = group.expansion != null && group.tiers.length > 1;
+          // Couleur propre à l'extension (à défaut, la couleur du jeu).
+          const color = group.expansion ? expansionColor(group.expansion) : game.color;
           const body = (
-            <div className={grouped ? 'space-y-3 border-l-2 border-border pl-4' : 'space-y-3'}>
+            <div className={grouped ? 'space-y-3 border-l-2 pl-4' : 'space-y-3'} style={grouped ? { borderColor: `${color}55` } : undefined}>
               {group.tiers.map((tier) => {
                 const open = firstTier;
                 firstTier = false;
@@ -100,7 +102,7 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
                   <TierEditor
                     key={tier.id}
                     tier={tier}
-                    color={game.color}
+                    color={color}
                     showWcl={showWcl}
                     showTimer={showTimer}
                     hideExpansion={grouped}
@@ -115,7 +117,7 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
           return (
             <section key={group.expansion} className="space-y-3">
               <div className="flex items-baseline gap-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: game.color }}>
+                <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color }}>
                   {group.expansion}
                 </h2>
                 <span className="text-xs text-muted">{group.tiers.length} tiers</span>
@@ -160,7 +162,7 @@ function TierEditor({
         <h3 className="flex min-w-0 items-baseline gap-2 font-semibold text-title">
           <span className="truncate">{tier.name}</span>
           {!hideExpansion && tier.expansion && (
-            <span className="shrink-0 text-sm font-normal text-muted">· {tier.expansion}</span>
+            <span className="shrink-0 text-sm font-normal" style={{ color }}>· {tier.expansion}</span>
           )}
         </h3>
         <div className="flex shrink-0 items-center gap-3">

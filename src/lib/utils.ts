@@ -25,6 +25,39 @@ export function slugify(text: string): string {
     .replace(/-+/g, '-'); // tirets multiples -> simple
 }
 
+/**
+ * Palette de couleurs distinctes (lisibles sur fond sombre) pour différencier
+ * visuellement les extensions de progression.
+ */
+const EXPANSION_PALETTE = [
+  '#4A9EFF', // bleu
+  '#A78BFA', // violet
+  '#F472B6', // rose
+  '#FB923C', // orange
+  '#34D399', // émeraude
+  '#FBBF24', // ambre
+  '#22D3EE', // cyan
+  '#F87171', // rouge
+  '#A3E635', // lime
+  '#E879F9', // fuchsia
+  '#60A5FA', // bleu clair
+  '#2DD4BF', // turquoise
+];
+
+/**
+ * Couleur stable dérivée du nom d'une extension : même nom → même couleur,
+ * noms différents → couleurs (quasi toujours) différentes. Insensible à la
+ * casse et aux espaces de bord.
+ */
+export function expansionColor(name: string): string {
+  const key = name.trim().toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash * 31 + key.charCodeAt(i)) | 0;
+  }
+  return EXPANSION_PALETTE[Math.abs(hash) % EXPANSION_PALETTE.length];
+}
+
 /** Formate une date en français lisible (ex : "12 mars 2025"). */
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return '—';

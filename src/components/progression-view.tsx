@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { BOSS_STATUS } from '@/lib/labels';
-import { formatDate, cn } from '@/lib/utils';
+import { formatDate, cn, expansionColor } from '@/lib/utils';
 import { GameTabBar } from './game-tab-bar';
 
 type Boss = {
@@ -85,8 +85,10 @@ function ProgressionTiers({ game }: { game: ProgressionGame }) {
     <div className="space-y-8">
       {groups.map((group) => {
         const grouped = group.expansion != null && group.tiers.length > 1;
+        // Couleur propre à l'extension (à défaut, la couleur du jeu).
+        const color = group.expansion ? expansionColor(group.expansion) : game.color;
         const body = (
-          <div className={grouped ? 'space-y-4 border-l-2 pl-4' : 'space-y-4'} style={grouped ? { borderColor: `${game.color}55` } : undefined}>
+          <div className={grouped ? 'space-y-4 border-l-2 pl-4' : 'space-y-4'} style={grouped ? { borderColor: `${color}55` } : undefined}>
             {group.tiers.map((tier) => {
               const open = first;
               first = false;
@@ -94,7 +96,7 @@ function ProgressionTiers({ game }: { game: ProgressionGame }) {
                 <TierBlock
                   key={tier.id}
                   tier={tier}
-                  color={game.color}
+                  color={color}
                   defaultOpen={open}
                   showTimer={showTimer}
                   hideExpansion={grouped}
@@ -108,7 +110,7 @@ function ProgressionTiers({ game }: { game: ProgressionGame }) {
         return (
           <section key={group.expansion} className="space-y-4">
             <div className="flex items-baseline gap-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: game.color }}>
+              <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color }}>
                 {group.expansion}
               </h2>
               <span className="text-xs text-muted">{group.tiers.length} tiers</span>
@@ -151,7 +153,7 @@ function TierBlock({
             <h3 className="flex min-w-0 items-baseline gap-2 text-lg font-semibold text-title">
               <span className="truncate">{tier.name}</span>
               {!hideExpansion && tier.expansion && (
-                <span className="shrink-0 text-sm font-normal text-muted">{tier.expansion}</span>
+                <span className="shrink-0 text-sm font-normal" style={{ color }}>{tier.expansion}</span>
               )}
             </h3>
             <div className="flex shrink-0 items-center gap-2">
