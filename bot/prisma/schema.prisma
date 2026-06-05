@@ -72,7 +72,9 @@ model RaidTier {
   id        String   @id @default(cuid())
   name      String
   order     Int      @default(0)
+  year      Int?
   zoneId    Int?
+  timerDone Boolean  @default(false)
   game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
   gameId    String
   bosses    Boss[]

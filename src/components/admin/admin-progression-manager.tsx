@@ -10,6 +10,7 @@ import {
   createTier,
   updateTier,
   deleteTier,
+  toggleTierTimer,
   createBoss,
   updateBoss,
   deleteBoss,
@@ -23,14 +24,25 @@ export type AdminBoss = {
   imageUrl: string | null;
   encounterId: number | null;
 };
-export type AdminTier = { id: string; name: string; zoneId: number | null; bosses: AdminBoss[] };
-export type AdminProgGame = GameTabInfo & { tiers: AdminTier[] };
+export type AdminTier = {
+  id: string;
+  name: string;
+  year: number | null;
+  zoneId: number | null;
+  timerDone: boolean;
+  bosses: AdminBoss[];
+};
+export type AdminProgGame = GameTabInfo & { slug: string; tiers: AdminTier[] };
 
 /** Gestion de la progression, séparée par jeu (un onglet par jeu). */
 export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
   const [activeId, setActiveId] = useState(games[0]?.id);
   const game = games.find((g) => g.id === activeId) ?? games[0];
   if (!game) return <p className="text-muted">Crée d'abord un jeu dans l'onglet « Jeux ».</p>;
+
+  // Champs spécifiques au jeu : Warcraft Logs (WoW), Succès « timer » (SWTOR).
+  const showWcl = game.slug === 'wow';
+  const showTimer = game.slug === 'swtor';
 
   return (
     <div>
@@ -48,16 +60,43 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
         {game.tiers.map((tier) => (
           <div key={tier.id} className="card p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <h3 className="font-semibold text-title">{tier.name}</h3>
-              <div className="flex items-center gap-4">
+              <h3 className="font-semibold text-title">
+                {tier.name}
+                {tier.year != null && <span className="ml-2 text-sm font-normal text-muted">· {tier.year}</span>}
+              </h3>
+              <div className="flex flex-wrap items-end gap-4">
                 <ActionForm action={updateTier} success="Tier enregistré" className="flex items-end gap-2">
                   <input type="hidden" name="id" value={tier.id} />
                   <div>
-                    <label className="mb-1 block text-xs text-muted">Zone ID (Warcraft Logs)</label>
-                    <input name="zoneId" type="number" defaultValue={tier.zoneId ?? ''} placeholder="ex : 38" className="field w-28 py-1.5 text-sm" />
+                    <label className="mb-1 block text-xs text-muted">Année</label>
+                    <input name="year" type="number" defaultValue={tier.year ?? ''} placeholder="ex : 2025" className="field w-24 py-1.5 text-sm" />
                   </div>
+                  {showWcl && (
+                    <div>
+                      <label className="mb-1 block text-xs text-muted">Zone ID (Warcraft Logs)</label>
+                      <input name="zoneId" type="number" defaultValue={tier.zoneId ?? ''} placeholder="ex : 38" className="field w-28 py-1.5 text-sm" />
+                    </div>
+                  )}
+                  {/* On conserve la valeur du zoneId même quand le champ est masqué. */}
+                  {!showWcl && <input type="hidden" name="zoneId" value={tier.zoneId ?? ''} />}
                   <button type="submit" className="btn-secondary py-2 text-sm">OK</button>
                 </ActionForm>
+
+                {showTimer && (
+                  <ActionForm action={toggleTierTimer.bind(null, tier.id, !tier.timerDone)} success="Timer mis à jour">
+                    <button
+                      type="submit"
+                      className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        tier.timerDone
+                          ? 'border-amber-400/40 bg-amber-400/15 text-amber-300'
+                          : 'border-border bg-white/5 text-muted'
+                      }`}
+                    >
+                      ⏱️ Timer {tier.timerDone ? 'validé' : 'non validé'}
+                    </button>
+                  </ActionForm>
+                )}
+
                 <ActionForm action={deleteTier.bind(null, tier.id)} success="Tier supprimé">
                   <ConfirmButton message="Supprimer ce tier et tous ses boss ?">Supprimer le tier</ConfirmButton>
                 </ActionForm>
@@ -85,10 +124,15 @@ export function AdminProgressionManager({ games }: { games: AdminProgGame[] }) {
                       <label className="mb-1 block text-xs text-muted">Date de premier kill</label>
                       <input type="date" name="firstKillDate" defaultValue={boss.firstKillDate} className="field py-1.5 text-sm" />
                     </div>
-                    <div>
-                      <label className="mb-1 block text-xs text-muted">Encounter ID (WCL)</label>
-                      <input name="encounterId" type="number" defaultValue={boss.encounterId ?? ''} placeholder="ex : 3009" className="field w-28 py-1.5 text-sm" />
-                    </div>
+                    {showWcl ? (
+                      <div>
+                        <label className="mb-1 block text-xs text-muted">Encounter ID (WCL)</label>
+                        <input name="encounterId" type="number" defaultValue={boss.encounterId ?? ''} placeholder="ex : 3009" className="field w-28 py-1.5 text-sm" />
+                      </div>
+                    ) : (
+                      // Champ masqué hors WoW : on conserve la valeur existante.
+                      <input type="hidden" name="encounterId" value={boss.encounterId ?? ''} />
+                    )}
                     <div className="min-w-[240px] flex-1">
                       <ImageInput name="imageUrl" defaultValue={boss.imageUrl ?? ''} label="Image du boss" />
                     </div>

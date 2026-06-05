@@ -23,7 +23,8 @@ export default async function AdminProgressionPage() {
     orderBy: [{ status: 'asc' }, { order: 'asc' }],
     include: {
       raidTiers: {
-        orderBy: { order: 'asc' },
+        // Chronologique : plus récent en premier (année, puis création).
+        orderBy: [{ year: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
         include: { bosses: { orderBy: { order: 'asc' } } },
       },
     },
@@ -32,13 +33,16 @@ export default async function AdminProgressionPage() {
   const data: AdminProgGame[] = games.map((g) => ({
     id: g.id,
     name: g.name,
+    slug: g.slug,
     color: g.color,
     logoUrl: g.logoUrl,
     status: g.status,
     tiers: g.raidTiers.map((t) => ({
       id: t.id,
       name: t.name,
+      year: t.year,
       zoneId: t.zoneId,
+      timerDone: t.timerDone,
       bosses: t.bosses.map((b) => ({
         id: b.id,
         name: b.name,

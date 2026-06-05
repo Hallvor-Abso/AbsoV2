@@ -54,7 +54,8 @@ export function getGameProgression(gameId: string) {
   if (IS_DEMO) return Promise.resolve(demo.demoProgression(gameId));
   return prisma.raidTier.findMany({
     where: { gameId },
-    orderBy: { order: 'asc' },
+    // Chronologique : le contenu le plus récent en premier (année, puis création).
+    orderBy: [{ year: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
     include: {
       bosses: { orderBy: { order: 'asc' } },
     },

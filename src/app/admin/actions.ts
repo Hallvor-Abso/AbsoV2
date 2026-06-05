@@ -236,13 +236,23 @@ export async function createTier(formData: FormData) {
   revalidatePath('/admin/progression');
 }
 
-/** Met à jour le zoneId Warcraft Logs d'un tier (pour la synchro auto). */
+/** Met à jour les métadonnées d'un tier (zoneId Warcraft Logs + année). */
 export async function updateTier(formData: FormData) {
   const id = formData.get('id') as string;
   await requireGameAccess(await gameIdOfTier(id));
   const zoneRaw = formData.get('zoneId') as string;
   const zoneId = zoneRaw && !Number.isNaN(Number(zoneRaw)) ? Number(zoneRaw) : null;
-  await prisma.raidTier.update({ where: { id }, data: { zoneId } });
+  const yearRaw = formData.get('year') as string;
+  const year = yearRaw && !Number.isNaN(Number(yearRaw)) ? Number(yearRaw) : null;
+  await prisma.raidTier.update({ where: { id }, data: { zoneId, year } });
+  revalidatePublic();
+  revalidatePath('/admin/progression');
+}
+
+/** SWTOR : bascule le Succès « timer » de l'opération (tier) validé ou non. */
+export async function toggleTierTimer(id: string, value: boolean) {
+  await requireGameAccess(await gameIdOfTier(id));
+  await prisma.raidTier.update({ where: { id }, data: { timerDone: value } });
   revalidatePublic();
   revalidatePath('/admin/progression');
 }

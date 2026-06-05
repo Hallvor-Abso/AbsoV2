@@ -15,7 +15,7 @@ type Boss = {
   pulls: number | null; // nb de pulls (synchro Warcraft Logs)
   bestPercent: number | null; // meilleur % de vie restante atteint
 };
-type Tier = { id: string; name: string; bosses: Boss[] };
+type Tier = { id: string; name: string; year: number | null; timerDone: boolean; bosses: Boss[] };
 export type ProgressionGame = {
   id: string;
   name: string;
@@ -64,6 +64,7 @@ export function ProgressionView({
               tier={tier}
               color={activeGame.color}
               defaultOpen={index === 0}
+              showTimer={activeGame.slug === 'swtor'}
             />
           ))}
         </div>
@@ -76,10 +77,12 @@ function TierBlock({
   tier,
   color,
   defaultOpen,
+  showTimer,
 }: {
   tier: Tier;
   color: string;
   defaultOpen: boolean;
+  showTimer: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const total = tier.bosses.length;
@@ -95,10 +98,22 @@ function TierBlock({
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-3">
-            <h3 className="truncate text-lg font-semibold text-title">{tier.name}</h3>
-            <span className="whitespace-nowrap text-sm font-semibold" style={{ color }}>
-              {killed}/{total}
-            </span>
+            <h3 className="flex min-w-0 items-baseline gap-2 text-lg font-semibold text-title">
+              <span className="truncate">{tier.name}</span>
+              {tier.year != null && (
+                <span className="shrink-0 text-sm font-normal text-muted">{tier.year}</span>
+              )}
+            </h3>
+            <div className="flex shrink-0 items-center gap-2">
+              {showTimer && tier.timerDone && (
+                <span className="flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/15 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
+                  ⏱️ Timer
+                </span>
+              )}
+              <span className="whitespace-nowrap text-sm font-semibold" style={{ color }}>
+                {killed}/{total}
+              </span>
+            </div>
           </div>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-ink-soft">
             <div
