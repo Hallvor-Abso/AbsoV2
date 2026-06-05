@@ -54,7 +54,7 @@ const wowTier = {
   id: 'demo-tier-1',
   name: 'Liberation of Undermine',
   order: 0,
-  year: 2025,
+  expansion: 'The War Within',
   zoneId: null,
   timerDone: false,
   gameId: wow.id,

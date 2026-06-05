@@ -23,8 +23,8 @@ export default async function AdminProgressionPage() {
     orderBy: [{ status: 'asc' }, { order: 'asc' }],
     include: {
       raidTiers: {
-        // Chronologique : plus récent en premier (année, puis création).
-        orderBy: [{ year: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
+        // Chronologique : plus récent (dernier ajouté) en premier.
+        orderBy: { createdAt: 'desc' },
         include: { bosses: { orderBy: { order: 'asc' } } },
       },
     },
@@ -40,7 +40,7 @@ export default async function AdminProgressionPage() {
     tiers: g.raidTiers.map((t) => ({
       id: t.id,
       name: t.name,
-      year: t.year,
+      expansion: t.expansion,
       zoneId: t.zoneId,
       timerDone: t.timerDone,
       bosses: t.bosses.map((b) => ({

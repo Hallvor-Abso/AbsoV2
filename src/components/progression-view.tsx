@@ -15,7 +15,7 @@ type Boss = {
   pulls: number | null; // nb de pulls (synchro Warcraft Logs)
   bestPercent: number | null; // meilleur % de vie restante atteint
 };
-type Tier = { id: string; name: string; year: number | null; timerDone: boolean; bosses: Boss[] };
+type Tier = { id: string; name: string; expansion: string | null; timerDone: boolean; bosses: Boss[] };
 export type ProgressionGame = {
   id: string;
   name: string;
@@ -100,8 +100,8 @@ function TierBlock({
           <div className="flex items-baseline justify-between gap-3">
             <h3 className="flex min-w-0 items-baseline gap-2 text-lg font-semibold text-title">
               <span className="truncate">{tier.name}</span>
-              {tier.year != null && (
-                <span className="shrink-0 text-sm font-normal text-muted">{tier.year}</span>
+              {tier.expansion && (
+                <span className="shrink-0 text-sm font-normal text-muted">{tier.expansion}</span>
               )}
             </h3>
             <div className="flex shrink-0 items-center gap-2">

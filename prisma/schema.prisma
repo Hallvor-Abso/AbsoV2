@@ -92,7 +92,7 @@ model RaidTier {
   id        String   @id @default(cuid())
   name      String
   order     Int      @default(0) // les tiers récents en premier
-  year      Int? // année du contenu (pour l'affichage chronologique)
+  expansion String? // nom de l'extension / contenu (ex. « The War Within »)
   zoneId    Int? // ID de la zone Warcraft Logs (pour la synchro auto des pulls/%)
   timerDone Boolean  @default(false) // SWTOR : Succès « timer » de l'opération validé
   game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)

@@ -230,21 +230,25 @@ export async function createTier(formData: FormData) {
   await requireGameAccess(gameId);
   const name = sanitizeText(formData.get('name'), 120);
   if (!gameId || !name) return;
+  const expansion = sanitizeText(formData.get('expansion'), 120) || null;
   const count = await prisma.raidTier.count({ where: { gameId } });
-  await prisma.raidTier.create({ data: { gameId, name, order: count } });
+  await prisma.raidTier.create({ data: { gameId, name, expansion, order: count } });
   revalidatePublic();
   revalidatePath('/admin/progression');
 }
 
-/** Met à jour les métadonnées d'un tier (zoneId Warcraft Logs + année). */
+/** Met à jour les métadonnées d'un tier (extension + zoneId Warcraft Logs). */
 export async function updateTier(formData: FormData) {
   const id = formData.get('id') as string;
   await requireGameAccess(await gameIdOfTier(id));
   const zoneRaw = formData.get('zoneId') as string;
   const zoneId = zoneRaw && !Number.isNaN(Number(zoneRaw)) ? Number(zoneRaw) : null;
-  const yearRaw = formData.get('year') as string;
-  const year = yearRaw && !Number.isNaN(Number(yearRaw)) ? Number(yearRaw) : null;
-  await prisma.raidTier.update({ where: { id }, data: { zoneId, year } });
+  const name = sanitizeText(formData.get('name'), 120);
+  const expansion = sanitizeText(formData.get('expansion'), 120) || null;
+  await prisma.raidTier.update({
+    where: { id },
+    data: { zoneId, expansion, ...(name ? { name } : {}) },
+  });
   revalidatePublic();
   revalidatePath('/admin/progression');
 }

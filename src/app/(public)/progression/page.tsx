@@ -57,7 +57,7 @@ export default async function ProgressionPage({
             return {
               id: t.id,
               name: t.name,
-              year: t.year,
+              expansion: t.expansion,
               timerDone: t.timerDone,
               bosses: t.bosses.map((b) => {
                 const p =
