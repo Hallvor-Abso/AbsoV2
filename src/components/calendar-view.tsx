@@ -1,9 +1,17 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { EVENT_TYPE } from '@/lib/labels';
 import { GameTabBar, type GameTabInfo } from './game-tab-bar';
+import { rsvpEvent, cancelRsvp } from '@/app/(public)/calendrier/actions';
+
+export type EventSignup = {
+  discordId: string;
+  displayName: string;
+  status: string; // GOING | MAYBE | DECLINED
+};
 
 export type CalendarEvent = {
   id: string;
@@ -15,7 +23,14 @@ export type CalendarEvent = {
   gameId: string;
   gameName: string;
   gameColor: string;
+  signups: EventSignup[];
 };
+
+const RSVP_OPTIONS = [
+  { key: 'GOING', label: 'Présent', emoji: '✅' },
+  { key: 'MAYBE', label: 'Peut-être', emoji: '❓' },
+  { key: 'DECLINED', label: 'Absent', emoji: '❌' },
+] as const;
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const MONTHS = [
@@ -32,13 +47,20 @@ const MONTHS = [
 export function CalendarView({
   events,
   games,
+  discordLinked,
+  myDiscordId,
 }: {
   events: CalendarEvent[];
   games: GameTabInfo[];
+  discordLinked: boolean;
+  myDiscordId: string | null;
 }) {
   const today = new Date();
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-  const [selected, setSelected] = useState<CalendarEvent | null>(null);
+  // On garde l'ID (et non l'objet) pour que le détail reflète les changements
+  // après un rafraîchissement (inscription, etc.).
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = selectedId ? events.find((e) => e.id === selectedId) ?? null : null;
   // Un seul jeu affiché à la fois pour éviter un calendrier surchargé.
   const [activeId, setActiveId] = useState(games[0]?.id);
 
@@ -135,7 +157,7 @@ export function CalendarView({
                     <button
                       key={ev.id}
                       type="button"
-                      onClick={() => setSelected(ev)}
+                      onClick={() => setSelectedId(ev.id)}
                       className="block w-full truncate rounded px-1.5 py-1 text-left text-[11px] font-medium transition-opacity hover:opacity-80"
                       style={{ backgroundColor: `${ev.gameColor}26`, color: ev.gameColor }}
                       title={ev.title}
@@ -154,10 +176,10 @@ export function CalendarView({
       {selected && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-          onClick={() => setSelected(null)}
+          onClick={() => setSelectedId(null)}
         >
           <div
-            className="card w-full max-w-md p-6"
+            className="card max-h-[90vh] w-full max-w-md overflow-y-auto p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-start justify-between gap-4">
@@ -172,7 +194,7 @@ export function CalendarView({
               </div>
               <button
                 type="button"
-                onClick={() => setSelected(null)}
+                onClick={() => setSelectedId(null)}
                 className="rounded-md p-1 text-muted hover:text-title"
                 aria-label="Fermer"
               >
@@ -191,9 +213,111 @@ export function CalendarView({
                 {selected.description}
               </p>
             )}
+
+            <EventRsvp event={selected} discordLinked={discordLinked} myDiscordId={myDiscordId} />
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Bloc d'inscription (RSVP) + liste des inscrits dans le détail d'un événement. */
+function EventRsvp({
+  event,
+  discordLinked,
+  myDiscordId,
+}: {
+  event: CalendarEvent;
+  discordLinked: boolean;
+  myDiscordId: string | null;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const myStatus = myDiscordId
+    ? event.signups.find((s) => s.discordId === myDiscordId)?.status ?? null
+    : null;
+
+  const run = (fn: () => Promise<{ ok: true } | { error: string }>) =>
+    startTransition(async () => {
+      setError(null);
+      const res = await fn();
+      if ('error' in res) setError(res.error);
+      else router.refresh();
+    });
+
+  return (
+    <div className="mt-5 border-t border-border pt-4">
+      {/* Boutons d'inscription */}
+      {discordLinked ? (
+        <>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Ma réponse</p>
+          <div className="flex flex-wrap gap-2">
+            {RSVP_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                disabled={pending}
+                onClick={() => run(() => rsvpEvent(event.id, opt.key))}
+                className={cn(
+                  'rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50',
+                  myStatus === opt.key
+                    ? 'border-accent bg-accent/15 text-accent'
+                    : 'border-border text-foreground hover:border-accent/60'
+                )}
+              >
+                {opt.emoji} {opt.label}
+              </button>
+            ))}
+            {myStatus && (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => run(() => cancelRsvp(event.id))}
+                className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:text-title disabled:opacity-50"
+              >
+                Me retirer
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="rounded-lg border border-border bg-ink-soft/40 p-3 text-sm">
+          <p className="mb-2 text-foreground/90">
+            Pour t’inscrire depuis le site, relie ton compte Discord (une seule fois).
+          </p>
+          <a href="/api/discord/link" className="btn-primary inline-flex text-sm">
+            Lier mon compte Discord
+          </a>
+        </div>
+      )}
+
+      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+
+      {/* Listes des inscrits */}
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {RSVP_OPTIONS.map((opt) => {
+          const names = event.signups.filter((s) => s.status === opt.key).map((s) => s.displayName);
+          return (
+            <div key={opt.key}>
+              <p className="mb-1 text-xs font-semibold text-muted">
+                {opt.emoji} {opt.label} ({names.length})
+              </p>
+              {names.length === 0 ? (
+                <p className="text-xs text-muted/70">—</p>
+              ) : (
+                <ul className="space-y-0.5 text-sm text-foreground/90">
+                  {names.map((n, i) => (
+                    <li key={`${n}-${i}`} className="truncate">{n}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

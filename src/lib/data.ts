@@ -126,6 +126,9 @@ export function getEvents() {
   return prisma.event.findMany({
     where: { game: { isActive: true } },
     orderBy: { startDate: 'asc' },
-    include: { game: true },
+    include: {
+      game: true,
+      signups: { select: { discordId: true, displayName: true, status: true }, orderBy: { createdAt: 'asc' } },
+    },
   });
 }
