@@ -40,11 +40,13 @@ export async function GET(req: NextRequest) {
     return back('err_user');
   }
 
-  // Étape 3 : enregistrer l'ID sur le compte courant.
+  // Étape 3 : enregistrer l'ID sur le compte courant. Le pseudo affiché du
+  // site devient le pseudo Discord (global_name si dispo, sinon username).
+  const discordName = dUser.global_name || dUser.username;
   try {
     await prisma.user.update({
       where: { id: user.id },
-      data: { discordId: dUser.id, discord: dUser.global_name || dUser.username },
+      data: { discordId: dUser.id, discord: discordName, displayName: discordName },
     });
   } catch (err) {
     if (err && typeof err === 'object' && 'code' in err && (err as { code?: string }).code === 'P2002') {
