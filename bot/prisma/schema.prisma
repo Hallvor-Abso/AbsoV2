@@ -45,7 +45,8 @@ model Game {
   isActive         Boolean    @default(true)
   status           GameStatus @default(ACTIVE)
   order            Int        @default(0)
-  discordCalendarChannelId String?
+  discordCalendarChannelId    String?
+  discordRecruitmentChannelId String?
 
   raidTiers        RaidTier[]
   news             News[]
@@ -156,6 +157,7 @@ enum SlotStatus {
 model Application {
   id            String            @id @default(cuid())
   pseudo        String
+  discord       String?
   characterId   String?
   className     String
   role          String

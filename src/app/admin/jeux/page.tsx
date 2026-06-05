@@ -97,6 +97,7 @@ function GameForm({
     isActive: boolean;
     order: number;
     discordCalendarChannelId: string | null;
+    discordRecruitmentChannelId: string | null;
   };
 }) {
   return (
@@ -153,6 +154,19 @@ function GameForm({
         <p className="mt-1 text-xs text-muted">
           Le bot publie les événements de ce jeu dans ce salon. Mode développeur Discord →
           clic droit sur le salon → « Copier l'identifiant ».
+        </p>
+      </div>
+
+      <div>
+        <label className="label">Salon Discord des candidatures (ID)</label>
+        <input
+          name="discordRecruitmentChannelId"
+          defaultValue={game?.discordRecruitmentChannelId ?? ''}
+          className="field"
+          placeholder="ex : 123456789012345678 (laisser vide = pas de publication Discord)"
+        />
+        <p className="mt-1 text-xs text-muted">
+          Le bot publie les nouvelles candidatures de ce jeu dans ce salon.
         </p>
       </div>
 

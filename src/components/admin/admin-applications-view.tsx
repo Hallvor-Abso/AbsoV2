@@ -11,6 +11,7 @@ import { formatDate, cn } from '@/lib/utils';
 export type AdminApplication = {
   id: string;
   pseudo: string;
+  discord: string | null;
   characterId: string | null;
   className: string;
   role: string;
@@ -89,6 +90,11 @@ export function AdminApplicationsView({
                     {app.characterId && <span className="ml-2 text-sm font-normal text-muted">{app.characterId}</span>}
                   </h3>
                   <p className="text-sm text-muted">{app.className} · {app.role} · {app.server}</p>
+                  {app.discord && (
+                    <p className="mt-1 text-sm text-foreground">
+                      <span className="text-muted">Discord :</span> {app.discord}
+                    </p>
+                  )}
                 </div>
                 <span className="text-xs text-muted">{formatDate(app.createdAt)}</span>
               </div>

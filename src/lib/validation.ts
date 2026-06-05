@@ -17,6 +17,7 @@ export const registerSchema = z.object({
 // Formulaire public de candidature
 export const applicationSchema = z.object({
   pseudo: z.string().min(2, 'Pseudo trop court').max(60),
+  discord: z.string().min(2, 'Pseudo Discord requis').max(60),
   characterId: z.string().max(80).optional().or(z.literal('')),
   className: z.string().min(1, 'Classe requise').max(60),
   role: z.string().min(1, 'Rôle requis').max(60),

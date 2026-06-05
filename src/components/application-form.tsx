@@ -80,8 +80,10 @@ export function ApplicationForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Pseudo *" name="pseudo" required placeholder="Ton pseudo en jeu" />
-        <Field label="BattleTag / ID" name="characterId" placeholder="Pseudo#1234" />
+        <Field label="Discord *" name="discord" required placeholder="ton_pseudo_discord" />
       </div>
+
+      <Field label="BattleTag / ID" name="characterId" placeholder="Pseudo#1234" />
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Serveur *" name="server" required placeholder="Hyjal, Tarren Mill..." />

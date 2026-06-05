@@ -4,6 +4,7 @@ import { applicationSchema } from '@/lib/validation';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { sanitizeText } from '@/lib/sanitize';
 import { notifyDiscord } from '@/lib/discord';
+import { syncApplicationToBot } from '@/lib/bot';
 
 /**
  * POST /api/applications — réception d'une candidature publique.
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
   // 4. Enregistrement (textes nettoyés)
   const clean = {
     pseudo: sanitizeText(data.pseudo, 60),
+    discord: sanitizeText(data.discord, 60) || null,
     characterId: sanitizeText(data.characterId, 80) || null,
     className: sanitizeText(data.className, 60),
     role: sanitizeText(data.role, 60),
@@ -64,15 +66,19 @@ export async function POST(request: Request) {
     motivation: sanitizeText(data.motivation, 4000),
     gameId: game.id,
   };
-  await prisma.application.create({ data: clean });
+  const application = await prisma.application.create({ data: clean });
 
-  // 5. Notification Discord (no-op si non configuré, n'échoue jamais le flux).
+  // 5a. Publication dans le salon de candidatures du jeu (via le bot).
+  await syncApplicationToBot(application.id);
+
+  // 5b. Notification Discord par webhook global (no-op si non configuré).
   const base = process.env.NEXTAUTH_URL?.replace(/\/$/, '');
   await notifyDiscord({
     title: '📥 Nouvelle candidature',
     description: `**${clean.pseudo}** a postulé pour **${game.name}**`,
     url: base ? `${base}/admin/candidatures` : undefined,
     fields: [
+      ...(clean.discord ? [{ name: 'Discord', value: clean.discord, inline: true }] : []),
       { name: 'Classe / Rôle', value: `${clean.className} · ${clean.role}`, inline: true },
       { name: 'Serveur', value: clean.server, inline: true },
       { name: 'Disponibilités', value: clean.availability },

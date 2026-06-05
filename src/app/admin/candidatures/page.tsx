@@ -23,6 +23,7 @@ export default async function AdminApplicationsPage() {
   const apps: AdminApplication[] = applications.map((a) => ({
     id: a.id,
     pseudo: a.pseudo,
+    discord: a.discord,
     characterId: a.characterId,
     className: a.className,
     role: a.role,
