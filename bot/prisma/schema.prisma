@@ -169,6 +169,7 @@ model Application {
   motivation    String
   status        ApplicationStatus @default(PENDING)
   internalNotes String?
+  discordChannelId String?
   game          Game?             @relation(fields: [gameId], references: [id], onDelete: SetNull)
   gameId        String?
 

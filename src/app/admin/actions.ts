@@ -20,7 +20,12 @@ import { prisma } from '@/lib/prisma';
 import { sanitizeHtml, sanitizeText } from '@/lib/sanitize';
 import { SITE_CONTENT_DEFAULTS } from '@/lib/site-content';
 import { slugify } from '@/lib/utils';
-import { syncEventToBot, removeEventFromBot } from '@/lib/bot';
+import {
+  syncEventToBot,
+  removeEventFromBot,
+  syncApplicationStatusToBot,
+  deleteApplicationChannelFromBot,
+} from '@/lib/bot';
 
 /** Bloque l'action réservée au Super Admin (ex : Contenu du site). */
 async function requireSuperAdmin() {
@@ -403,26 +408,30 @@ export async function cycleSlotStatus(id: string) {
 // =============================================================================
 export async function updateApplication(formData: FormData) {
   const id = formData.get('id') as string;
-  const app = await prisma.application.findUnique({ where: { id }, select: { gameId: true } });
+  const app = await prisma.application.findUnique({ where: { id }, select: { gameId: true, status: true } });
   await requireGameAccess(app?.gameId);
+  const newStatus = formData.get('status') as 'PENDING' | 'DISCUSSING' | 'ACCEPTED' | 'REJECTED';
   await prisma.application.update({
     where: { id },
     data: {
-      status: formData.get('status') as
-        | 'PENDING'
-        | 'DISCUSSING'
-        | 'ACCEPTED'
-        | 'REJECTED',
+      status: newStatus,
       internalNotes: sanitizeText(formData.get('internalNotes'), 4000) || null,
     },
   });
+  // Si le statut change, le bot poste un message dans le salon dédié.
+  if (app && app.status !== newStatus) await syncApplicationStatusToBot(id);
   revalidatePath('/admin/candidatures');
 }
 
 export async function deleteApplication(id: string) {
-  const app = await prisma.application.findUnique({ where: { id }, select: { gameId: true } });
+  const app = await prisma.application.findUnique({
+    where: { id },
+    select: { gameId: true, discordChannelId: true },
+  });
   await requireGameAccess(app?.gameId);
   await prisma.application.delete({ where: { id } });
+  // Supprime aussi le salon Discord dédié (no-op si pas de salon / bot non configuré).
+  await deleteApplicationChannelFromBot(app?.discordChannelId ?? null);
   revalidatePath('/admin/candidatures');
 }
 

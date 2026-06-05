@@ -68,8 +68,10 @@ export async function postApplication(client: Client, applicationId: string): Pr
 
   // Choix de la destination : catégorie (salon dédié) en priorité, sinon salon unique.
   let target: GuildTextBasedChannel;
+  let dedicated = false;
   if (game.discordRecruitmentCategoryId) {
     target = await getOrCreateCandidateChannel(client, game.discordRecruitmentCategoryId, application.pseudo);
+    dedicated = true;
   } else if (game.discordRecruitmentChannelId) {
     const channel = await client.channels.fetch(game.discordRecruitmentChannelId);
     if (!channel || !channel.isTextBased() || channel.isDMBased()) {
@@ -78,6 +80,15 @@ export async function postApplication(client: Client, applicationId: string): Pr
     target = channel as GuildTextBasedChannel;
   } else {
     return; // rien de configuré pour ce jeu → on ne publie pas.
+  }
+
+  // On ne mémorise le salon que s'il est DÉDIÉ (créé par le bot) : c'est lui qui
+  // recevra les messages de statut et qui sera supprimé avec la candidature.
+  if (dedicated) {
+    await prisma.application.update({
+      where: { id: application.id },
+      data: { discordChannelId: target.id },
+    });
   }
 
   const embed = new EmbedBuilder()
@@ -97,4 +108,36 @@ export async function postApplication(client: Client, applicationId: string): Pr
     .setTimestamp(application.createdAt);
 
   await target.send({ embeds: [embed] });
+}
+
+const STATUS_MESSAGE: Record<string, string> = {
+  PENDING: '🕓 Candidature remise en attente.',
+  DISCUSSING: '💬 Candidature passée **en discussion**.',
+  ACCEPTED: '✅ Candidature **acceptée** — bienvenue ! 🎉',
+  REJECTED: '🔴 Candidature **refusée**.',
+};
+
+/** Poste un message de statut dans le salon dédié de la candidature. */
+export async function postApplicationStatus(client: Client, applicationId: string): Promise<void> {
+  const application = await prisma.application.findUnique({
+    where: { id: applicationId },
+    select: { discordChannelId: true, status: true, pseudo: true },
+  });
+  if (!application?.discordChannelId) return; // pas de salon dédié → rien à faire.
+
+  const channel = await client.channels.fetch(application.discordChannelId).catch(() => null);
+  if (!channel || !channel.isTextBased() || channel.isDMBased()) return;
+
+  const text = STATUS_MESSAGE[application.status] ?? `Statut mis à jour : ${application.status}`;
+  await (channel as GuildTextBasedChannel).send(text);
+}
+
+/** Supprime le salon dédié d'une candidature (suppression côté site). */
+export async function deleteApplicationChannel(client: Client, channelId: string | null): Promise<void> {
+  if (!channelId) return;
+  const channel = await client.channels.fetch(channelId).catch(() => null);
+  if (!channel || channel.isDMBased()) return;
+  if ('delete' in channel && typeof channel.delete === 'function') {
+    await channel.delete('Candidature supprimée depuis le site');
+  }
 }

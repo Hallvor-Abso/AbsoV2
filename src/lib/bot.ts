@@ -46,3 +46,14 @@ export function removeEventFromBot(channelId: string | null, messageId: string |
 export function syncApplicationToBot(applicationId: string) {
   return callBot('/sync/application', { applicationId });
 }
+
+/** Demande au bot de poster un message de statut dans le salon dédié. */
+export function syncApplicationStatusToBot(applicationId: string) {
+  return callBot('/sync/application-status', { applicationId });
+}
+
+/** Demande au bot de supprimer le salon dédié d'une candidature supprimée. */
+export function deleteApplicationChannelFromBot(channelId: string | null) {
+  if (!channelId) return Promise.resolve();
+  return callBot('/sync/application-deleted', { channelId });
+}

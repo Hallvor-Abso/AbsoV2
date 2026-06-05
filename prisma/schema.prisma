@@ -203,6 +203,7 @@ model Application {
   motivation    String
   status        ApplicationStatus @default(PENDING)
   internalNotes String? // notes internes (admin only)
+  discordChannelId String? // salon « candid-pseudo » créé par le bot (mode catégorie)
   game          Game?             @relation(fields: [gameId], references: [id], onDelete: SetNull)
   gameId        String?
 

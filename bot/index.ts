@@ -61,6 +61,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+// Suppression d'un salon Discord → on supprime la candidature associée (sync inverse).
+client.on(Events.ChannelDelete, async (channel) => {
+  try {
+    const deleted = await prisma.application.deleteMany({ where: { discordChannelId: channel.id } });
+    if (deleted.count > 0) {
+      console.log(`🗑️  Salon ${channel.id} supprimé → ${deleted.count} candidature(s) retirée(s).`);
+    }
+  } catch (err) {
+    console.error('ChannelDelete → suppression candidature :', err);
+  }
+});
+
 async function shutdown() {
   await prisma.$disconnect().catch(() => {});
   client.destroy();

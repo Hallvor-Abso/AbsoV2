@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import type { Client } from 'discord.js';
 import { env } from './env';
 import { syncEvent, removeEventMessage } from './features/calendar';
-import { postApplication } from './features/recruitment';
+import { postApplication, postApplicationStatus, deleteApplicationChannel } from './features/recruitment';
 
 /**
  * Petit serveur HTTP du bot : reçoit les notifications du site (site → bot)
@@ -56,6 +56,16 @@ export function startHttpServer(client: Client): void {
         case '/sync/application':
           void postApplication(client, body.applicationId).catch((e) =>
             console.error('postApplication (bg) :', e),
+          );
+          return json(200, { ok: true });
+        case '/sync/application-status':
+          void postApplicationStatus(client, body.applicationId).catch((e) =>
+            console.error('postApplicationStatus (bg) :', e),
+          );
+          return json(200, { ok: true });
+        case '/sync/application-deleted':
+          void deleteApplicationChannel(client, body.channelId ?? null).catch((e) =>
+            console.error('deleteApplicationChannel (bg) :', e),
           );
           return json(200, { ok: true });
         default:
