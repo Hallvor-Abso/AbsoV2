@@ -7,6 +7,7 @@ import {
   type GuildTextBasedChannel,
 } from 'discord.js';
 import { prisma } from '../prisma';
+import { resolveRoleMentions, applicationRoleNames } from './roles';
 
 const ACCENT = 0x4a9eff;
 
@@ -61,7 +62,7 @@ async function getOrCreateCandidateChannel(
 export async function postApplication(client: Client, applicationId: string): Promise<void> {
   const application = await prisma.application.findUnique({
     where: { id: applicationId },
-    include: { game: true },
+    include: { game: true, user: { select: { discordId: true } } },
   });
   if (!application || !application.game) return;
   const { game } = application;
@@ -107,7 +108,20 @@ export async function postApplication(client: Client, applicationId: string): Pr
     .setFooter({ text: game.name })
     .setTimestamp(application.createdAt);
 
-  await target.send({ embeds: [embed] });
+  // Ping : GM + Officier <TAG> du jeu visé, plus le candidat lui-même.
+  const { content: roleContent, roleIds } = await resolveRoleMentions(
+    target.guild,
+    applicationRoleNames(game),
+  );
+  const candidateId = application.user?.discordId ?? null;
+  const candidateMention = candidateId ? `<@${candidateId}>` : '';
+  const content = [roleContent, candidateMention].filter(Boolean).join(' ');
+
+  await target.send({
+    content: content || undefined,
+    embeds: [embed],
+    allowedMentions: { roles: roleIds, users: candidateId ? [candidateId] : [] },
+  });
 }
 
 const STATUS_MESSAGE: Record<string, string> = {

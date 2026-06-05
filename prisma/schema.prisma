@@ -63,6 +63,10 @@ model Game {
   discordRecruitmentChannelId String? // salon unique des candidatures (mode simple)
   discordRecruitmentCategoryId String? // catégorie : le bot crée un salon « candid-pseudo » dedans
 
+  // Tag des rôles Discord du jeu (ex. « WOW », « SWTOR »). Le bot pingue alors
+  // « Officier WOW », « Roster WOW », etc. Vide → déduit du slug en majuscules.
+  discordRoleTag  String?
+
   raidTiers       RaidTier[]
   news            News[]
   recruitmentRoles RecruitmentRole[]

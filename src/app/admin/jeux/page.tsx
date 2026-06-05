@@ -99,6 +99,7 @@ function GameForm({
     discordCalendarChannelId: string | null;
     discordRecruitmentChannelId: string | null;
     discordRecruitmentCategoryId: string | null;
+    discordRoleTag: string | null;
   };
 }) {
   return (
@@ -143,6 +144,23 @@ function GameForm({
         <input type="checkbox" name="isActive" defaultChecked={game?.isActive ?? true} className="h-4 w-4 accent-[#4A9EFF]" />
         Visible sur le site public
       </label>
+
+      <div>
+        <label className="label">Tag des rôles Discord</label>
+        <input
+          name="discordRoleTag"
+          defaultValue={game?.discordRoleTag ?? ''}
+          className="field"
+          placeholder="ex : WOW (laisser vide = déduit du slug)"
+        />
+        <p className="mt-1 text-xs text-muted">
+          Suffixe des rôles Discord du jeu. Avec « WOW », le bot pingue{' '}
+          <strong>@GM</strong>, <strong>@Officier WOW</strong>, <strong>@Roster WOW</strong>,{' '}
+          <strong>@Membre WOW</strong>, <strong>@Recrue WOW</strong> sur les événements (et
+          @GM + @Officier WOW sur les candidatures). Les rôles sont retrouvés par leur nom :
+          crée-les sur Discord et le bot s'y adapte automatiquement.
+        </p>
+      </div>
 
       <div>
         <label className="label">Salon Discord du calendrier (ID)</label>

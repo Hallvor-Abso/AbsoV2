@@ -125,6 +125,7 @@ export async function saveGame(formData: FormData) {
     discordCalendarChannelId: sanitizeText(formData.get('discordCalendarChannelId'), 40) || null,
     discordRecruitmentChannelId: sanitizeText(formData.get('discordRecruitmentChannelId'), 40) || null,
     discordRecruitmentCategoryId: sanitizeText(formData.get('discordRecruitmentCategoryId'), 40) || null,
+    discordRoleTag: sanitizeText(formData.get('discordRoleTag'), 30) || null,
   };
 
   if (id) {

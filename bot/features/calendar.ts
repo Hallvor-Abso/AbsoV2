@@ -11,6 +11,7 @@ import {
 import { SignupStatus } from '@prisma/client';
 import { prisma } from '../prisma';
 import { env } from '../env';
+import { resolveRoleMentions, calendarRoleNames } from './roles';
 
 const ACCENT = 0x4a9eff;
 
@@ -100,7 +101,16 @@ export async function syncEvent(client: Client, eventId: string): Promise<void> 
     }
   }
 
-  const sent = await textChannel.send({ embeds: [embed], components: [row] });
+  // Première publication → on pingue les rôles du jeu (GM + Officier/Roster/
+  // Membre/Recrue <TAG>). Les mises à jour suivantes (edit) ne re-pinguent pas.
+  const { content, roleIds } = await resolveRoleMentions(textChannel.guild, calendarRoleNames(event.game));
+
+  const sent = await textChannel.send({
+    content: content || undefined,
+    embeds: [embed],
+    components: [row],
+    allowedMentions: { roles: roleIds },
+  });
   await prisma.event.update({
     where: { id: event.id },
     data: { discordChannelId: textChannel.id, discordMessageId: sent.id },
