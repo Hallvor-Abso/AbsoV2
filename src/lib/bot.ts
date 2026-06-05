@@ -31,7 +31,12 @@ async function callBotJson<T>(path: string, payload: unknown): Promise<T | null>
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // Visible dans les logs du site (Vercel) : 401 = secret différent,
+      // 404 = mauvaise URL/chemin, 500 = erreur interne du bot.
+      console.error(`Appel bot ${path} → HTTP ${res.status}`);
+      return null;
+    }
     return (await res.json()) as T;
   } catch (err) {
     console.error(`Appel bot ${path} échoué :`, err);
