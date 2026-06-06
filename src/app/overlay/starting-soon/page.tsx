@@ -51,7 +51,7 @@ function readConfig(): Config {
 
   return {
     name: p.get('name') || 'Hallvor',
-    title: p.get('title') || 'Le stream commence bientôt',
+    title: p.get('title') || 'Live Starting',
     subtitle: p.get('subtitle') || '',
     twitch: p.get('twitch') || '',
     discord: p.get('discord') || '',
