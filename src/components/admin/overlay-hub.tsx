@@ -157,6 +157,21 @@ const OVERLAYS: OverlayDef[] = [
     ],
   },
   {
+    id: 'alert',
+    name: 'Alertes (Twitch)',
+    path: '/overlay/alert',
+    size: 'auto · transparent',
+    desc: 'Alertes follow / sub / raid en temps réel. À mettre en plein écran ou dans un coin. Utilise les tests ci-dessus.',
+    shared: [],
+    fields: [
+      { param: 'duration', label: 'Durée (secondes)', kind: 'number', placeholder: '6' },
+      { param: 'sound', label: 'Son d’alerte', kind: 'toggle', defaultOn: false, on: '1' },
+      { param: 'followMsg', label: 'Message follow', kind: 'text', placeholder: 'vient de suivre la chaîne !' },
+      { param: 'subMsg', label: 'Message sub', kind: 'text', placeholder: 's’abonne à la chaîne !' },
+      { param: 'raidMsg', label: 'Message raid', kind: 'text', placeholder: 'débarque avec {amount} viewers !' },
+    ],
+  },
+  {
     id: 'kills',
     name: 'Derniers boss vaincus',
     path: '/overlay/kills',

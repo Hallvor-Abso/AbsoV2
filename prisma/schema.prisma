@@ -292,3 +292,30 @@ model SiteContent {
   value     String // contenu
   updatedAt DateTime @updatedAt
 }
+
+// -----------------------------------------------------------------------------
+//  ALERTES DE STREAM — file d'attente des événements Twitch (follows, subs,
+//  raids). Alimentée par le webhook EventSub (et les tests admin) ; consommée
+//  par l'overlay /overlay/alert qui interroge régulièrement les nouvelles
+//  entrées. Les anciennes alertes sont purgées automatiquement.
+// -----------------------------------------------------------------------------
+model StreamAlert {
+  id        Int       @id @default(autoincrement())
+  type      AlertType
+  username  String    @default("")
+  message   String    @default("")
+  amount    Int       @default(0) // mois (resub), nb d'abos offerts, ou viewers (raid)
+  tier      String    @default("") // niveau d'abonnement Twitch (1000/2000/3000)
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+}
+
+enum AlertType {
+  FOLLOW
+  SUB
+  RESUB
+  SUBGIFT
+  RAID
+  TEST
+}

@@ -20,6 +20,9 @@ import { prisma } from '@/lib/prisma';
 import { sanitizeHtml, sanitizeText, sanitizePlainText } from '@/lib/sanitize';
 import { SITE_CONTENT_DEFAULTS } from '@/lib/site-content';
 import { OVERLAY_CONFIG_KEY } from '@/lib/overlay-config';
+import { enqueueAlert } from '@/lib/alerts';
+import { setupSubscriptions, deleteSubscription, clearBroadcaster } from '@/lib/twitch';
+import type { AlertType } from '@prisma/client';
 import { slugify } from '@/lib/utils';
 import {
   syncEventToBot,
@@ -619,5 +622,45 @@ export async function saveOverlayConfig(json: string) {
     update: { value },
     create: { key: OVERLAY_CONFIG_KEY, value },
   });
+  revalidatePath('/admin/overlays');
+}
+
+// =============================================================================
+//  ALERTES DE STREAM (Twitch) — réservé au Super Admin
+// =============================================================================
+
+/** Envoie une alerte de TEST dans la file (pour prévisualiser l'overlay). */
+export async function fireTestAlert(type: AlertType) {
+  await requireOverlays();
+  const samples: Record<AlertType, Parameters<typeof enqueueAlert>[0]> = {
+    FOLLOW: { type: 'FOLLOW', username: 'NouveauFollow' },
+    SUB: { type: 'SUB', username: 'NouvelAbo', tier: '1000' },
+    RESUB: { type: 'RESUB', username: 'FidèleViewer', tier: '1000', amount: 6, message: 'Toujours au rendez-vous !' },
+    SUBGIFT: { type: 'SUBGIFT', username: 'GénéreuxDonateur', tier: '1000', amount: 5 },
+    RAID: { type: 'RAID', username: 'AmiStreamer', amount: 42 },
+    TEST: { type: 'TEST', username: 'Test' },
+  };
+  await enqueueAlert(samples[type] ?? samples.TEST);
+}
+
+/** (Re)crée les abonnements Twitch EventSub pour la chaîne connectée. */
+export async function setupTwitchSubscriptions() {
+  await requireOverlays();
+  const results = await setupSubscriptions();
+  revalidatePath('/admin/overlays');
+  return results;
+}
+
+/** Supprime un abonnement EventSub. */
+export async function removeTwitchSubscription(id: string) {
+  await requireOverlays();
+  await deleteSubscription(id);
+  revalidatePath('/admin/overlays');
+}
+
+/** Déconnecte la chaîne Twitch (oublie le diffuseur mémorisé). */
+export async function disconnectTwitch() {
+  await requireOverlays();
+  await clearBroadcaster();
   revalidatePath('/admin/overlays');
 }
