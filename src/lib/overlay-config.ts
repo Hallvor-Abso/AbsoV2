@@ -20,6 +20,27 @@ export type OverlayConfig = {
 
 export const EMPTY_OVERLAY_CONFIG: OverlayConfig = { shared: {}, overlays: {} };
 
+/** Décode les entités HTML basiques (réparation des valeurs anciennement encodées). */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0*39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ');
+}
+
+function decodeMap(input: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (input && typeof input === 'object') {
+    for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
+      if (typeof v === 'string') out[k] = decodeEntities(v);
+    }
+  }
+  return out;
+}
+
 /** Lit les réglages sauvegardés (objet vide si rien / base indisponible). */
 export async function getOverlayConfig(): Promise<OverlayConfig> {
   if (IS_DEMO) return EMPTY_OVERLAY_CONFIG;
@@ -27,10 +48,13 @@ export async function getOverlayConfig(): Promise<OverlayConfig> {
     const row = await prisma.siteContent.findUnique({ where: { key: OVERLAY_CONFIG_KEY } });
     if (!row?.value) return EMPTY_OVERLAY_CONFIG;
     const parsed = JSON.parse(row.value);
-    return {
-      shared: parsed?.shared && typeof parsed.shared === 'object' ? parsed.shared : {},
-      overlays: parsed?.overlays && typeof parsed.overlays === 'object' ? parsed.overlays : {},
-    };
+    const overlays: Record<string, Record<string, string>> = {};
+    if (parsed?.overlays && typeof parsed.overlays === 'object') {
+      for (const [id, map] of Object.entries(parsed.overlays as Record<string, unknown>)) {
+        overlays[id] = decodeMap(map);
+      }
+    }
+    return { shared: decodeMap(parsed?.shared), overlays };
   } catch {
     return EMPTY_OVERLAY_CONFIG;
   }

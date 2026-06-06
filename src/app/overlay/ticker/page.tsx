@@ -48,9 +48,6 @@ export default function TickerOverlay() {
   }
   if (items.length === 0) items.push('Absolution — Progression. Cohésion. Excellence.');
 
-  // On duplique la séquence pour un défilement continu et sans couture.
-  const sequence = [...items, ...items];
-
   return (
     <div className="tk-root">
       <div className="tk-bar">
@@ -61,7 +58,7 @@ export default function TickerOverlay() {
         )}
         <div className="tk-viewport">
           <div className="tk-track" style={{ animationDuration: `${cfg.speed}s` }}>
-            {sequence.map((msg, i) => (
+            {items.map((msg, i) => (
               <span key={i} className="tk-item">
                 <span className="tk-bullet">◆</span>
                 {msg}
@@ -81,12 +78,15 @@ export default function TickerOverlay() {
           text-transform: uppercase; letter-spacing: .18em; white-space: nowrap;
           background: rgba(74,158,255,.10); border-right: 1px solid rgba(74,158,255,.35); }
         .tk-viewport { position: relative; flex: 1; overflow: hidden; }
-        .tk-track { position: absolute; top: 0; left: 0; height: 100%; display: flex; align-items: center;
-          white-space: nowrap; will-change: transform; animation: tkScroll linear infinite; }
+        /* Défilement simple : le bloc de messages part de la droite (padding-left:100%
+           = largeur du viewport) et sort entièrement à gauche, puis recommence.
+           Une seule copie à l'écran → pas d'affichage en double. */
+        .tk-track { position: absolute; top: 0; left: 0; height: 100%; display: inline-flex; align-items: center;
+          white-space: nowrap; padding-left: 100%; will-change: transform; animation: tkScroll linear infinite; }
         .tk-item { display: inline-flex; align-items: center; gap: 18px; padding: 0 26px; font-size: 21px;
           font-weight: 500; color: rgba(255,255,255,.92); }
         .tk-bullet { color: ${ACCENT}; font-size: 13px; }
-        @keyframes tkScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @keyframes tkScroll { from { transform: translateX(0); } to { transform: translateX(-100%); } }
       `}</style>
     </div>
   );

@@ -36,3 +36,24 @@ export function sanitizeText(input: unknown, maxLength = 5000): string {
   });
   return stripped.trim().slice(0, maxLength);
 }
+
+/**
+ * Nettoie un texte destiné à être affiché en TEXTE BRUT (pas en HTML) :
+ * supprime toute balise mais NE ré-encode PAS les entités (`&`, `<`, `>`…),
+ * contrairement à `sanitizeText`. À utiliser pour des valeurs rendues via du
+ * texte React (qui ré-échappe déjà à l'affichage) — ex. messages d'overlay,
+ * où `SWTOR & WOW` doit rester `SWTOR & WOW` et non `SWTOR &amp; WOW`.
+ */
+export function sanitizePlainText(input: unknown, maxLength = 5000): string {
+  if (typeof input !== 'string') return '';
+  return input
+    .replace(/<[^>]*>/g, '') // retire les balises
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0*39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .trim()
+    .slice(0, maxLength);
+}

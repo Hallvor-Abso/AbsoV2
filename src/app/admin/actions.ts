@@ -17,7 +17,7 @@ import { getAppUser } from '@/lib/auth';
 import { canAccessAdmin, canAccessContenu, canAccessOverlays, canManageGlobally, allowedGameIds } from '@/lib/permissions';
 import type { Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { sanitizeHtml, sanitizeText } from '@/lib/sanitize';
+import { sanitizeHtml, sanitizeText, sanitizePlainText } from '@/lib/sanitize';
 import { SITE_CONTENT_DEFAULTS } from '@/lib/site-content';
 import { OVERLAY_CONFIG_KEY } from '@/lib/overlay-config';
 import { slugify } from '@/lib/utils';
@@ -599,7 +599,7 @@ export async function saveOverlayConfig(json: string) {
     const out: Record<string, string> = {};
     if (input && typeof input === 'object') {
       for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
-        if (typeof v === 'string' && v.length > 0) out[k] = sanitizeText(v, 300);
+        if (typeof v === 'string' && v.length > 0) out[k] = sanitizePlainText(v, 300);
       }
     }
     return out;
