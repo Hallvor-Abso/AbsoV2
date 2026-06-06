@@ -28,8 +28,8 @@ export function Logo({
       <Image
         src={logoUrl}
         alt="Absolution"
-        width={180}
-        height={48}
+        width={512}
+        height={512}
         unoptimized
         className={cn(
           'block w-auto object-contain',
