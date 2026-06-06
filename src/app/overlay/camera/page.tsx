@@ -44,7 +44,8 @@ export default function CameraFrame() {
         >
           {!cfg.image && (
             <div className="cam-ph">
-              <div className="cam-ph-icon">🎥</div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="cam-ph-logo" src="/absolution-emblem.svg" alt="" />
               <div className="cam-ph-text">{cfg.label}</div>
             </div>
           )}
@@ -73,10 +74,10 @@ export default function CameraFrame() {
           background: radial-gradient(circle at 50% 35%, #1b2433, #0b0e14);
           background-size: cover; background-position: center;
           display: flex; align-items: center; justify-content: center; }
-        .cam-ph { display: flex; flex-direction: column; align-items: center; gap: 10px; opacity: .7; }
-        .cam-ph-icon { font-size: 54px; filter: drop-shadow(0 0 12px rgba(74,158,255,.5)); }
+        .cam-ph { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+        .cam-ph-logo { width: 38%; max-width: 130px; min-width: 64px; opacity: .92; }
         .cam-ph-text { font-size: 16px; letter-spacing: .18em; text-transform: uppercase;
-          color: rgba(255,255,255,.6); }
+          color: rgba(255,255,255,.55); }
 
         /* Cadre : bordure + lueur, centre transparent */
         .cam-frame { position: absolute; inset: 0; border-radius: 16px;
