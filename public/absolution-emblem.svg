@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none" role="img" aria-label="Absolution">
+  <defs>
+    <linearGradient id="absoGrad" x1="40" y1="20" x2="200" y2="222" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7CC0FF"/>
+      <stop offset="1" stop-color="#1A6EFF"/>
+    </linearGradient>
+    <filter id="absoGlow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#4A9EFF" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+  <g filter="url(#absoGlow)">
+    <!-- Écu / crest -->
+    <path d="M120 20 L206 56 L206 120 C206 168 170 206 120 222 C70 206 34 168 34 120 L34 56 Z"
+      stroke="url(#absoGrad)" stroke-width="8" stroke-linejoin="round"/>
+    <!-- Monogramme A -->
+    <path d="M86 172 L120 72 L154 172" stroke="url(#absoGrad)" stroke-width="14"
+      stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M100 134 L140 134" stroke="url(#absoGrad)" stroke-width="12" stroke-linecap="round"/>
+    <!-- Gemme au sommet -->
+    <path d="M120 40 l12 14 l-12 14 l-12 -14 Z" fill="url(#absoGrad)"/>
+  </g>
+</svg>
