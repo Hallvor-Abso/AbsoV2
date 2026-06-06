@@ -45,9 +45,8 @@ export default function BadgeOverlay() {
         .bd-card { display: inline-flex; flex-direction: column; align-items: center; gap: 4px;
           padding: 14px 26px; border-radius: 14px;
           background: linear-gradient(180deg, rgba(20,26,38,.82), rgba(10,12,17,.82));
-          border: 1px solid rgba(74,158,255,.35); backdrop-filter: blur(6px);
-          box-shadow: 0 8px 30px rgba(0,0,0,.45); }
-        .bd-bare { background: none; border: none; backdrop-filter: none; box-shadow: none; padding: 0; }
+          backdrop-filter: blur(6px); box-shadow: 0 8px 30px rgba(0,0,0,.45); }
+        .bd-bare { background: none; backdrop-filter: none; box-shadow: none; padding: 0; }
         .bd-name { font-size: 30px; font-weight: 700; text-transform: uppercase; letter-spacing: .22em;
           color: rgba(255,255,255,.9); text-shadow: 0 0 24px rgba(74,158,255,.3); }
         .bd-site { font-family: var(--font-inter), system-ui, sans-serif; font-size: 15px;
