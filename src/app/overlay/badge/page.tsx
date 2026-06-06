@@ -48,7 +48,9 @@ export default function BadgeOverlay() {
           backdrop-filter: blur(6px); box-shadow: 0 8px 30px rgba(0,0,0,.45); }
         .bd-bare { background: none; backdrop-filter: none; box-shadow: none; padding: 0; }
         .bd-name { font-size: 30px; font-weight: 700; text-transform: uppercase; letter-spacing: .22em;
-          color: rgba(255,255,255,.9); text-shadow: 0 0 24px rgba(74,158,255,.3); }
+          color: rgba(255,255,255,.92); }
+        .bd-bare .bd-name { text-shadow: 0 2px 8px rgba(0,0,0,.9), 0 0 18px rgba(0,0,0,.7); }
+        .bd-bare .bd-site { text-shadow: 0 2px 6px rgba(0,0,0,.9); }
         .bd-site { font-family: var(--font-inter), system-ui, sans-serif; font-size: 15px;
           letter-spacing: .04em; color: ${ACCENT}; font-weight: 600; }
       `}</style>
