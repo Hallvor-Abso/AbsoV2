@@ -84,9 +84,8 @@ export default function SceneOverlay() {
         /* Plaques */
         .sc-plate { position: absolute; bottom: 44px; display: inline-flex; align-items: center; gap: 14px;
           padding: 14px 22px; border-radius: 14px;
-          background: linear-gradient(180deg, rgba(20,26,38,.82), rgba(10,12,17,.82));
-          border: 1px solid rgba(74,158,255,.35); backdrop-filter: blur(6px);
-          box-shadow: 0 8px 30px rgba(0,0,0,.45); }
+          background: linear-gradient(180deg, rgba(20,26,38,.94), rgba(10,12,17,.94));
+          backdrop-filter: blur(6px); box-shadow: 0 8px 30px rgba(0,0,0,.5); }
         .sc-left { left: 64px; }
         .sc-right { right: 64px; flex-direction: column; align-items: flex-end; gap: 2px; }
 

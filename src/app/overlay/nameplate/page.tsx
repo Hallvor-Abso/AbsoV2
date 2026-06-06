@@ -42,8 +42,8 @@ export default function NameplateOverlay() {
         .np-root { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
           background: transparent; font-family: var(--font-space-grotesk), system-ui, sans-serif; color: #fff; }
         .np-card { display: inline-flex; align-items: center; gap: 14px; padding: 14px 22px; border-radius: 14px;
-          background: linear-gradient(180deg, rgba(20,26,38,.82), rgba(10,12,17,.82));
-          backdrop-filter: blur(6px); box-shadow: 0 8px 30px rgba(0,0,0,.45); }
+          background: linear-gradient(180deg, rgba(20,26,38,.94), rgba(10,12,17,.94));
+          backdrop-filter: blur(6px); box-shadow: 0 8px 30px rgba(0,0,0,.5); }
         /* Texte seul : pas de panneau, ombre forte pour rester lisible sur le jeu */
         .np-bare { background: none; backdrop-filter: none; box-shadow: none; padding: 0;
           text-shadow: 0 2px 8px rgba(0,0,0,.9), 0 0 18px rgba(0,0,0,.7); }
