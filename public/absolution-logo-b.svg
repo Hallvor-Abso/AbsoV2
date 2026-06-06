@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none" role="img" aria-label="Absolution — esport">
+  <defs>
+    <linearGradient id="bGrad" x1="28" y1="16" x2="212" y2="224" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7CC0FF"/>
+      <stop offset="1" stop-color="#1A6EFF"/>
+    </linearGradient>
+    <filter id="bGlow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#4A9EFF" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+  <g filter="url(#bGlow)">
+    <!-- Badge hexagonal anguleux -->
+    <path d="M120 14 L210 64 L210 150 L120 226 L30 150 L30 64 Z"
+      stroke="url(#bGrad)" stroke-width="9" stroke-linejoin="miter"/>
+    <!-- Encoches latérales (style esport) -->
+    <path d="M30 96 L8 108 L30 120" stroke="url(#bGrad)" stroke-width="7" stroke-linejoin="miter" fill="none"/>
+    <path d="M210 96 L232 108 L210 120" stroke="url(#bGrad)" stroke-width="7" stroke-linejoin="miter" fill="none"/>
+    <!-- A anguleux et agressif -->
+    <path d="M74 178 L120 58 L166 178" stroke="url(#bGrad)" stroke-width="16"
+      stroke-linejoin="miter" stroke-linecap="butt" fill="none"/>
+    <path d="M97 132 L143 132" stroke="url(#bGrad)" stroke-width="13" stroke-linecap="butt"/>
+    <!-- Éclat / slash dynamique -->
+    <path d="M150 92 L176 92 L150 118 Z" fill="url(#bGrad)"/>
+  </g>
+</svg>
