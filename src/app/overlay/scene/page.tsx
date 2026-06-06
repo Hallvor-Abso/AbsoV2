@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useOverlayConfig } from '@/components/overlay/overlay-kit';
 
 /**
  * Habillage de scène principale (par-dessus le jeu) — Browser Source OBS 1920×1080.
@@ -18,21 +19,23 @@ const ACCENT = '#4A9EFF';
 
 type Cfg = { name: string; live: string; plate: boolean; guild: boolean; site: boolean; siteUrl: string };
 
-function readConfig(): Cfg {
-  const p = new URLSearchParams(window.location.search);
+function readConfig(get: (k: string) => string | null): Cfg {
   return {
-    name: p.get('name') || 'Hallvor',
-    live: p.get('live') || 'Live',
-    plate: p.get('plate') !== '0', // ?plate=0 : masque la plaque pseudo intégrée
-    guild: p.get('guild') !== '0', // ?guild=0 : masque « Absolution » intégré
-    site: p.get('site') === '1',
-    siteUrl: p.get('siteUrl') || 'absolution-guild.com',
+    name: get('name') || 'Hallvor',
+    live: get('live') || 'Live',
+    plate: get('plate') !== '0', // ?plate=0 : masque la plaque pseudo intégrée
+    guild: get('guild') !== '0', // ?guild=0 : masque « Absolution » intégré
+    site: get('site') === '1',
+    siteUrl: get('siteUrl') || 'absolution-guild.com',
   };
 }
 
 export default function SceneOverlay() {
+  const { ready, get } = useOverlayConfig('scene');
   const [cfg, setCfg] = useState<Cfg | null>(null);
-  useEffect(() => setCfg(readConfig()), []);
+  useEffect(() => {
+    if (ready) setCfg(readConfig(get));
+  }, [ready, get]);
   if (!cfg) return <div className="sc-root" />;
 
   return (

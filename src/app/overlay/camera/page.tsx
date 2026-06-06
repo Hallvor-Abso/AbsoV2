@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSiteLogo } from '@/components/overlay/overlay-kit';
+import { useOverlayConfig, useSiteLogo } from '@/components/overlay/overlay-kit';
 
 /**
  * Cadre caméra SEUL — source Browser OBS séparée, à poser sur ta webcam et à
@@ -19,22 +19,24 @@ const ACCENT = '#4A9EFF';
 
 type Cfg = { name: string; plate: boolean; fill: boolean; image: string; label: string };
 
-function readConfig(): Cfg {
-  const p = new URLSearchParams(window.location.search);
-  const image = p.get('image') || '';
+function readConfig(get: (k: string) => string | null): Cfg {
+  const image = get('image') || '';
   return {
-    name: p.get('name') || 'Hallvor',
-    plate: p.get('plate') !== '0',
-    fill: p.get('fill') === '1' || Boolean(image), // remplit l'intérieur si demandé
+    name: get('name') || 'Hallvor',
+    plate: get('plate') !== '0',
+    fill: get('fill') === '1' || Boolean(image), // remplit l'intérieur si demandé
     image,
-    label: p.get('label') || 'Caméra bientôt',
+    label: get('label') || 'Caméra bientôt',
   };
 }
 
 export default function CameraFrame() {
+  const { ready, get } = useOverlayConfig('camera');
   const [cfg, setCfg] = useState<Cfg | null>(null);
   const siteLogo = useSiteLogo();
-  useEffect(() => setCfg(readConfig()), []);
+  useEffect(() => {
+    if (ready) setCfg(readConfig(get));
+  }, [ready, get]);
   if (!cfg) return <div className="cam-root" />;
 
   // Logo réel téléversé dans l'admin, sinon emblème embarqué.

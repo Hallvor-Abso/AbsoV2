@@ -14,11 +14,12 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getAppUser } from '@/lib/auth';
-import { canAccessAdmin, canAccessContenu, canManageGlobally, allowedGameIds } from '@/lib/permissions';
+import { canAccessAdmin, canAccessContenu, canAccessOverlays, canManageGlobally, allowedGameIds } from '@/lib/permissions';
 import type { Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { sanitizeHtml, sanitizeText } from '@/lib/sanitize';
 import { SITE_CONTENT_DEFAULTS } from '@/lib/site-content';
+import { OVERLAY_CONFIG_KEY } from '@/lib/overlay-config';
 import { slugify } from '@/lib/utils';
 import {
   syncEventToBot,
@@ -36,6 +37,11 @@ async function requireSuperAdmin() {
   if (!canAccessContenu(user)) {
     throw new Error('Non autorisé');
   }
+}
+
+/** Bloque l'action réservée au Super Admin (hub des overlays). */
+async function requireOverlays() {
+  if (!canAccessOverlays(await getAppUser())) throw new Error('Non autorisé');
 }
 
 /** Réservé aux admins globaux (gestion des membres et des jeux). */
@@ -571,4 +577,47 @@ export async function saveSiteContentField(key: string, raw: string) {
   });
   revalidatePublic();
   revalidatePath('/admin/contenu');
+}
+
+/**
+ * Enregistre les réglages des overlays de stream (hub /admin/overlays).
+ * Reçoit le JSON { shared, overlays } produit par le hub ; on le re-construit
+ * proprement (valeurs texte nettoyées, plafonnées) avant de le stocker.
+ */
+export async function saveOverlayConfig(json: string) {
+  await requireOverlays();
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    throw new Error('Configuration invalide');
+  }
+
+  // Nettoie un dictionnaire { param: valeur } en ne gardant que des chaînes courtes.
+  const cleanMap = (input: unknown): Record<string, string> => {
+    const out: Record<string, string> = {};
+    if (input && typeof input === 'object') {
+      for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
+        if (typeof v === 'string' && v.length > 0) out[k] = sanitizeText(v, 300);
+      }
+    }
+    return out;
+  };
+
+  const src = (parsed ?? {}) as { shared?: unknown; overlays?: unknown };
+  const overlays: Record<string, Record<string, string>> = {};
+  if (src.overlays && typeof src.overlays === 'object') {
+    for (const [id, map] of Object.entries(src.overlays as Record<string, unknown>)) {
+      overlays[id] = cleanMap(map);
+    }
+  }
+  const value = JSON.stringify({ shared: cleanMap(src.shared), overlays });
+
+  await prisma.siteContent.upsert({
+    where: { key: OVERLAY_CONFIG_KEY },
+    update: { value },
+    create: { key: OVERLAY_CONFIG_KEY, value },
+  });
+  revalidatePath('/admin/overlays');
 }

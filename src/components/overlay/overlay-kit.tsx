@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 /**
  * Briques communes aux overlays plein écran (Starting soon / Be right back /
@@ -67,6 +67,54 @@ export function useOverlayData(intervalMs = 60000): OverlayData | null {
     };
   }, [intervalMs]);
   return data;
+}
+
+type SavedConfig = { shared: Record<string, string>; overlays: Record<string, Record<string, string>> };
+
+/**
+ * Résout les paramètres d'un overlay selon la priorité :
+ *   1. paramètre d'URL (ex. ?name=…)  ← prioritaire (réglage ponctuel)
+ *   2. réglage enregistré dans l'admin (/admin/overlays)
+ *   3. valeur par défaut codée dans l'overlay
+ *
+ * Renvoie `ready` (true une fois les réglages chargés) et `get(clé)` qui
+ * applique cette priorité. `get` renvoie une chaîne au MÊME format qu'un
+ * paramètre d'URL : l'overlay l'interprète donc de façon identique.
+ */
+export function useOverlayConfig(overlayId: string) {
+  const [saved, setSaved] = useState<SavedConfig | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const fallback: SavedConfig = { shared: {}, overlays: {} };
+    fetch('/api/overlay/config')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: SavedConfig | null) => {
+        if (active) setSaved(d && typeof d === 'object' && d.shared ? d : fallback);
+      })
+      .catch(() => {
+        if (active) setSaved(fallback);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const get = useCallback(
+    (key: string): string | null => {
+      if (typeof window === 'undefined') return null;
+      const url = new URLSearchParams(window.location.search).get(key);
+      if (url !== null) return url;
+      if (!saved) return null;
+      const own = saved.overlays?.[overlayId];
+      if (own && key in own) return own[key];
+      if (key in saved.shared) return saved.shared[key];
+      return null;
+    },
+    [saved, overlayId],
+  );
+
+  return { ready: saved !== null, get };
 }
 
 /** Compte à rebours configurable par URL : ?min=10 ou ?to=2026-06-06T20:00. */
@@ -166,19 +214,20 @@ export function OverlayShell({ children }: { children: React.ReactNode }) {
     twitch: string;
     discord: string;
   } | null>(null);
+  const { ready, get } = useOverlayConfig('shell');
 
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
+    if (!ready) return;
     // Fond transparent : ?transparent=1 ou ?bg=0 (pour superposer au jeu/à une vidéo).
-    setTransparent(p.get('transparent') === '1' || p.get('bg') === '0');
+    setTransparent(get('transparent') === '1' || get('bg') === '0');
     setFoot({
-      guild: p.get('guild') !== '0',
-      site: p.get('site') === '1',
-      siteUrl: p.get('siteUrl') || 'https://absolution-guild.com/',
-      twitch: p.get('twitch') || '',
-      discord: p.get('discord') || '',
+      guild: get('guild') !== '0',
+      site: get('site') === '1',
+      siteUrl: get('siteUrl') || 'https://absolution-guild.com/',
+      twitch: get('twitch') || '',
+      discord: get('discord') || '',
     });
-  }, []);
+  }, [ready, get]);
 
   return (
     <div className={`ov-root${transparent ? ' ov-transparent' : ''}`}>

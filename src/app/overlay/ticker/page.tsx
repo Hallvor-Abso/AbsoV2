@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ACCENT, useOverlayData } from '@/components/overlay/overlay-kit';
+import { ACCENT, useOverlayConfig, useOverlayData } from '@/components/overlay/overlay-kit';
 
 /**
  * Bandeau d'infos défilant (bas de l'écran) — Browser Source OBS, fond
@@ -19,22 +19,24 @@ import { ACCENT, useOverlayData } from '@/components/overlay/overlay-kit';
 
 type Cfg = { messages: string[]; auto: boolean; speed: number; guild: boolean };
 
-function readConfig(): Cfg {
-  const p = new URLSearchParams(window.location.search);
-  const speed = Number(p.get('speed'));
-  const raw = p.get('messages') || '';
+function readConfig(get: (k: string) => string | null): Cfg {
+  const speed = Number(get('speed'));
+  const raw = get('messages') || '';
   return {
     messages: raw.split('|').map((s) => s.trim()).filter(Boolean),
-    auto: p.get('auto') !== '0',
+    auto: get('auto') !== '0',
     speed: Number.isFinite(speed) && speed > 0 ? speed : 40,
-    guild: p.get('guild') !== '0',
+    guild: get('guild') !== '0',
   };
 }
 
 export default function TickerOverlay() {
+  const { ready, get } = useOverlayConfig('ticker');
   const [cfg, setCfg] = useState<Cfg | null>(null);
   const data = useOverlayData();
-  useEffect(() => setCfg(readConfig()), []);
+  useEffect(() => {
+    if (ready) setCfg(readConfig(get));
+  }, [ready, get]);
   if (!cfg) return <div className="tk-root" />;
 
   // Items personnalisés + infos automatiques de la guilde.

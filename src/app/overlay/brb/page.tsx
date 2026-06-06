@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { OverlayShell, CountdownRing, useCountdown } from '@/components/overlay/overlay-kit';
+import { OverlayShell, CountdownRing, useCountdown, useOverlayConfig } from '@/components/overlay/overlay-kit';
 
 /**
  * Overlay « Be right back » (pause) — Browser Source OBS 1920×1080.
@@ -11,16 +11,18 @@ import { OverlayShell, CountdownRing, useCountdown } from '@/components/overlay/
  *   ?twitch= ?discord= ?guild=0 ?site=1 ?siteUrl=
  */
 export default function BeRightBackOverlay() {
-  const cd = useCountdown(5);
+  const { ready, get } = useOverlayConfig('brb');
+  const min = Number(get('min'));
+  const cd = useCountdown(Number.isFinite(min) && min > 0 ? min : 5);
   const [meta, setMeta] = useState({ title: 'Pause', subtitle: 'Je reviens dans un instant' });
 
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
+    if (!ready) return;
     setMeta({
-      title: p.get('title') || 'Pause',
-      subtitle: p.get('subtitle') || 'Je reviens dans un instant',
+      title: get('title') || 'Pause',
+      subtitle: get('subtitle') || 'Je reviens dans un instant',
     });
-  }, []);
+  }, [ready, get]);
 
   return (
     <OverlayShell>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ACCENT } from '@/components/overlay/overlay-kit';
+import { ACCENT, useOverlayConfig } from '@/components/overlay/overlay-kit';
 
 /**
  * Barre d'objectif (followers, abonnés, dons…) — Browser Source OBS séparée,
@@ -14,21 +14,23 @@ import { ACCENT } from '@/components/overlay/overlay-kit';
 
 type Cfg = { label: string; current: number; target: number; unit: string };
 
-function readConfig(): Cfg {
-  const p = new URLSearchParams(window.location.search);
-  const current = Number(p.get('current'));
-  const target = Number(p.get('target'));
+function readConfig(get: (k: string) => string | null): Cfg {
+  const current = Number(get('current'));
+  const target = Number(get('target'));
   return {
-    label: p.get('label') || 'Objectif abonnés',
+    label: get('label') || 'Objectif abonnés',
     current: Number.isFinite(current) ? current : 0,
     target: Number.isFinite(target) && target > 0 ? target : 100,
-    unit: p.get('unit') || '',
+    unit: get('unit') || '',
   };
 }
 
 export default function GoalOverlay() {
+  const { ready, get } = useOverlayConfig('goal');
   const [cfg, setCfg] = useState<Cfg | null>(null);
-  useEffect(() => setCfg(readConfig()), []);
+  useEffect(() => {
+    if (ready) setCfg(readConfig(get));
+  }, [ready, get]);
   if (!cfg) return <div className="gl-root" />;
 
   const ratio = Math.min(Math.max(cfg.current / cfg.target, 0), 1);

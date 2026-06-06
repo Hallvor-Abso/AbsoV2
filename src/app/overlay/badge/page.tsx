@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSiteLogo } from '@/components/overlay/overlay-kit';
+import { useOverlayConfig, useSiteLogo } from '@/components/overlay/overlay-kit';
 
 /**
  * Badge « Absolution » autonome et déplaçable — Browser Source OBS séparée
@@ -17,19 +17,21 @@ const ACCENT = '#4A9EFF';
 
 type Cfg = { site: boolean; siteUrl: string; bare: boolean };
 
-function readConfig(): Cfg {
-  const p = new URLSearchParams(window.location.search);
+function readConfig(get: (k: string) => string | null): Cfg {
   return {
-    site: p.get('site') === '1',
-    siteUrl: p.get('siteUrl') || 'absolution-guild.com',
-    bare: p.get('bare') === '1',
+    site: get('site') === '1',
+    siteUrl: get('siteUrl') || 'absolution-guild.com',
+    bare: get('bare') === '1',
   };
 }
 
 export default function BadgeOverlay() {
+  const { ready, get } = useOverlayConfig('badge');
   const [cfg, setCfg] = useState<Cfg | null>(null);
   const siteLogo = useSiteLogo();
-  useEffect(() => setCfg(readConfig()), []);
+  useEffect(() => {
+    if (ready) setCfg(readConfig(get));
+  }, [ready, get]);
   if (!cfg) return <div className="bd-root" />;
 
   return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { OverlayShell } from '@/components/overlay/overlay-kit';
+import { OverlayShell, useOverlayConfig } from '@/components/overlay/overlay-kit';
 
 /**
  * Overlay « Stream ending » (fin de stream) — Browser Source OBS 1920×1080.
@@ -11,18 +11,19 @@ import { OverlayShell } from '@/components/overlay/overlay-kit';
  *   ?twitch= ?discord= ?guild=0 ?site=1 ?siteUrl=
  */
 export default function EndingOverlay() {
+  const { ready, get } = useOverlayConfig('ending');
   const [meta, setMeta] = useState({
     title: 'Merci !',
     subtitle: "Merci d'avoir suivi le stream — à très vite 👋",
   });
 
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
+    if (!ready) return;
     setMeta({
-      title: p.get('title') || 'Merci !',
-      subtitle: p.get('subtitle') || "Merci d'avoir suivi le stream — à très vite 👋",
+      title: get('title') || 'Merci !',
+      subtitle: get('subtitle') || "Merci d'avoir suivi le stream — à très vite 👋",
     });
-  }, []);
+  }, [ready, get]);
 
   return (
     <OverlayShell>

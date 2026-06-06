@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { OverlayShell, CountdownRing, useCountdown } from '@/components/overlay/overlay-kit';
+import { OverlayShell, CountdownRing, useCountdown, useOverlayConfig } from '@/components/overlay/overlay-kit';
 
 /**
  * Overlay « Starting soon » — Browser Source OBS 1920×1080.
@@ -11,16 +11,18 @@ import { OverlayShell, CountdownRing, useCountdown } from '@/components/overlay/
  *   ?twitch= ?discord= ?guild=0 ?site=1 ?siteUrl=
  */
 export default function StartingSoonOverlay() {
-  const cd = useCountdown(10);
+  const { ready, get } = useOverlayConfig('starting-soon');
+  const min = Number(get('min'));
+  const cd = useCountdown(Number.isFinite(min) && min > 0 ? min : 10);
   const [meta, setMeta] = useState({ name: 'Hallvor', title: 'Le stream commence bientôt' });
 
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
+    if (!ready) return;
     setMeta({
-      name: p.get('name') || 'Hallvor',
-      title: p.get('title') || 'Le stream commence bientôt',
+      name: get('name') || 'Hallvor',
+      title: get('title') || 'Le stream commence bientôt',
     });
-  }, []);
+  }, [ready, get]);
 
   return (
     <OverlayShell>

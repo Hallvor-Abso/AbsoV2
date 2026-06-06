@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useOverlayConfig } from '@/components/overlay/overlay-kit';
 
 /**
  * Plaque pseudo « Hallvor ● LIVE » autonome et déplaçable — Browser Source OBS
@@ -16,18 +17,20 @@ const ACCENT = '#4A9EFF';
 
 type Cfg = { name: string; live: string; bare: boolean };
 
-function readConfig(): Cfg {
-  const p = new URLSearchParams(window.location.search);
+function readConfig(get: (k: string) => string | null): Cfg {
   return {
-    name: p.get('name') || 'Hallvor',
-    live: p.get('live') || 'Live',
-    bare: p.get('bare') === '1',
+    name: get('name') || 'Hallvor',
+    live: get('live') || 'Live',
+    bare: get('bare') === '1',
   };
 }
 
 export default function NameplateOverlay() {
+  const { ready, get } = useOverlayConfig('nameplate');
   const [cfg, setCfg] = useState<Cfg | null>(null);
-  useEffect(() => setCfg(readConfig()), []);
+  useEffect(() => {
+    if (ready) setCfg(readConfig(get));
+  }, [ready, get]);
   if (!cfg) return <div className="np-root" />;
 
   return (

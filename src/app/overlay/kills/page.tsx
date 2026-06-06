@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ACCENT, useOverlayData } from '@/components/overlay/overlay-kit';
+import { ACCENT, useOverlayConfig, useOverlayData } from '@/components/overlay/overlay-kit';
 import { formatDate } from '@/lib/utils';
 
 /**
@@ -15,20 +15,22 @@ import { formatDate } from '@/lib/utils';
 
 type Cfg = { limit: number; title: string; showDate: boolean };
 
-function readConfig(): Cfg {
-  const p = new URLSearchParams(window.location.search);
-  const limit = Number(p.get('limit'));
+function readConfig(get: (k: string) => string | null): Cfg {
+  const limit = Number(get('limit'));
   return {
     limit: Number.isFinite(limit) && limit > 0 ? limit : 5,
-    title: p.get('title') || 'Derniers boss vaincus',
-    showDate: p.get('date') !== '0',
+    title: get('title') || 'Derniers boss vaincus',
+    showDate: get('date') !== '0',
   };
 }
 
 export default function KillsOverlay() {
+  const { ready, get } = useOverlayConfig('kills');
   const [cfg, setCfg] = useState<Cfg | null>(null);
   const data = useOverlayData();
-  useEffect(() => setCfg(readConfig()), []);
+  useEffect(() => {
+    if (ready) setCfg(readConfig(get));
+  }, [ready, get]);
   if (!cfg) return <div className="kl-root" />;
 
   const kills = (data?.recentKills ?? []).slice(0, cfg.limit);

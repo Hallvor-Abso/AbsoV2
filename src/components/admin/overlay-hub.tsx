@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/components/admin/toast';
+import { saveOverlayConfig } from '@/app/admin/actions';
+import type { OverlayConfig } from '@/lib/overlay-config';
 
 /**
  * Hub de configuration des overlays de stream (Super Admin).
@@ -174,9 +176,20 @@ const OVERLAYS: OverlayDef[] = [
 type Val = string | boolean;
 type FieldState = Record<string, Val>;
 
-function initState(fields: FieldDef[]): FieldState {
+/** Reconstitue l'état d'un champ depuis une valeur sauvegardée (format URL). */
+function fieldFromSaved(def: FieldDef, saved?: string): Val {
+  if (def.kind === 'toggle') {
+    if (saved === undefined) return Boolean(def.defaultOn);
+    if (def.on !== undefined) return saved === def.on;
+    if (def.off !== undefined) return saved !== def.off;
+    return Boolean(def.defaultOn);
+  }
+  return saved ?? '';
+}
+
+function initState(fields: FieldDef[], saved: Record<string, string> = {}): FieldState {
   const s: FieldState = {};
-  for (const f of fields) s[f.param] = f.kind === 'toggle' ? Boolean(f.defaultOn) : '';
+  for (const f of fields) s[f.param] = fieldFromSaved(f, saved[f.param]);
   return s;
 }
 
@@ -190,16 +203,40 @@ function serialize(def: FieldDef, val: Val, qs: URLSearchParams) {
   }
 }
 
-export function OverlayHub() {
+/** Transforme un ensemble de champs + état en dictionnaire { param: valeur }. */
+function toMap(fields: FieldDef[], state: FieldState): Record<string, string> {
+  const qs = new URLSearchParams();
+  for (const f of fields) serialize(f, state[f.param], qs);
+  return Object.fromEntries(qs.entries());
+}
+
+export function OverlayHub({ initial }: { initial: OverlayConfig }) {
   const toast = useToast();
   const [origin, setOrigin] = useState('');
-  const [shared, setShared] = useState<FieldState>(() => initState(Object.values(SHARED)));
+  const [shared, setShared] = useState<FieldState>(() => initState(Object.values(SHARED), initial.shared));
   const [own, setOwn] = useState<Record<string, FieldState>>(() =>
-    Object.fromEntries(OVERLAYS.map((o) => [o.id, initState(o.fields)])),
+    Object.fromEntries(OVERLAYS.map((o) => [o.id, initState(o.fields, initial.overlays[o.id])])),
   );
   const [preview, setPreview] = useState<Record<string, boolean>>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => setOrigin(window.location.origin), []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const config: OverlayConfig = {
+        shared: toMap(Object.values(SHARED), shared),
+        overlays: Object.fromEntries(OVERLAYS.map((o) => [o.id, toMap(o.fields, own[o.id])])),
+      };
+      await saveOverlayConfig(JSON.stringify(config));
+      toast('Réglages enregistrés — actualise la source dans OBS.');
+    } catch {
+      toast("Échec de l'enregistrement.", 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const urls = useMemo(() => {
     const map: Record<string, string> = {};
@@ -224,6 +261,17 @@ export function OverlayHub() {
 
   return (
     <div className="space-y-8">
+      {/* Barre d'action : enregistrer les réglages */}
+      <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-ink-soft/95 px-4 py-3 backdrop-blur">
+        <p className="text-sm text-muted">
+          <b className="text-foreground">Enregistre</b> tes réglages : les overlays les utiliseront même avec
+          une URL <b>propre</b> (sans paramètres) dans OBS.
+        </p>
+        <button type="button" onClick={save} disabled={saving} className="btn-primary shrink-0 text-sm disabled:opacity-60">
+          {saving ? 'Enregistrement…' : 'Enregistrer les réglages'}
+        </button>
+      </div>
+
       {/* Réglages partagés */}
       <section className="card p-6">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Réglages partagés</h2>
@@ -246,6 +294,9 @@ export function OverlayHub() {
       <div className="rounded-lg border border-border bg-ink-soft/60 p-4 text-sm text-muted">
         <b className="text-foreground">Dans OBS :</b> Sources → <b>+</b> → <b>Source navigateur</b> → colle l'URL,
         règle la taille indiquée, et coche <i>« Rafraîchir le navigateur quand la scène devient active »</i>.
+        <br />
+        Après avoir cliqué <b>Enregistrer</b>, tu peux coller l'URL telle quelle : les réglages sont déjà mémorisés
+        côté serveur. Les paramètres dans l'URL restent prioritaires (pratique pour ajuster un compte à rebours).
       </div>
 
       {/* Catalogue */}
