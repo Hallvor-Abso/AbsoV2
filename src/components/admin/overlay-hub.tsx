@@ -91,12 +91,9 @@ const OVERLAYS: OverlayDef[] = [
     name: 'Habillage de scène',
     path: '/overlay/scene',
     size: '1920×1080 · transparent',
-    desc: 'Décor en jeu : coins + plaques (pseudo & guilde). À superposer au gameplay.',
-    shared: ['name', 'guild', 'site', 'siteUrl'],
-    fields: [
-      { param: 'live', label: 'Libellé live', kind: 'text', placeholder: 'Live' },
-      { param: 'plate', label: 'Afficher la plaque pseudo', kind: 'toggle', defaultOn: true, off: '0' },
-    ],
+    desc: 'Barre basse esport : logo/guilde à gauche, réseaux (Twitch/Discord) à droite. À superposer au gameplay.',
+    shared: ['twitch', 'discord', 'guild', 'site', 'siteUrl'],
+    fields: [],
   },
   {
     id: 'camera',
