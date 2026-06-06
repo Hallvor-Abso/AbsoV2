@@ -25,6 +25,8 @@ type Config = {
   twitch: string;
   discord: string;
   guild: boolean;
+  site: boolean;
+  siteUrl: string;
   totalMs: number;
   targetTs: number;
 };
@@ -50,10 +52,12 @@ function readConfig(): Config {
   return {
     name: p.get('name') || 'Hallvor',
     title: p.get('title') || 'Le stream commence bientôt',
-    subtitle: p.get('subtitle') || 'Installe-toi confortablement, ça arrive 👀',
+    subtitle: p.get('subtitle') || '',
     twitch: p.get('twitch') || '',
     discord: p.get('discord') || '',
     guild: p.get('guild') !== '0',
+    site: p.get('site') === '1', // lien du site masqué par défaut (activer avec ?site=1)
+    siteUrl: p.get('siteUrl') || 'https://absolution-guild.com/',
     totalMs,
     targetTs,
   };
@@ -142,7 +146,7 @@ export default function StartingSoonOverlay() {
 
         <h1 className="ov-name">{cfg.name}</h1>
         <p className="ov-title">{cfg.title}</p>
-        <p className="ov-subtitle">{cfg.subtitle}</p>
+        {cfg.subtitle && <p className="ov-subtitle">{cfg.subtitle}</p>}
       </div>
 
       {/* Bas : réseaux + mention discrète de la guilde */}
@@ -160,12 +164,15 @@ export default function StartingSoonOverlay() {
           )}
         </div>
         {cfg.guild && (
-          <div className="ov-guild">
-            <span className="ov-guild-mark" />
-            Membre de la guilde&nbsp;
-            <span className="ov-guild-name">
+          <div className="ov-brand">
+            <span className="ov-brand-name">
               Abso<span style={{ color: ACCENT }}>lution</span>
             </span>
+            {cfg.site && (
+              <span className="ov-join">
+                Rejoins-nous : <span className="ov-join-url">{cfg.siteUrl}</span>
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -244,14 +251,13 @@ export default function StartingSoonOverlay() {
         .ov-socials { display: flex; gap: 40px; }
         .ov-social { font-size: 22px; color: rgba(255,255,255,.8); letter-spacing: .02em; }
         .ov-social b { color: ${ACCENT}; font-weight: 700; margin-right: 6px; }
-        .ov-guild { display: inline-flex; align-items: center; gap: 10px;
-          font-family: var(--font-inter), system-ui, sans-serif;
-          font-size: 15px; letter-spacing: .12em; text-transform: uppercase;
-          color: rgba(255,255,255,.42); }
-        .ov-guild-mark { width: 7px; height: 7px; transform: rotate(45deg);
-          background: ${ACCENT}; box-shadow: 0 0 8px ${ACCENT}; opacity: .8; }
-        .ov-guild-name { font-family: var(--font-space-grotesk), sans-serif; font-weight: 700;
-          letter-spacing: .18em; color: rgba(255,255,255,.75); }
+        .ov-brand { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+        .ov-brand-name { font-family: var(--font-space-grotesk), sans-serif; font-weight: 700;
+          font-size: 32px; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.88);
+          text-shadow: 0 0 26px rgba(74,158,255,.28); }
+        .ov-join { font-family: var(--font-inter), system-ui, sans-serif; font-size: 19px;
+          letter-spacing: .03em; color: rgba(255,255,255,.6); }
+        .ov-join-url { color: ${ACCENT}; font-weight: 600; }
 
         @keyframes ovPulse { 0%,100% { opacity: .4; transform: translate(-50%,-50%) scale(1); }
           50% { opacity: .65; transform: translate(-50%,-50%) scale(1.08); } }
