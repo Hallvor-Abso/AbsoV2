@@ -16,14 +16,15 @@ import { useEffect, useState } from 'react';
 
 const ACCENT = '#4A9EFF';
 
-type Cfg = { name: string; live: string; guild: boolean; site: boolean; siteUrl: string };
+type Cfg = { name: string; live: string; plate: boolean; guild: boolean; site: boolean; siteUrl: string };
 
 function readConfig(): Cfg {
   const p = new URLSearchParams(window.location.search);
   return {
     name: p.get('name') || 'Hallvor',
     live: p.get('live') || 'Live',
-    guild: p.get('guild') !== '0',
+    plate: p.get('plate') !== '0', // ?plate=0 : masque la plaque pseudo intégrée
+    guild: p.get('guild') !== '0', // ?guild=0 : masque « Absolution » intégré
     site: p.get('site') === '1',
     siteUrl: p.get('siteUrl') || 'absolution-guild.com',
   };
@@ -43,11 +44,13 @@ export default function SceneOverlay() {
       <span className="sc-corner sc-br" />
 
       {/* Plaque pseudo (bas gauche) */}
-      <div className="sc-plate sc-left">
-        <span className="sc-live-dot" />
-        <span className="sc-name">{cfg.name}</span>
-        <span className="sc-live">{cfg.live}</span>
-      </div>
+      {cfg.plate && (
+        <div className="sc-plate sc-left">
+          <span className="sc-live-dot" />
+          <span className="sc-name">{cfg.name}</span>
+          <span className="sc-live">{cfg.live}</span>
+        </div>
+      )}
 
       {/* Marque guilde (bas droite) */}
       {cfg.guild && (
