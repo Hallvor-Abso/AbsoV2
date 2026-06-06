@@ -12,6 +12,28 @@ export const ACCENT = '#4A9EFF';
 const R = 168;
 const CIRC = 2 * Math.PI * R;
 
+/**
+ * Logo de la guilde téléversé dans l'admin (`site.logoUrl`), récupéré via
+ * l'API publique `/api/logo`. Renvoie '' tant qu'aucun logo n'est défini ou
+ * pendant le chargement : les overlays retombent alors sur l'emblème embarqué.
+ */
+export function useSiteLogo(): string {
+  const [logo, setLogo] = useState('');
+  useEffect(() => {
+    let active = true;
+    fetch('/api/logo')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (active && d?.logoUrl) setLogo(d.logoUrl as string);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+  return logo;
+}
+
 /** Compte à rebours configurable par URL : ?min=10 ou ?to=2026-06-06T20:00. */
 export function useCountdown(defaultMin: number) {
   const [state, setState] = useState({ remaining: 0, totalMs: 1 });

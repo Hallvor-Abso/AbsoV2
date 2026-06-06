@@ -45,7 +45,7 @@ export default async function HomePage() {
         <div className="container-page relative">
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-8 flex justify-center">
-              <Logo logoUrl={content['site.logoUrl'] || undefined} withGlow className="text-3xl" />
+              <Logo logoUrl={content['site.logoUrl'] || undefined} withGlow className="text-3xl" imageClassName="h-12 sm:h-14" />
             </div>
             <h1
               data-edit-key="hero.tagline"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSiteLogo } from '@/components/overlay/overlay-kit';
 
 /**
  * Cadre caméra SEUL — source Browser OBS séparée, à poser sur ta webcam et à
@@ -32,8 +33,12 @@ function readConfig(): Cfg {
 
 export default function CameraFrame() {
   const [cfg, setCfg] = useState<Cfg | null>(null);
+  const siteLogo = useSiteLogo();
   useEffect(() => setCfg(readConfig()), []);
   if (!cfg) return <div className="cam-root" />;
+
+  // Logo réel téléversé dans l'admin, sinon emblème embarqué.
+  const placeholderLogo = siteLogo || '/absolution-emblem.svg';
 
   return (
     <div className="cam-root">
@@ -45,7 +50,7 @@ export default function CameraFrame() {
           {!cfg.image && (
             <div className="cam-ph">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="cam-ph-logo" src="/absolution-emblem.svg" alt="" />
+              <img className="cam-ph-logo" src={placeholderLogo} alt="" />
               <div className="cam-ph-text">{cfg.label}</div>
             </div>
           )}
