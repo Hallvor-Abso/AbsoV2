@@ -103,10 +103,11 @@ const OVERLAYS: OverlayDef[] = [
     name: 'Cadre caméra',
     path: '/overlay/camera',
     size: 'format webcam · transparent',
-    desc: 'Cadre déplaçable à poser sur ta webcam (centre transparent).',
+    desc: 'Cadre déplaçable à poser sur ta webcam. Centre transparent par défaut ; active « Visuel sans webcam » pour afficher le logo + un texte quand il n’y a pas de cam.',
     shared: ['name'],
     fields: [
       { param: 'plate', label: 'Afficher la plaque pseudo', kind: 'toggle', defaultOn: true, off: '0' },
+      { param: 'fill', label: 'Visuel sans webcam (logo + texte)', kind: 'toggle', defaultOn: false, on: '1' },
       { param: 'label', label: 'Texte si pas de cam', kind: 'text', placeholder: 'Caméra bientôt' },
     ],
   },
