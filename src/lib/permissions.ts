@@ -47,6 +47,11 @@ export function canAccessContenu(u?: SessionUser | null): boolean {
   return !!u && u.role === 'SUPER_ADMIN';
 }
 
+/** Seul le Super Admin accède au hub des overlays de stream. */
+export function canAccessOverlays(u?: SessionUser | null): boolean {
+  return !!u && u.role === 'SUPER_ADMIN';
+}
+
 /** Gestion globale (liste des jeux, gestion des membres) : Admin & Super Admin. */
 export function canManageGlobally(u?: SessionUser | null): boolean {
   return !!u && (u.role === 'ADMIN' || u.role === 'SUPER_ADMIN');

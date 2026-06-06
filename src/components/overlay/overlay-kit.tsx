@@ -34,6 +34,41 @@ export function useSiteLogo(): string {
   return logo;
 }
 
+export type OverlayKill = { name: string; game: string; color: string; date: string | null };
+export type OverlayData = {
+  recentKills: OverlayKill[];
+  nextEvent: { title: string; game: string; startDate: string } | null;
+  latestNews: { title: string; game: string | null } | null;
+};
+
+/**
+ * Données dynamiques de la guilde (derniers boss, prochain event, dernière news)
+ * récupérées depuis `/api/overlay/data` et rafraîchies périodiquement — un
+ * stream pouvant rester ouvert des heures, l'overlay se met à jour tout seul.
+ * `intervalMs` règle la fréquence de rafraîchissement (60 s par défaut).
+ */
+export function useOverlayData(intervalMs = 60000): OverlayData | null {
+  const [data, setData] = useState<OverlayData | null>(null);
+  useEffect(() => {
+    let active = true;
+    const load = () => {
+      fetch('/api/overlay/data')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (active && d) setData(d as OverlayData);
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, intervalMs);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [intervalMs]);
+  return data;
+}
+
 /** Compte à rebours configurable par URL : ?min=10 ou ?to=2026-06-06T20:00. */
 export function useCountdown(defaultMin: number) {
   const [state, setState] = useState({ remaining: 0, totalMs: 1 });
