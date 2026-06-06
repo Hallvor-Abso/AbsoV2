@@ -11,10 +11,12 @@ import { cn } from '@/lib/utils';
 export function AdminNav({
   username,
   canContenu,
+  canOverlays,
   canManageGlobally,
 }: {
   username?: string | null;
   canContenu: boolean;
+  canOverlays: boolean;
   canManageGlobally: boolean;
 }) {
   const pathname = usePathname();
@@ -31,6 +33,7 @@ export function AdminNav({
     { href: '/admin/calendrier', label: 'Calendrier', show: true },
     { href: '/admin/membres', label: 'Membres', show: canManageGlobally },
     { href: '/admin/contenu', label: 'Contenu du site', show: canContenu },
+    { href: '/admin/overlays', label: 'Overlays Stream', show: canOverlays },
   ].filter((l) => l.show);
 
   const links = (

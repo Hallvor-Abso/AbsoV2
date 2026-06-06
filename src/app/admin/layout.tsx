@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getAppUser } from '@/lib/auth';
-import { canAccessAdmin, canAccessContenu, canManageGlobally } from '@/lib/permissions';
+import { canAccessAdmin, canAccessContenu, canAccessOverlays, canManageGlobally } from '@/lib/permissions';
 import { AuthProvider } from '@/components/session-provider';
 import { AdminNav } from '@/components/admin/admin-nav';
 import { ToastProvider } from '@/components/admin/toast';
@@ -30,6 +30,7 @@ export default async function AdminLayout({
           <AdminNav
             username={user.name}
             canContenu={canAccessContenu(user)}
+            canOverlays={canAccessOverlays(user)}
             canManageGlobally={canManageGlobally(user)}
           />
           <div className="flex-1 overflow-x-hidden">
