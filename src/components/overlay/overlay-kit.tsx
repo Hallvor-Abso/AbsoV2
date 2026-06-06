@@ -101,6 +101,7 @@ export function CountdownRing({
 
 /** Conteneur plein écran : décor animé + bas de page (Absolution + lien site). */
 export function OverlayShell({ children }: { children: React.ReactNode }) {
+  const [transparent, setTransparent] = useState(false);
   const [foot, setFoot] = useState<{
     guild: boolean;
     site: boolean;
@@ -111,6 +112,8 @@ export function OverlayShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
+    // Fond transparent : ?transparent=1 ou ?bg=0 (pour superposer au jeu/à une vidéo).
+    setTransparent(p.get('transparent') === '1' || p.get('bg') === '0');
     setFoot({
       guild: p.get('guild') !== '0',
       site: p.get('site') === '1',
@@ -121,7 +124,7 @@ export function OverlayShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="ov-root">
+    <div className={`ov-root${transparent ? ' ov-transparent' : ''}`}>
       <div className="ov-glow ov-glow-1" />
       <div className="ov-glow ov-glow-2" />
       <div className="ov-grid" />
@@ -166,6 +169,10 @@ export function OverlayShell({ children }: { children: React.ReactNode }) {
         .ov-root { position: fixed; inset: 0; overflow: hidden;
           background: radial-gradient(1200px 800px at 50% 30%, #141a26 0%, #0a0c11 60%, #07090d 100%);
           font-family: var(--font-space-grotesk), system-ui, sans-serif; color: #fff; }
+        /* Mode transparent : on enlève le fond opaque et on atténue les lueurs/grille. */
+        .ov-transparent { background: transparent; }
+        .ov-transparent .ov-glow { opacity: .28; }
+        .ov-transparent .ov-grid { display: none; }
         .ov-glow { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55; }
         .ov-glow-1 { width: 720px; height: 720px; left: 50%; top: 38%; transform: translate(-50%,-50%);
           background: radial-gradient(circle, rgba(74,158,255,.45), transparent 70%);
