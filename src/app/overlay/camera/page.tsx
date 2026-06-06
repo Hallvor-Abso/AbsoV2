@@ -16,11 +16,18 @@ import { useEffect, useState } from 'react';
 
 const ACCENT = '#4A9EFF';
 
-type Cfg = { name: string; plate: boolean };
+type Cfg = { name: string; plate: boolean; fill: boolean; image: string; label: string };
 
 function readConfig(): Cfg {
   const p = new URLSearchParams(window.location.search);
-  return { name: p.get('name') || 'Hallvor', plate: p.get('plate') !== '0' };
+  const image = p.get('image') || '';
+  return {
+    name: p.get('name') || 'Hallvor',
+    plate: p.get('plate') !== '0',
+    fill: p.get('fill') === '1' || Boolean(image), // remplit l'intérieur si demandé
+    image,
+    label: p.get('label') || 'Caméra bientôt',
+  };
 }
 
 export default function CameraFrame() {
@@ -30,6 +37,19 @@ export default function CameraFrame() {
 
   return (
     <div className="cam-root">
+      {cfg.fill && (
+        <div
+          className="cam-fill"
+          style={cfg.image ? { backgroundImage: `url(${cfg.image})` } : undefined}
+        >
+          {!cfg.image && (
+            <div className="cam-ph">
+              <div className="cam-ph-icon">🎥</div>
+              <div className="cam-ph-text">{cfg.label}</div>
+            </div>
+          )}
+        </div>
+      )}
       <div className="cam-frame">
         <span className="cam-c cam-tl" />
         <span className="cam-c cam-tr" />
@@ -47,6 +67,16 @@ export default function CameraFrame() {
       <style>{`
         .cam-root { position: fixed; inset: 0; background: transparent; pointer-events: none;
           font-family: var(--font-space-grotesk), system-ui, sans-serif; color: #fff; }
+
+        /* Remplissage de l'intérieur (placeholder ou image) quand pas de webcam */
+        .cam-fill { position: absolute; inset: 0; border-radius: 16px; overflow: hidden;
+          background: radial-gradient(circle at 50% 35%, #1b2433, #0b0e14);
+          background-size: cover; background-position: center;
+          display: flex; align-items: center; justify-content: center; }
+        .cam-ph { display: flex; flex-direction: column; align-items: center; gap: 10px; opacity: .7; }
+        .cam-ph-icon { font-size: 54px; filter: drop-shadow(0 0 12px rgba(74,158,255,.5)); }
+        .cam-ph-text { font-size: 16px; letter-spacing: .18em; text-transform: uppercase;
+          color: rgba(255,255,255,.6); }
 
         /* Cadre : bordure + lueur, centre transparent */
         .cam-frame { position: absolute; inset: 0; border-radius: 16px;
