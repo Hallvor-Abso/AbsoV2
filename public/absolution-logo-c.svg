@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" fill="none" role="img" aria-label="Absolution — ailé">
+  <defs>
+    <linearGradient id="cGrad" x1="40" y1="40" x2="280" y2="210" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9CD0FF"/>
+      <stop offset="1" stop-color="#1A6EFF"/>
+    </linearGradient>
+    <filter id="cGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4.5" flood-color="#4A9EFF" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+  <g filter="url(#cGlow)" stroke="url(#cGrad)" fill="none" stroke-linecap="round">
+    <!-- Halo -->
+    <ellipse cx="160" cy="46" rx="42" ry="12" stroke-width="8"/>
+    <!-- Aile gauche -->
+    <path d="M150 122 L100 92" stroke-width="12"/>
+    <path d="M150 140 L84 120" stroke-width="12"/>
+    <path d="M152 158 L92 150" stroke-width="12"/>
+    <!-- Aile droite -->
+    <path d="M170 122 L220 92" stroke-width="12"/>
+    <path d="M170 140 L236 120" stroke-width="12"/>
+    <path d="M168 158 L228 150" stroke-width="12"/>
+    <!-- Monogramme A -->
+    <path d="M132 188 L160 80 L188 188" stroke-width="16" stroke-linejoin="miter"/>
+    <path d="M146 152 L174 152" stroke-width="14"/>
+  </g>
+</svg>
