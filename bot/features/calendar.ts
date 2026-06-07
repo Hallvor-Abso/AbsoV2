@@ -20,9 +20,10 @@ import {
   ROLE_EMOJI,
   ROLE_LABEL,
   ROLE_ORDER,
-  classEmojiName,
+  specEmojiName,
   findClass,
   findSpec,
+  findSpecByLabel,
   gameKey,
   type GameKey,
   type SpecRole,
@@ -57,12 +58,20 @@ type SignupRow = {
   spec: string | null;
 };
 
-/** Emoji d'une classe : icône personnalisée du serveur si dispo, sinon emoji de rôle. */
-function classEmoji(guild: Guild | null, key: GameKey, classId: string | null, role: string | null): string {
-  if (guild && classId) {
-    const name = classEmojiName(key, classId);
-    const found = guild.emojis.cache.find((e) => e.name === name);
-    if (found) return found.toString();
+/** Emoji d'une spé : icône personnalisée du serveur si dispo, sinon emoji de rôle. */
+function specEmoji(
+  guild: Guild | null,
+  key: GameKey,
+  classId: string | null,
+  specLabel: string | null,
+  role: string | null,
+): string {
+  if (guild && classId && specLabel) {
+    const spec = findSpecByLabel(key, classId, specLabel);
+    if (spec) {
+      const found = guild.emojis.cache.find((e) => e.name === specEmojiName(key, classId, spec.id));
+      if (found) return found.toString();
+    }
   }
   return ROLE_EMOJI[(role as SpecRole) ?? 'DPS'] ?? '•';
 }
@@ -80,7 +89,7 @@ function renderGoing(going: SignupRow[], guild: Guild | null, key: GameKey | nul
       if (members.length === 0) continue;
       lines.push(`**${ROLE_EMOJI[role]} ${ROLE_LABEL[role]} (${members.length})**`);
       for (const m of members) {
-        const emoji = classEmoji(guild, key, m.classId, m.role);
+        const emoji = specEmoji(guild, key, m.classId, m.spec, m.role);
         lines.push(`${emoji} ${m.displayName}${m.spec ? ` · ${m.spec}` : ''}`);
       }
     }

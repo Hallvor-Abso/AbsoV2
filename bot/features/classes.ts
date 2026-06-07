@@ -144,18 +144,42 @@ export function findSpec(key: GameKey, classId: string, specId: string): SpecDef
   return findClass(key, classId)?.specs.find((s) => s.id === specId) ?? null;
 }
 
-/** Nom d'emoji Discord attendu pour l'icône d'une classe (ex. « wow_mage »). */
-export function classEmojiName(key: GameKey, classId: string): string {
-  return `${key}_${classId}`;
+export function findSpecByLabel(key: GameKey, classId: string, label: string): SpecDef | null {
+  return findClass(key, classId)?.specs.find((s) => s.label === label) ?? null;
+}
+
+// Registre déterministe des noms d'emoji par spé (≤ 32 caractères, uniques).
+function rawEmoji(key: GameKey, classId: string, specId: string): string {
+  return `${key}_${classId}_${specId}`.replace(/[^a-z0-9_]/gi, '').toLowerCase();
+}
+const SPEC_EMOJI_NAMES = new Map<string, string>();
+const _usedEmojiNames = new Set<string>();
+for (const key of Object.keys(CLASSES) as GameKey[]) {
+  for (const c of CLASSES[key]) {
+    for (const s of c.specs) {
+      let name = rawEmoji(key, c.id, s.id).slice(0, 32);
+      if (_usedEmojiNames.has(name)) {
+        const base = name.slice(0, 30);
+        let i = 1;
+        while (_usedEmojiNames.has(`${base}${i}`)) i++;
+        name = `${base}${i}`;
+      }
+      _usedEmojiNames.add(name);
+      SPEC_EMOJI_NAMES.set(`${key}:${c.id}:${s.id}`, name);
+    }
+  }
+}
+
+/** Nom d'emoji Discord attendu pour l'icône d'une spé (ex. « wow_mage_givre »). */
+export function specEmojiName(key: GameKey, classId: string, specId: string): string {
+  return SPEC_EMOJI_NAMES.get(`${key}:${classId}:${specId}`) ?? rawEmoji(key, classId, specId).slice(0, 32);
 }
 
 /**
- * URLs des icônes de classe, pour la commande `/setup-class-emojis` qui crée
- * les emojis personnalisés du serveur. À REMPLIR avec des liens d'images
- * publics (PNG carré, fond transparent recommandé). Clé = nom d'emoji
- * (`wow_mage`, `swtor_juggernaut`…). Les entrées vides sont ignorées.
+ * URLs des icônes de SPÉCIALISATION, pour la commande `/setup-class-emojis` qui
+ * crée les emojis personnalisés du serveur. À REMPLIR avec des liens d'images
+ * publics (PNG carré, fond transparent recommandé). Clé = nom d'emoji de spé
+ * (`wow_mage_givre`, `swtor_juggernaut_immortal`…). Entrées vides ignorées.
  */
-export const CLASS_EMOJI_URLS: Record<string, string> = {};
-for (const key of Object.keys(CLASSES) as GameKey[]) {
-  for (const c of CLASSES[key]) CLASS_EMOJI_URLS[classEmojiName(key, c.id)] ||= '';
-}
+export const SPEC_EMOJI_URLS: Record<string, string> = {};
+for (const name of SPEC_EMOJI_NAMES.values()) SPEC_EMOJI_URLS[name] ||= '';
