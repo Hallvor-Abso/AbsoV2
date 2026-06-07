@@ -1,5 +1,6 @@
 import { RichTextEditor } from './rich-text-editor';
 import { ImageInput } from './image-input';
+import { DateTimeInput } from './datetime-input';
 import { saveNews } from '@/app/admin/actions';
 
 type NewsData = {
@@ -10,7 +11,7 @@ type NewsData = {
   imageUrl: string | null;
   status: string;
   gameId: string | null;
-  publishedAt: string; // valeur pour <input datetime-local> ('' si vide)
+  publishedAt: string; // instant UTC au format ISO ('' si vide)
 };
 
 type GameOption = { id: string; name: string };
@@ -67,10 +68,10 @@ export function NewsForm({
         </div>
         <div>
           <label className="label">Date de publication</label>
-          <input type="datetime-local" name="publishedAt" defaultValue={news?.publishedAt ?? ''} className="field" />
+          <DateTimeInput name="publishedAt" defaultValue={news?.publishedAt ?? ''} />
           <p className="mt-1 text-xs text-muted">
-            Vide = maintenant. Une date <strong>future</strong> programme la publication
-            (l'article reste masqué jusque-là).
+            Saisie à <strong>ton heure locale</strong>. Vide = maintenant. Une date{' '}
+            <strong>future</strong> programme la publication (l'article reste masqué jusque-là).
           </p>
         </div>
       </div>

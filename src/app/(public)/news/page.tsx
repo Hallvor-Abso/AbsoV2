@@ -13,12 +13,41 @@ export const metadata: Metadata = {
   description: "L'actualité de la guilde Absolution : annonces, progression et événements.",
 };
 
-export default async function NewsPage() {
+// Page 1 : grande carte « À la Une » + 3 articles. Pages suivantes : 6 par page.
+const PAGE1_GRID = 3;
+const PER_PAGE = 6;
+
+const pageHref = (p: number) => (p <= 1 ? '/news' : `/news?page=${p}`);
+
+export default async function NewsPage({
+  searchParams,
+}: {
+  searchParams: { page?: string };
+}) {
   const news = await getPublishedNews();
 
   // Article « À la Une » : celui marqué comme tel dans l'admin, sinon le plus récent.
   const featured = news.find((n) => n.featured) ?? news[0];
   const rest = featured ? news.filter((n) => n.id !== featured.id) : news;
+
+  // Pagination : page 1 affiche 3 articles (sous la Une), les pages suivantes 6.
+  const totalPages =
+    rest.length <= PAGE1_GRID ? 1 : 1 + Math.ceil((rest.length - PAGE1_GRID) / PER_PAGE);
+  const page = Math.min(Math.max(Number(searchParams.page) || 1, 1), totalPages);
+
+  const pageItems =
+    page === 1
+      ? rest.slice(0, PAGE1_GRID)
+      : rest.slice(PAGE1_GRID + (page - 2) * PER_PAGE, PAGE1_GRID + (page - 1) * PER_PAGE);
+
+  // La grille adapte le nombre de colonnes au nombre d'articles affichés :
+  // 1 = pleine largeur, 2 = moitié-moitié, 3+ = par tiers (max 3 par ligne).
+  const colClass =
+    pageItems.length <= 1
+      ? 'grid-cols-1'
+      : pageItems.length === 2
+        ? 'grid-cols-1 sm:grid-cols-2'
+        : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
 
   return (
     <div className="container-page py-16">
@@ -33,8 +62,8 @@ export default async function NewsPage() {
         <p className="text-muted">Aucun article publié pour le moment.</p>
       ) : (
         <>
-          {/* ===================== ARTICLE À LA UNE ===================== */}
-          {featured && (
+          {/* ===================== ARTICLE À LA UNE (page 1) ===================== */}
+          {page === 1 && featured && (
             <Reveal>
               <Link
                 href={`/news/${featured.slug}`}
@@ -88,10 +117,10 @@ export default async function NewsPage() {
             </Reveal>
           )}
 
-          {/* ===================== GRILLE DES AUTRES ===================== */}
-          {rest.length > 0 && (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {rest.map((article, i) => (
+          {/* ===================== GRILLE ADAPTATIVE ===================== */}
+          {pageItems.length > 0 && (
+            <div className={`grid gap-6 ${colClass}`}>
+              {pageItems.map((article, i) => (
                 <Reveal key={article.id} delay={i * 0.06}>
                   <Link
                     href={`/news/${article.slug}`}
@@ -140,6 +169,42 @@ export default async function NewsPage() {
                 </Reveal>
               ))}
             </div>
+          )}
+
+          {/* ===================== PAGINATION ===================== */}
+          {totalPages > 1 && (
+            <nav className="mt-12 flex items-center justify-center gap-2" aria-label="Pagination">
+              {page > 1 && (
+                <Link
+                  href={pageHref(page - 1)}
+                  className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:border-accent/50 hover:text-accent"
+                >
+                  ← Précédent
+                </Link>
+              )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <Link
+                  key={p}
+                  href={pageHref(p)}
+                  aria-current={p === page ? 'page' : undefined}
+                  className={`min-w-[2.25rem] rounded-lg border px-3 py-1.5 text-center text-sm transition-colors ${
+                    p === page
+                      ? 'border-accent bg-accent/15 font-semibold text-accent'
+                      : 'border-border text-muted hover:border-accent/50 hover:text-accent'
+                  }`}
+                >
+                  {p}
+                </Link>
+              ))}
+              {page < totalPages && (
+                <Link
+                  href={pageHref(page + 1)}
+                  className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:border-accent/50 hover:text-accent"
+                >
+                  Suivant →
+                </Link>
+              )}
+            </nav>
           )}
         </>
       )}

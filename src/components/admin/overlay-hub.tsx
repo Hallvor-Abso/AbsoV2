@@ -234,6 +234,7 @@ export function OverlayHub({ initial }: { initial: OverlayConfig }) {
   );
   const [preview, setPreview] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
+  const [active, setActive] = useState<string>('__shared__');
 
   useEffect(() => setOrigin(window.location.origin), []);
 
@@ -274,8 +275,10 @@ export function OverlayHub({ initial }: { initial: OverlayConfig }) {
     }
   };
 
+  const activeOverlay = active === '__shared__' ? null : OVERLAYS.find((o) => o.id === active);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Barre d'action : enregistrer les réglages */}
       <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-ink-soft/95 px-4 py-3 backdrop-blur">
         <p className="text-sm text-muted">
@@ -287,97 +290,115 @@ export function OverlayHub({ initial }: { initial: OverlayConfig }) {
         </button>
       </div>
 
-      {/* Réglages partagés */}
-      <section className="card p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Réglages partagés</h2>
-        <p className="mt-1 text-sm text-muted">
-          Définis ces valeurs une fois : elles s'appliquent automatiquement aux overlays concernés.
-        </p>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Object.entries(SHARED).map(([key, def]) => (
-            <FieldInput
-              key={key}
-              def={def}
-              value={shared[key]}
-              onChange={(v) => setShared((s) => ({ ...s, [key]: v }))}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* Aide OBS */}
-      <div className="rounded-lg border border-border bg-ink-soft/60 p-4 text-sm text-muted">
-        <b className="text-foreground">Dans OBS :</b> Sources → <b>+</b> → <b>Source navigateur</b> → colle l'URL,
-        règle la taille indiquée, et coche <i>« Rafraîchir le navigateur quand la scène devient active »</i>.
-        <br />
-        Après avoir cliqué <b>Enregistrer</b>, tu peux coller l'URL telle quelle : les réglages sont déjà mémorisés
-        côté serveur. Les paramètres dans l'URL restent prioritaires (pratique pour ajuster un compte à rebours).
-      </div>
-
-      {/* Catalogue */}
-      <div className="grid gap-5 lg:grid-cols-2">
+      {/* Onglets : réglages partagés + un onglet par overlay */}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={() => setActive('__shared__')} className={tabClass(active === '__shared__')}>
+          Réglages partagés
+        </button>
         {OVERLAYS.map((ov) => (
-          <section key={ov.id} className="card flex flex-col p-6">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="font-display text-lg font-bold text-title">{ov.name}</h3>
-                <p className="mt-1 text-sm text-muted">{ov.desc}</p>
-              </div>
-              <span className="shrink-0 rounded-full border border-border px-2.5 py-1 text-xs text-muted">
-                {ov.size}
-              </span>
-            </div>
-
-            {ov.fields.length > 0 && (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {ov.fields.map((f) => (
-                  <FieldInput
-                    key={f.param}
-                    def={f}
-                    value={own[ov.id][f.param]}
-                    onChange={(v) => setOwn((s) => ({ ...s, [ov.id]: { ...s[ov.id], [f.param]: v } }))}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* URL générée */}
-            <div className="mt-4 flex items-center gap-2">
-              <input
-                readOnly
-                value={urls[ov.id]}
-                onFocus={(e) => e.currentTarget.select()}
-                className="min-w-0 flex-1 rounded-lg border border-border bg-ink px-3 py-2 font-mono text-xs text-foreground"
-              />
-              <button type="button" onClick={() => copy(urls[ov.id])} className="btn-primary shrink-0 text-sm">
-                Copier
-              </button>
-            </div>
-
-            <div className="mt-3 flex items-center gap-4 text-sm">
-              <a href={urls[ov.id]} target="_blank" rel="noreferrer" className="font-medium text-accent hover:text-accent-deep">
-                Ouvrir ↗
-              </a>
-              <button
-                type="button"
-                onClick={() => setPreview((p) => ({ ...p, [ov.id]: !p[ov.id] }))}
-                className="font-medium text-muted hover:text-title"
-              >
-                {preview[ov.id] ? 'Masquer l’aperçu' : 'Aperçu'}
-              </button>
-            </div>
-
-            {preview[ov.id] && origin && (
-              <div className="mt-4">
-                <div className="ovh-preview">
-                  <iframe key={urls[ov.id]} src={urls[ov.id]} title={ov.name} className="ovh-frame" />
-                </div>
-                <p className="mt-1.5 text-xs text-muted">Aperçu approximatif (réduit depuis 1920×1080).</p>
-              </div>
-            )}
-          </section>
+          <button key={ov.id} type="button" onClick={() => setActive(ov.id)} className={tabClass(active === ov.id)}>
+            {ov.name}
+          </button>
         ))}
       </div>
+
+      {/* Contenu de l'onglet actif */}
+      {!activeOverlay ? (
+        <>
+          <section className="card p-6">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Réglages partagés</h2>
+            <p className="mt-1 text-sm text-muted">
+              Définis ces valeurs une fois : elles s'appliquent automatiquement aux overlays concernés.
+            </p>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Object.entries(SHARED).map(([key, def]) => (
+                <FieldInput
+                  key={key}
+                  def={def}
+                  value={shared[key]}
+                  onChange={(v) => setShared((s) => ({ ...s, [key]: v }))}
+                />
+              ))}
+            </div>
+          </section>
+
+          {/* Aide OBS */}
+          <div className="rounded-lg border border-border bg-ink-soft/60 p-4 text-sm text-muted">
+            <b className="text-foreground">Dans OBS :</b> Sources → <b>+</b> → <b>Source navigateur</b> → colle l'URL,
+            règle la taille indiquée, et coche <i>« Rafraîchir le navigateur quand la scène devient active »</i>.
+            <br />
+            Après avoir cliqué <b>Enregistrer</b>, tu peux coller l'URL telle quelle : les réglages sont déjà mémorisés
+            côté serveur. Les paramètres dans l'URL restent prioritaires (pratique pour ajuster un compte à rebours).
+          </div>
+        </>
+      ) : (
+        <section className="card flex flex-col p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="font-display text-lg font-bold text-title">{activeOverlay.name}</h3>
+              <p className="mt-1 text-sm text-muted">{activeOverlay.desc}</p>
+            </div>
+            <span className="shrink-0 rounded-full border border-border px-2.5 py-1 text-xs text-muted">
+              {activeOverlay.size}
+            </span>
+          </div>
+
+          {activeOverlay.fields.length > 0 && (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {activeOverlay.fields.map((f) => (
+                <FieldInput
+                  key={f.param}
+                  def={f}
+                  value={own[activeOverlay.id][f.param]}
+                  onChange={(v) =>
+                    setOwn((s) => ({ ...s, [activeOverlay.id]: { ...s[activeOverlay.id], [f.param]: v } }))
+                  }
+                />
+              ))}
+            </div>
+          )}
+
+          {/* URL générée */}
+          <div className="mt-4 flex items-center gap-2">
+            <input
+              readOnly
+              value={urls[activeOverlay.id]}
+              onFocus={(e) => e.currentTarget.select()}
+              className="min-w-0 flex-1 rounded-lg border border-border bg-ink px-3 py-2 font-mono text-xs text-foreground"
+            />
+            <button type="button" onClick={() => copy(urls[activeOverlay.id])} className="btn-primary shrink-0 text-sm">
+              Copier
+            </button>
+          </div>
+
+          <div className="mt-3 flex items-center gap-4 text-sm">
+            <a
+              href={urls[activeOverlay.id]}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-accent hover:text-accent-deep"
+            >
+              Ouvrir ↗
+            </a>
+            <button
+              type="button"
+              onClick={() => setPreview((p) => ({ ...p, [activeOverlay.id]: !p[activeOverlay.id] }))}
+              className="font-medium text-muted hover:text-title"
+            >
+              {preview[activeOverlay.id] ? 'Masquer l’aperçu' : 'Aperçu'}
+            </button>
+          </div>
+
+          {preview[activeOverlay.id] && origin && (
+            <div className="mt-4">
+              <div className="ovh-preview">
+                <iframe key={urls[activeOverlay.id]} src={urls[activeOverlay.id]} title={activeOverlay.name} className="ovh-frame" />
+              </div>
+              <p className="mt-1.5 text-xs text-muted">Aperçu approximatif (réduit depuis 1920×1080).</p>
+            </div>
+          )}
+        </section>
+      )}
 
       <style>{`
         .ovh-preview { position: relative; width: 100%; max-width: 384px; aspect-ratio: 16 / 9;
@@ -389,6 +410,15 @@ export function OverlayHub({ initial }: { initial: OverlayConfig }) {
       `}</style>
     </div>
   );
+}
+
+/** Classe d'un bouton d'onglet selon son état (actif / inactif). */
+function tabClass(isActive: boolean): string {
+  return `rounded-lg border px-3.5 py-2 text-sm font-medium transition ${
+    isActive
+      ? 'border-accent bg-accent/15 text-title'
+      : 'border-border bg-ink text-muted hover:border-muted/40 hover:text-title'
+  }`;
 }
 
 function FieldInput({ def, value, onChange }: { def: FieldDef; value: Val; onChange: (v: Val) => void }) {

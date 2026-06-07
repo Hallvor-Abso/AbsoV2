@@ -2,9 +2,11 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   MessageFlags,
+  PermissionFlagsBits,
   type ChatInputCommandInteraction,
 } from 'discord.js';
 import { prisma } from './prisma';
+import { setupServer } from './features/server-setup';
 
 const ACCENT = 0x4a9eff;
 
@@ -56,6 +58,10 @@ export const commands = [
     .addStringOption((o) =>
       o.setName('jeu').setDescription('Jeu concerné (ex : wow)').setRequired(false),
     ),
+  new SlashCommandBuilder()
+    .setName('setup-serveur')
+    .setDescription('Construit/complète la structure du serveur (catégories, salons, permissions).')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 ].map((c) => c.toJSON());
 
 // --- Aiguillage --------------------------------------------------------------
@@ -65,9 +71,43 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
       return recrutement(interaction);
     case 'progression':
       return progression(interaction);
+    case 'setup-serveur':
+      return setupServeur(interaction);
     default:
       return;
   }
+}
+
+async function setupServeur(interaction: ChatInputCommandInteraction) {
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+  if (!interaction.guild) {
+    await interaction.editReply('Cette commande doit être utilisée sur un serveur.');
+    return;
+  }
+  if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+    await interaction.editReply('Réservé aux administrateurs du serveur.');
+    return;
+  }
+
+  const { created, warnings } = await setupServer(interaction.guild);
+
+  const lines: string[] = [];
+  lines.push(
+    created.length === 0
+      ? '✅ Structure déjà en place — rien à créer.'
+      : `✅ ${created.length} élément(s) créé(s) :\n${created.join('\n')}`,
+  );
+  if (warnings.length > 0) {
+    lines.push(`\n⚠️ Avertissements :\n${warnings.join('\n')}`);
+  }
+  lines.push(
+    '\nℹ️ Commande relançable à tout moment : seuls les éléments manquants sont créés.',
+  );
+
+  // Discord limite un message à 2000 caractères.
+  const text = lines.join('\n');
+  await interaction.editReply(text.length > 1990 ? `${text.slice(0, 1989)}…` : text);
 }
 
 async function recrutement(interaction: ChatInputCommandInteraction) {

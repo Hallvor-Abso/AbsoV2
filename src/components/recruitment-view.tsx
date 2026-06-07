@@ -5,6 +5,7 @@ import { SLOT_STATUS } from '@/lib/labels';
 import { GameTabBar, type GameTabInfo } from './game-tab-bar';
 import { ApplicationForm } from './application-form';
 import { SectionHeading } from './section-heading';
+import { DEFAULT_RECRUIT_FIELDS, type FormFieldDef } from '@/lib/recruitment-fields';
 
 export type RecruitSlot = {
   id: string;
@@ -21,6 +22,8 @@ export type RecruitRole = {
   description: string | null;
 };
 
+export type RecruitField = FormFieldDef & { gameId: string };
+
 /**
  * Affichage du recrutement, lisible et par jeu :
  * - onglets pour distinguer les jeux
@@ -32,11 +35,13 @@ export function RecruitmentView({
   games,
   slots,
   roles: roleCategories = [],
+  fields = [],
   auth,
 }: {
   games: GameTabInfo[];
   slots: RecruitSlot[];
   roles?: RecruitRole[];
+  fields?: RecruitField[];
   auth: RecruitAuth;
 }) {
   const [activeId, setActiveId] = useState(games[0]?.id);
@@ -45,6 +50,9 @@ export function RecruitmentView({
 
   const gameSlots = slots.filter((s) => s.gameId === activeGame.id);
   const gameRoles = roleCategories.filter((r) => r.gameId === activeGame.id);
+  // Champs du formulaire du jeu, ou jeu de champs par défaut s'il n'a rien défini.
+  const customFields = fields.filter((f) => f.gameId === activeGame.id);
+  const gameFields: FormFieldDef[] = customFields.length > 0 ? customFields : DEFAULT_RECRUIT_FIELDS;
 
   // Ordre des rôles : catégories déclarées d'abord, puis d'éventuels rôles
   // orphelins issus d'anciens postes, dans leur ordre d'apparition.
@@ -118,7 +126,7 @@ export function RecruitmentView({
           className="mb-8"
         />
         {activeGame.status === 'ACTIVE' ? (
-          <ApplicationForm gameId={activeGame.id} gameName={activeGame.name} auth={auth} />
+          <ApplicationForm gameId={activeGame.id} gameName={activeGame.name} fields={gameFields} auth={auth} />
         ) : (
           <div className="card p-10 text-center text-muted">
             Les candidatures pour {activeGame.name} ouvriront au lancement du projet.

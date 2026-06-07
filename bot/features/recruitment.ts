@@ -21,6 +21,49 @@ function clamp(value: string, max = 1024): string {
   return value.length > max ? `${value.slice(0, max - 1)}…` : value;
 }
 
+type StoredAnswer = { label: string; value: string };
+
+/**
+ * Construit les champs de l'embed à partir des réponses au formulaire
+ * personnalisé (`answers`). Repli sur les anciennes colonnes fixes pour les
+ * candidatures antérieures au constructeur de formulaire.
+ */
+function applicationAnswerFields(application: {
+  answers: unknown;
+  characterId: string | null;
+  className: string | null;
+  role: string | null;
+  server: string | null;
+  availability: string | null;
+  experience: string | null;
+  motivation: string | null;
+  logsUrl: string | null;
+}): { name: string; value: string }[] {
+  const answers = Array.isArray(application.answers)
+    ? (application.answers as StoredAnswer[])
+    : [];
+  if (answers.length > 0) {
+    return answers
+      .filter((a) => a && a.label && a.value)
+      .map((a) => ({ name: clamp(a.label, 256), value: clamp(String(a.value)) }));
+  }
+  // Repli : anciennes candidatures (colonnes historiques).
+  const legacy: { name: string; value: string }[] = [];
+  const push = (name: string, value: string | null) => {
+    if (value) legacy.push({ name, value: clamp(value) });
+  };
+  if (application.className || application.role) {
+    legacy.push({ name: 'Classe / Rôle', value: clamp(`${application.className ?? ''} · ${application.role ?? ''}`, 256) });
+  }
+  push('Serveur', application.server);
+  push('BattleTag / ID', application.characterId);
+  push('Disponibilités', application.availability);
+  push('Expérience', application.experience);
+  push('Motivation', application.motivation);
+  push('Logs / Armory', application.logsUrl);
+  return legacy;
+}
+
 /** Construit un nom de salon Discord valide : « candid-pseudo » (minuscules, sans accents). */
 function candidateChannelName(pseudo: string): string {
   const slug = pseudo
@@ -97,13 +140,7 @@ export async function postApplication(client: Client, applicationId: string): Pr
     .setTitle(`📥 Candidature — ${application.pseudo}`)
     .addFields(
       ...(application.discord ? [{ name: 'Discord', value: clamp(application.discord, 256), inline: true }] : []),
-      { name: 'Classe / Rôle', value: clamp(`${application.className} · ${application.role}`, 256), inline: true },
-      { name: 'Serveur', value: clamp(application.server, 256), inline: true },
-      ...(application.characterId ? [{ name: 'BattleTag / ID', value: clamp(application.characterId, 256), inline: true }] : []),
-      { name: 'Disponibilités', value: clamp(application.availability) },
-      { name: 'Expérience', value: clamp(application.experience) },
-      { name: 'Motivation', value: clamp(application.motivation) },
-      ...(application.logsUrl ? [{ name: 'Logs / Armory', value: clamp(application.logsUrl, 512) }] : []),
+      ...applicationAnswerFields(application),
     )
     .setFooter({ text: game.name })
     .setTimestamp(application.createdAt);

@@ -1,19 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import type { FormFieldDef } from '@/lib/recruitment-fields';
 
 /**
  * Formulaire public de candidature, propre à UN jeu.
  * Le jeu n'est pas demandé au joueur : il est déterminé par l'onglet/la page
  * sur laquelle il se trouve (transmis en champ caché `gameId`).
+ *
+ * Les champs (hors Pseudo + Discord, toujours présents) sont définis par jeu
+ * dans l'admin (constructeur de formulaire) et rendus dynamiquement ici.
  */
 export function ApplicationForm({
   gameId,
   gameName,
+  fields,
   auth,
 }: {
   gameId: string;
   gameName: string;
+  fields: FormFieldDef[];
   auth: { loggedIn: boolean; discordLinked: boolean; discord: string | null };
 }) {
   // Connexion + Discord lié obligatoires pour postuler (suivi de candidature).
@@ -45,16 +51,20 @@ export function ApplicationForm({
       </div>
     );
   }
-  return <ApplicationFormFields gameId={gameId} gameName={gameName} discord={auth.discord} />;
+  return (
+    <ApplicationFormFields gameId={gameId} gameName={gameName} fields={fields} discord={auth.discord} />
+  );
 }
 
 function ApplicationFormFields({
   gameId,
   gameName,
+  fields,
   discord,
 }: {
   gameId: string;
   gameName: string;
+  fields: FormFieldDef[];
   discord: string | null;
 }) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
@@ -65,8 +75,17 @@ function ApplicationFormFields({
     setStatus('sending');
     setError('');
 
-    const formData = new FormData(e.currentTarget);
-    const payload = Object.fromEntries(formData.entries());
+    const fd = new FormData(e.currentTarget);
+    // Les réponses aux champs personnalisés sont collectées par clé.
+    const values: Record<string, string> = {};
+    for (const f of fields) values[f.key] = String(fd.get(`field_${f.key}`) ?? '');
+
+    const payload = {
+      gameId,
+      pseudo: String(fd.get('pseudo') ?? ''),
+      discord: String(fd.get('discord') ?? ''),
+      values,
+    };
 
     try {
       const res = await fetch('/api/applications', {
@@ -121,6 +140,7 @@ function ApplicationFormFields({
       {/* Le jeu est imposé par la page : aucun choix demandé au joueur. */}
       <input type="hidden" name="gameId" value={gameId} />
 
+      {/* Champs fixes : identité + contact (liés à la connexion). */}
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Pseudo *" name="pseudo" required placeholder="Ton pseudo en jeu" />
         <Field
@@ -133,40 +153,10 @@ function ApplicationFormFields({
         />
       </div>
 
-      <Field label="BattleTag / ID" name="characterId" placeholder="Pseudo#1234" />
-
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Serveur *" name="server" required placeholder="Hyjal, Tarren Mill..." />
-        <Field label="Classe *" name="className" required placeholder="Mage, Prêtre..." />
-      </div>
-
-      <Field label="Rôle *" name="role" required placeholder="DPS, Heal, Tank" />
-
-      <div>
-        <label className="label" htmlFor="experience">Expérience PvE *</label>
-        <textarea
-          id="experience" name="experience" required rows={4} className="field"
-          placeholder="Tes progress récents, guildes précédentes, ton niveau de jeu..."
-        />
-      </div>
-
-      <Field
-        label="Disponibilités *" name="availability" required
-        placeholder="Ex : lun/mer/jeu 20h-23h"
-      />
-
-      <Field
-        label="Logs / Armory" name="logsUrl" type="url"
-        placeholder="https://www.warcraftlogs.com/character/..."
-      />
-
-      <div>
-        <label className="label" htmlFor="motivation">Motivation *</label>
-        <textarea
-          id="motivation" name="motivation" required rows={4} className="field"
-          placeholder="Pourquoi Absolution ? Qu'attends-tu de la guilde ?"
-        />
-      </div>
+      {/* Champs personnalisés du jeu. */}
+      {fields.map((f) => (
+        <DynamicField key={f.key} field={f} />
+      ))}
 
       {error && (
         <p className="rounded-lg border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-300">
@@ -178,6 +168,52 @@ function ApplicationFormFields({
         {status === 'sending' ? 'Envoi...' : `Postuler pour ${gameName}`}
       </button>
     </form>
+  );
+}
+
+/** Rend un champ du formulaire selon son type. */
+function DynamicField({ field }: { field: FormFieldDef }) {
+  const name = `field_${field.key}`;
+  const label = `${field.label}${field.required ? ' *' : ''}`;
+
+  if (field.type === 'TEXTAREA') {
+    return (
+      <div>
+        <label className="label" htmlFor={name}>{label}</label>
+        <textarea
+          id={name} name={name} required={field.required} rows={4} className="field"
+          placeholder={field.placeholder ?? ''}
+        />
+        {field.helpText && <p className="mt-1 text-xs text-muted">{field.helpText}</p>}
+      </div>
+    );
+  }
+
+  if (field.type === 'SELECT') {
+    return (
+      <div>
+        <label className="label" htmlFor={name}>{label}</label>
+        <select id={name} name={name} required={field.required} className="field" defaultValue="">
+          <option value="" disabled>Choisir…</option>
+          {(field.options ?? []).map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+        {field.helpText && <p className="mt-1 text-xs text-muted">{field.helpText}</p>}
+      </div>
+    );
+  }
+
+  const inputType = field.type === 'URL' ? 'url' : field.type === 'NUMBER' ? 'number' : 'text';
+  return (
+    <div>
+      <label className="label" htmlFor={name}>{label}</label>
+      <input
+        id={name} name={name} type={inputType} required={field.required}
+        placeholder={field.placeholder ?? ''} className="field"
+      />
+      {field.helpText && <p className="mt-1 text-xs text-muted">{field.helpText}</p>}
+    </div>
   );
 }
 

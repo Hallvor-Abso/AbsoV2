@@ -12,19 +12,42 @@ export type AdminApplication = {
   id: string;
   pseudo: string;
   discord: string | null;
+  // Réponses au formulaire personnalisé (candidatures récentes).
+  answers: { label: string; value: string }[] | null;
+  // Colonnes historiques (candidatures antérieures au constructeur).
   characterId: string | null;
-  className: string;
-  role: string;
-  server: string;
-  experience: string;
-  availability: string;
+  className: string | null;
+  role: string | null;
+  server: string | null;
+  experience: string | null;
+  availability: string | null;
   logsUrl: string | null;
-  motivation: string;
+  motivation: string | null;
   status: keyof typeof APPLICATION_STATUS;
   internalNotes: string | null;
   createdAt: string;
   gameId: string | null;
 };
+
+const isUrl = (v: string) => /^https?:\/\//i.test(v.trim());
+
+/** Réponses à afficher : formulaire personnalisé, ou repli sur les colonnes historiques. */
+function answersOf(app: AdminApplication): { label: string; value: string }[] {
+  if (app.answers?.length) return app.answers;
+  const legacy: { label: string; value: string }[] = [];
+  const push = (label: string, value: string | null) => {
+    if (value) legacy.push({ label, value });
+  };
+  push('BattleTag / ID', app.characterId);
+  push('Serveur', app.server);
+  push('Classe', app.className);
+  push('Rôle', app.role);
+  push('Expérience', app.experience);
+  push('Disponibilités', app.availability);
+  push('Logs / Armory', app.logsUrl);
+  push('Motivation', app.motivation);
+  return legacy;
+}
 
 const STATUS_TABS = [
   { key: 'ALL', label: 'Toutes' },
@@ -78,18 +101,18 @@ export function AdminApplicationsView({
         <p className="text-muted">Aucune candidature pour ce filtre.</p>
       ) : (
         <div className="space-y-4">
-          {list.map((app) => (
+          {list.map((app) => {
+            const answers = answersOf(app);
+            const subtitle = answers.slice(0, 3).map((a) => a.value).join(' · ');
+            return (
             <div key={app.id} className="card p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold ${APPLICATION_STATUS[app.status].badge}`}>
                     {APPLICATION_STATUS[app.status].label}
                   </span>
-                  <h3 className="mt-2 text-lg font-semibold text-title">
-                    {app.pseudo}
-                    {app.characterId && <span className="ml-2 text-sm font-normal text-muted">{app.characterId}</span>}
-                  </h3>
-                  <p className="text-sm text-muted">{app.className} · {app.role} · {app.server}</p>
+                  <h3 className="mt-2 text-lg font-semibold text-title">{app.pseudo}</h3>
+                  {subtitle && <p className="text-sm text-muted">{subtitle}</p>}
                   {app.discord && (
                     <p className="mt-1 text-sm text-foreground">
                       <span className="text-muted">Discord :</span> {app.discord}
@@ -102,17 +125,22 @@ export function AdminApplicationsView({
               <details className="mt-4">
                 <summary className="cursor-pointer text-sm font-medium text-accent">Voir les détails</summary>
                 <dl className="mt-3 space-y-3 text-sm">
-                  <Detail label="Expérience" value={app.experience} />
-                  <Detail label="Disponibilités" value={app.availability} />
-                  {app.logsUrl && (
-                    <div>
-                      <dt className="text-xs uppercase tracking-wider text-muted">Logs / Armory</dt>
-                      <dd className="mt-1">
-                        <a href={app.logsUrl} target="_blank" rel="noopener noreferrer" className="break-all text-accent hover:underline">{app.logsUrl}</a>
-                      </dd>
-                    </div>
+                  {answers.length === 0 ? (
+                    <p className="text-muted">Aucune réponse enregistrée.</p>
+                  ) : (
+                    answers.map((a, idx) => (
+                      <div key={`${a.label}-${idx}`}>
+                        <dt className="text-xs uppercase tracking-wider text-muted">{a.label}</dt>
+                        <dd className="mt-1">
+                          {isUrl(a.value) ? (
+                            <a href={a.value} target="_blank" rel="noopener noreferrer" className="break-all text-accent hover:underline">{a.value}</a>
+                          ) : (
+                            <span className="whitespace-pre-wrap text-foreground">{a.value}</span>
+                          )}
+                        </dd>
+                      </div>
+                    ))
                   )}
-                  <Detail label="Motivation" value={app.motivation} />
                 </dl>
               </details>
 
@@ -142,18 +170,10 @@ export function AdminApplicationsView({
                 </ConfirmButton>
               </ActionForm>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
-    </div>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-xs uppercase tracking-wider text-muted">{label}</dt>
-      <dd className="mt-1 whitespace-pre-wrap text-foreground">{value}</dd>
     </div>
   );
 }

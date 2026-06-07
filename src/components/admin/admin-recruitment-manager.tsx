@@ -14,11 +14,16 @@ import {
   cycleSlotStatus,
   deleteSlot,
 } from '@/app/admin/actions';
+import { RecruitFieldsEditor, type AdminField } from './recruit-fields-editor';
 
 type Status = 'OPEN' | 'LIMITED' | 'CLOSED';
 export type AdminSlot = { id: string; role: string; className: string; status: Status };
 export type AdminRole = { id: string; name: string; description: string | null };
-export type AdminRecruitGame = GameTabInfo & { roles: AdminRole[]; slots: AdminSlot[] };
+export type AdminRecruitGame = GameTabInfo & {
+  roles: AdminRole[];
+  slots: AdminSlot[];
+  fields: AdminField[];
+};
 
 // Couleurs des boutons de spécialisation selon le statut (cycle au clic).
 const BTN: Record<Status, string> = {
@@ -168,6 +173,9 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
           })}
         </div>
       )}
+
+      {/* Constructeur du formulaire de candidature pour le jeu sélectionné */}
+      <RecruitFieldsEditor gameId={game.id} fields={game.fields} />
     </div>
   );
 }
