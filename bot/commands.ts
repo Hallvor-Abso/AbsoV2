@@ -75,21 +75,36 @@ export const commands = [
 ].map((c) => c.toJSON());
 
 // --- Aiguillage --------------------------------------------------------------
+
+/** Supprime la réponse éphémère après un délai (désencombre le salon admin). */
+function autoDelete(interaction: ChatInputCommandInteraction, ms = 20_000): void {
+  setTimeout(() => {
+    interaction.deleteReply().catch(() => {});
+  }, ms);
+}
+
 export async function handleInteraction(interaction: ChatInputCommandInteraction) {
   switch (interaction.commandName) {
     case 'recrutement':
-      return recrutement(interaction);
+      await recrutement(interaction);
+      break;
     case 'progression':
-      return progression(interaction);
+      await progression(interaction);
+      break;
     case 'setup-serveur':
-      return setupServeur(interaction);
+      await setupServeur(interaction);
+      break;
     case 'presentation':
-      return presentation(interaction);
+      await presentation(interaction);
+      break;
     case 'setup-class-emojis':
-      return setupClassEmojis(interaction);
+      await setupClassEmojis(interaction);
+      break;
     default:
       return;
   }
+  // Auto-suppression de la réponse de TOUTE commande après un délai.
+  autoDelete(interaction);
 }
 
 async function setupClassEmojis(interaction: ChatInputCommandInteraction) {
