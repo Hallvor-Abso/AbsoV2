@@ -138,7 +138,10 @@ export function getEvents() {
     orderBy: { startDate: 'asc' },
     include: {
       game: true,
-      signups: { select: { discordId: true, displayName: true, status: true }, orderBy: { createdAt: 'asc' } },
+      signups: {
+        select: { discordId: true, displayName: true, status: true, role: true, className: true, spec: true },
+        orderBy: { createdAt: 'asc' },
+      },
     },
   });
 }

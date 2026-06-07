@@ -5,13 +5,20 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { EVENT_TYPE } from '@/lib/labels';
 import { GameTabBar, type GameTabInfo } from './game-tab-bar';
-import { rsvpEvent, cancelRsvp } from '@/app/(public)/calendrier/actions';
+import { rsvpEvent, rsvpWithSpec, changeSpec, cancelRsvp } from '@/app/(public)/calendrier/actions';
+import { CLASSES, ROLE_EMOJI, ROLE_LABEL, ROLE_ORDER, findClass, gameKey, type GameKey, type SpecRole } from '@/lib/classes';
 
 export type EventSignup = {
   discordId: string;
   displayName: string;
   status: string; // GOING | MAYBE | DECLINED
+  role?: string | null;
+  className?: string | null;
+  spec?: string | null;
 };
+
+/** Main du membre par jeu (gameId → classe/spé), pour savoir s'il faut demander la spé. */
+export type MyMain = { classId: string; className: string; spec: string; role: string };
 
 export type CalendarEvent = {
   id: string;
@@ -49,11 +56,13 @@ export function CalendarView({
   games,
   discordLinked,
   myDiscordId,
+  myMains = {},
 }: {
   events: CalendarEvent[];
   games: GameTabInfo[];
   discordLinked: boolean;
   myDiscordId: string | null;
+  myMains?: Record<string, MyMain>;
 }) {
   const today = new Date();
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -214,7 +223,12 @@ export function CalendarView({
               </p>
             )}
 
-            <EventRsvp event={selected} discordLinked={discordLinked} myDiscordId={myDiscordId} />
+            <EventRsvp
+              event={selected}
+              discordLinked={discordLinked}
+              myDiscordId={myDiscordId}
+              myMain={myMains[selected.gameId] ?? null}
+            />
           </div>
         </div>
       )}
@@ -227,36 +241,75 @@ function EventRsvp({
   event,
   discordLinked,
   myDiscordId,
+  myMain,
 }: {
   event: CalendarEvent;
   discordLinked: boolean;
   myDiscordId: string | null;
+  myMain: MyMain | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [picker, setPicker] = useState<{ mode: 'rsvp' | 'respec'; status?: string } | null>(null);
 
+  const key = gameKey(event.gameName);
   const myStatus = myDiscordId
     ? event.signups.find((s) => s.discordId === myDiscordId)?.status ?? null
     : null;
-
-  // Surbrillance instantanée : on affiche tout de suite le statut choisi, sans
-  // attendre l'aller-retour serveur (réconcilié au rafraîchissement).
   const [shownStatus, setOptimisticStatus] = useOptimistic<string | null>(myStatus);
 
-  // `next` = nouveau statut optimiste (ou null pour une désinscription).
-  const run = (next: string | null, fn: () => Promise<{ ok: true } | { error: string }>) =>
+  type Res = { ok: true } | { error: string } | { needSpec: true };
+
+  const onRsvp = (status: string) => {
+    setError(null);
+    // Jeu à classes + pas encore de main → on demande d'abord la spé.
+    if (key && status !== 'DECLINED' && !myMain) {
+      setPicker({ mode: 'rsvp', status });
+      return;
+    }
+    startTransition(async () => {
+      setOptimisticStatus(status);
+      const res: Res = await rsvpEvent(event.id, status);
+      if ('error' in res) setError(res.error);
+      else if ('needSpec' in res) setPicker({ mode: 'rsvp', status });
+      else router.refresh();
+    });
+  };
+
+  const onRemove = () =>
     startTransition(async () => {
       setError(null);
-      setOptimisticStatus(next);
-      const res = await fn();
+      setOptimisticStatus(null);
+      const res: Res = await cancelRsvp(event.id);
       if ('error' in res) setError(res.error);
       else router.refresh();
     });
 
+  const onConfirmSpec = (classId: string, specId: string) => {
+    const p = picker;
+    if (!p) return;
+    startTransition(async () => {
+      setError(null);
+      const res: Res =
+        p.mode === 'respec'
+          ? await changeSpec(event.id, classId, specId)
+          : await rsvpWithSpec(event.id, p.status as string, classId, specId);
+      if ('error' in res) setError(res.error);
+      else {
+        if (p.status) setOptimisticStatus(p.status);
+        setPicker(null);
+        router.refresh();
+      }
+    });
+  };
+
+  const going = event.signups.filter((s) => s.status === 'GOING');
+  const maybe = event.signups.filter((s) => s.status === 'MAYBE');
+  const declined = event.signups.filter((s) => s.status === 'DECLINED');
+
   return (
     <div className="mt-5 border-t border-border pt-4">
-      {/* Boutons d'inscription */}
       {discordLinked ? (
         <>
           <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Ma réponse</p>
@@ -266,7 +319,7 @@ function EventRsvp({
                 key={opt.key}
                 type="button"
                 disabled={pending}
-                onClick={() => run(opt.key, () => rsvpEvent(event.id, opt.key))}
+                onClick={() => onRsvp(opt.key)}
                 className={cn(
                   'rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50',
                   shownStatus === opt.key
@@ -281,13 +334,41 @@ function EventRsvp({
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => run(null, () => cancelRsvp(event.id))}
+                onClick={onRemove}
                 className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:text-title disabled:opacity-50"
               >
                 Me retirer
               </button>
             )}
+            {key && (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => setPicker({ mode: 'respec' })}
+                className="rounded-lg border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:border-accent/60 disabled:opacity-50"
+              >
+                🔁 Changer de spé
+              </button>
+            )}
           </div>
+
+          {myMain && key && (
+            <p className="mt-2 text-xs text-muted">
+              Ta spé : <span className="text-foreground/90">{myMain.className} — {myMain.spec}</span>
+            </p>
+          )}
+
+          {/* Sélecteur de classe / spé (1ʳᵉ inscription ou changement) */}
+          {key && picker && (
+            <SpecPicker
+              gameKey={key}
+              initial={myMain}
+              pending={pending}
+              onConfirm={onConfirmSpec}
+              onCancel={() => setPicker(null)}
+            />
+          )}
+
           <a href="/api/discord/link" className="mt-2 inline-block text-xs text-muted underline hover:text-accent">
             Mettre à jour mon pseudo Discord
           </a>
@@ -305,27 +386,113 @@ function EventRsvp({
 
       {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
 
-      {/* Listes des inscrits */}
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {RSVP_OPTIONS.map((opt) => {
-          const names = event.signups.filter((s) => s.status === opt.key).map((s) => s.displayName);
-          return (
-            <div key={opt.key}>
-              <p className="mb-1 text-xs font-semibold text-muted">
-                {opt.emoji} {opt.label} ({names.length})
-              </p>
-              {names.length === 0 ? (
-                <p className="text-xs text-muted/70">—</p>
-              ) : (
-                <ul className="space-y-0.5 text-sm text-foreground/90">
-                  {names.map((n, i) => (
-                    <li key={`${n}-${i}`} className="truncate">{n}</li>
-                  ))}
-                </ul>
-              )}
+      {/* Liste des inscrits */}
+      <div className="mt-5 space-y-4">
+        <div>
+          <p className="mb-1 text-xs font-semibold text-muted">✅ Présents ({going.length})</p>
+          {going.length === 0 ? (
+            <p className="text-xs text-muted/70">—</p>
+          ) : key ? (
+            <div className="space-y-2">
+              {ROLE_ORDER.map((role) => {
+                const members = going.filter((s) => s.role === role);
+                if (members.length === 0) return null;
+                return (
+                  <div key={role}>
+                    <p className="text-xs font-medium text-foreground/80">
+                      {ROLE_EMOJI[role]} {ROLE_LABEL[role]} ({members.length})
+                    </p>
+                    <ul className="ml-1 text-sm text-foreground/90">
+                      {members.map((m, i) => (
+                        <li key={i} className="truncate">
+                          {m.displayName}
+                          {m.spec ? <span className="text-muted"> · {m.spec}</span> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+              {going.filter((s) => !s.role).map((m, i) => (
+                <p key={`nr-${i}`} className="text-sm text-foreground/90">• {m.displayName}</p>
+              ))}
             </div>
-          );
-        })}
+          ) : (
+            <ul className="text-sm text-foreground/90">
+              {going.map((m, i) => <li key={i} className="truncate">{m.displayName}</li>)}
+            </ul>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <p className="mb-1 text-xs font-semibold text-muted">❓ Peut-être ({maybe.length})</p>
+            {maybe.length === 0 ? (
+              <p className="text-xs text-muted/70">—</p>
+            ) : (
+              <ul className="text-sm text-foreground/90">
+                {maybe.map((m, i) => <li key={i} className="truncate">{m.displayName}</li>)}
+              </ul>
+            )}
+          </div>
+          <div>
+            <p className="mb-1 text-xs font-semibold text-muted">❌ Absents ({declined.length})</p>
+            {declined.length === 0 ? (
+              <p className="text-xs text-muted/70">—</p>
+            ) : (
+              <ul className="text-sm text-foreground/90">
+                {declined.map((m, i) => <li key={i} className="truncate">{m.displayName}</li>)}
+              </ul>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Sélecteur classe + spé (deux menus liés). */
+function SpecPicker({
+  gameKey: key,
+  initial,
+  pending,
+  onConfirm,
+  onCancel,
+}: {
+  gameKey: GameKey;
+  initial: MyMain | null;
+  pending: boolean;
+  onConfirm: (classId: string, specId: string) => void;
+  onCancel: () => void;
+}) {
+  const [classId, setClassId] = useState(initial?.classId ?? CLASSES[key][0].id);
+  const cls = findClass(key, classId) ?? CLASSES[key][0];
+  const [specId, setSpecId] = useState(cls.specs[0].id);
+
+  const onClass = (id: string) => {
+    setClassId(id);
+    const c = findClass(key, id);
+    if (c) setSpecId(c.specs[0].id);
+  };
+
+  return (
+    <div className="mt-3 rounded-lg border border-border bg-ink-soft/40 p-3">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Ta classe &amp; spécialisation</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <select value={classId} onChange={(e) => onClass(e.target.value)} className="field max-w-[10rem] py-1.5 text-sm">
+          {CLASSES[key].map((c) => (
+            <option key={c.id} value={c.id}>{c.label}</option>
+          ))}
+        </select>
+        <select value={specId} onChange={(e) => setSpecId(e.target.value)} className="field max-w-[12rem] py-1.5 text-sm">
+          {cls.specs.map((s) => (
+            <option key={s.id} value={s.id}>{s.label} ({ROLE_LABEL[s.role as SpecRole]})</option>
+          ))}
+        </select>
+        <button type="button" disabled={pending} onClick={() => onConfirm(classId, specId)} className="btn-primary py-1.5 text-sm disabled:opacity-50">
+          Valider
+        </button>
+        <button type="button" onClick={onCancel} className="btn-secondary py-1.5 text-sm">Annuler</button>
       </div>
     </div>
   );

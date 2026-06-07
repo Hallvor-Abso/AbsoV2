@@ -56,6 +56,7 @@ model Game {
   recruitmentRoles RecruitmentRole[]
   recruitmentSlots RecruitmentSlot[]
   applications     Application[]
+  memberMains      MemberMain[]
   events           Event[]
   admins           User[]     @relation("GameAdmins")
 
@@ -222,6 +223,11 @@ model EventSignup {
   status      SignupStatus @default(GOING)
   source      String       @default("discord")
 
+  role        String?
+  classId     String?
+  className   String?
+  spec        String?
+
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -232,6 +238,23 @@ enum SignupStatus {
   GOING
   MAYBE
   DECLINED
+}
+
+model MemberMain {
+  id        String   @id @default(cuid())
+  discordId String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId    String
+  role      String
+  classId   String
+  className String
+  specId    String
+  spec      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([discordId, gameId])
 }
 
 model SiteContent {
