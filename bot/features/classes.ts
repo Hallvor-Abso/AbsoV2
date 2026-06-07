@@ -238,7 +238,21 @@ export function classEmojiName(key: GameKey, classId: string): string {
  * URLs des icônes au niveau CLASSE. Utile pour SWTOR (une icône par classe,
  * réutilisée pour ses spés). Clé = `swtor_juggernaut`, `swtor_sorcerer`…
  */
+const SWTOR_CLASS_ICONS: Record<string, string> = {
+  swtor_juggernaut: 'https://w5twhbqprmpdjcud.public.blob.vercel-storage.com/uploads/1780840434691-ntsq6dh.png', // Gardien
+  swtor_marauder: 'https://w5twhbqprmpdjcud.public.blob.vercel-storage.com/uploads/1780840451174-cgxq38b.png', // Sentinelle
+  swtor_sorcerer: 'https://w5twhbqprmpdjcud.public.blob.vercel-storage.com/uploads/1780840464820-ds8dqvi.png', // Érudit
+  swtor_assassin: 'https://w5twhbqprmpdjcud.public.blob.vercel-storage.com/uploads/1780840477558-5oxmf7a.png', // Ombre
+  swtor_mercenary: 'https://w5twhbqprmpdjcud.public.blob.vercel-storage.com/uploads/1780840488819-hvi180o.png', // Commando
+  swtor_powertech: 'https://w5twhbqprmpdjcud.public.blob.vercel-storage.com/uploads/1780840501944-qno1b02.png', // Avant-Garde
+  swtor_sniper: 'https://w5twhbqprmpdjcud.public.blob.vercel-storage.com/uploads/1780840517968-dlkyxl3.png', // Franc-Tireur
+  swtor_operative: 'https://w5twhbqprmpdjcud.public.blob.vercel-storage.com/uploads/1780840531476-on5f0im.png', // Malfrat
+};
+
 export const CLASS_EMOJI_URLS: Record<string, string> = {};
 for (const key of Object.keys(CLASSES) as GameKey[]) {
-  for (const c of CLASSES[key]) CLASS_EMOJI_URLS[classEmojiName(key, c.id)] ||= '';
+  for (const c of CLASSES[key]) {
+    const name = classEmojiName(key, c.id);
+    CLASS_EMOJI_URLS[name] = SWTOR_CLASS_ICONS[name] ?? '';
+  }
 }
