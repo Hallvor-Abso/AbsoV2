@@ -46,9 +46,14 @@ export function RecruitmentView({
   initialGameId?: string | null;
   auth: RecruitAuth;
 }) {
-  const [activeId, setActiveId] = useState(initialGameId ?? games[0]?.id);
-  const activeGame = games.find((g) => g.id === activeId) ?? games[0];
-  if (!activeGame) return null;
+  const [activeId, setActiveId] = useState<string | null>(initialGameId ?? null);
+  const activeGame = activeId ? games.find((g) => g.id === activeId) ?? null : null;
+
+  // Aucun jeu sélectionné → écran de choix neutre (pas de jeu imposé).
+  if (!activeGame) {
+    if (games.length === 0) return null;
+    return <GameChooser games={games} onSelect={setActiveId} />;
+  }
 
   const gameSlots = slots.filter((s) => s.gameId === activeGame.id);
   const gameRoles = roleCategories.filter((r) => r.gameId === activeGame.id);
@@ -65,6 +70,13 @@ export function RecruitmentView({
 
   return (
     <div>
+      <button
+        type="button"
+        onClick={() => setActiveId(null)}
+        className="mb-4 text-sm text-muted transition-colors hover:text-accent"
+      >
+        ← Choisir un autre jeu
+      </button>
       <GameTabBar games={games} activeId={activeGame.id} onSelect={setActiveId} />
 
       {/* ---- Postes recherchés pour le jeu sélectionné ---- */}
@@ -134,6 +146,50 @@ export function RecruitmentView({
             Les candidatures pour {activeGame.name} ouvriront au lancement du projet.
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/** Écran de choix du jeu : aucune préférence imposée, une carte par jeu. */
+function GameChooser({
+  games,
+  onSelect,
+}: {
+  games: GameTabInfo[];
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="py-4">
+      <p className="mb-6 text-center text-lg font-medium text-foreground">
+        Pour quel jeu veux-tu postuler ?
+      </p>
+      <div className="mx-auto grid max-w-2xl gap-4 sm:grid-cols-2">
+        {games.map((g) => (
+          <button
+            key={g.id}
+            type="button"
+            onClick={() => onSelect(g.id)}
+            className="card group flex items-center gap-4 p-6 text-left transition-all duration-300 hover:border-accent/50 hover:shadow-glow"
+          >
+            <span
+              className="h-10 w-10 shrink-0 rounded-full"
+              style={{ backgroundColor: `${g.color}33`, border: `2px solid ${g.color}` }}
+            />
+            <div className="min-w-0">
+              <p className="font-display text-lg font-bold text-title transition-colors group-hover:text-accent">
+                {g.name}
+              </p>
+              {g.status === 'UPCOMING' ? (
+                <span className="text-xs font-medium uppercase tracking-wider text-amber-300">
+                  Bientôt
+                </span>
+              ) : (
+                <span className="text-sm text-muted">Voir les postes & postuler →</span>
+              )}
+            </div>
+          </button>
+        ))}
       </div>
     </div>
   );
