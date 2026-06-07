@@ -120,6 +120,7 @@ export default async function CalendarPage({
             name: g.name,
             color: g.color,
             logoUrl: g.logoUrl,
+            coverImageUrl: g.coverImageUrl,
             status: g.status,
           }))}
         />
