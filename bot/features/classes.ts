@@ -175,11 +175,56 @@ export function specEmojiName(key: GameKey, classId: string, specId: string): st
   return SPEC_EMOJI_NAMES.get(`${key}:${classId}:${specId}`) ?? rawEmoji(key, classId, specId).slice(0, 32);
 }
 
+// Icônes WoW : CDN Wowhead (hotlinkable par Discord à la création de l'emoji).
+const zam = (icon: string) => `https://wow.zamimg.com/images/wow/icons/large/${icon}.jpg`;
+const WOW_SPEC_ICONS: Record<string, string> = {
+  wow_guerrier_armes: 'ability_warrior_savageblow',
+  wow_guerrier_fureur: 'ability_warrior_innerrage',
+  wow_guerrier_protection: 'ability_warrior_defensivestance',
+  wow_paladin_sacre: 'spell_holy_holybolt',
+  wow_paladin_protection: 'ability_paladin_shieldofthetemplar',
+  wow_paladin_vindicte: 'spell_holy_auraoflight',
+  wow_chasseur_maitrise_betes: 'ability_hunter_bestialdiscipline',
+  wow_chasseur_precision: 'ability_hunter_focusedaim',
+  wow_chasseur_survie: 'ability_hunter_camouflage',
+  wow_voleur_assassinat: 'ability_rogue_eviscerate',
+  wow_voleur_hors_la_loi: 'ability_rogue_waylay',
+  wow_voleur_subtilite: 'ability_stealth',
+  wow_pretre_discipline: 'spell_holy_powerwordshield',
+  wow_pretre_sacre: 'spell_holy_guardianspirit',
+  wow_pretre_ombre: 'spell_shadow_shadowwordpain',
+  wow_chaman_elementaire: 'spell_nature_lightning',
+  wow_chaman_amelioration: 'spell_shaman_improvedstormstrike',
+  wow_chaman_restauration: 'spell_nature_magicimmunity',
+  wow_mage_arcanes: 'spell_holy_magicalsentry',
+  wow_mage_feu: 'spell_fire_firebolt02',
+  wow_mage_givre: 'spell_frost_frostbolt02',
+  wow_demoniste_affliction: 'spell_shadow_deathcoil',
+  wow_demoniste_demonologie: 'spell_shadow_metamorphosis',
+  wow_demoniste_destruction: 'spell_shadow_rainoffire',
+  wow_moine_maitre_brasseur: 'spell_monk_brewmaster_spec',
+  wow_moine_tisse_brume: 'spell_monk_mistweaver_spec',
+  wow_moine_marche_vent: 'spell_monk_windwalker_spec',
+  wow_druide_equilibre: 'spell_nature_starfall',
+  wow_druide_farouche: 'ability_druid_catform',
+  wow_druide_gardien: 'ability_racial_bearform',
+  wow_druide_restauration: 'spell_nature_healingtouch',
+  wow_chasseur_demons_devastation: 'ability_demonhunter_specdps',
+  wow_chasseur_demons_vengeance: 'ability_demonhunter_spectank',
+  wow_chevalier_mort_sang: 'spell_deathknight_bloodpresence',
+  wow_chevalier_mort_givre: 'spell_deathknight_frostpresence',
+  wow_chevalier_mort_impie: 'spell_deathknight_unholypresence',
+  wow_evocateur_devastation: 'classicon_evoker_devastation',
+  wow_evocateur_preservation: 'classicon_evoker_preservation',
+  wow_evocateur_augmentation: 'classicon_evoker_augmentation',
+};
+
 /**
- * URLs des icônes de SPÉCIALISATION, pour la commande `/setup-class-emojis` qui
- * crée les emojis personnalisés du serveur. À REMPLIR avec des liens d'images
- * publics (PNG carré, fond transparent recommandé). Clé = nom d'emoji de spé
- * (`wow_mage_givre`, `swtor_juggernaut_immortal`…). Entrées vides ignorées.
+ * URLs des icônes de SPÉCIALISATION pour `/setup-class-emojis`. WoW est
+ * pré-rempli (CDN Wowhead). SWTOR reste à compléter avec des URLs publiques.
+ * Clé = nom d'emoji de spé (`wow_mage_givre`, `swtor_juggernaut_immortal`…).
  */
 export const SPEC_EMOJI_URLS: Record<string, string> = {};
-for (const name of SPEC_EMOJI_NAMES.values()) SPEC_EMOJI_URLS[name] ||= '';
+for (const name of SPEC_EMOJI_NAMES.values()) {
+  SPEC_EMOJI_URLS[name] = WOW_SPEC_ICONS[name] ? zam(WOW_SPEC_ICONS[name]) : '';
+}
