@@ -32,6 +32,7 @@ import {
 } from '@/lib/recruitment-fields';
 import {
   syncEventToBot,
+  syncProgressionToBot,
   removeEventFromBot,
   syncApplicationStatusToBot,
   deleteApplicationChannelFromBot,
@@ -281,12 +282,14 @@ export async function createTier(formData: FormData) {
   await prisma.raidTier.create({ data: { gameId, name, expansion, order: count } });
   revalidatePublic();
   revalidatePath('/admin/progression');
+  await syncProgressionToBot(gameId);
 }
 
 /** Met à jour les métadonnées d'un tier (extension + zoneId Warcraft Logs). */
 export async function updateTier(formData: FormData) {
   const id = formData.get('id') as string;
-  await requireGameAccess(await gameIdOfTier(id));
+  const gameId = await gameIdOfTier(id);
+  await requireGameAccess(gameId);
   const zoneRaw = formData.get('zoneId') as string;
   const zoneId = zoneRaw && !Number.isNaN(Number(zoneRaw)) ? Number(zoneRaw) : null;
   const name = sanitizeText(formData.get('name'), 120);
@@ -297,38 +300,46 @@ export async function updateTier(formData: FormData) {
   });
   revalidatePublic();
   revalidatePath('/admin/progression');
+  await syncProgressionToBot(gameId);
 }
 
 /** SWTOR : bascule le Succès « timer » de l'opération (tier) validé ou non. */
 export async function toggleTierTimer(id: string, value: boolean) {
-  await requireGameAccess(await gameIdOfTier(id));
+  const gameId = await gameIdOfTier(id);
+  await requireGameAccess(gameId);
   await prisma.raidTier.update({ where: { id }, data: { timerDone: value } });
   revalidatePublic();
   revalidatePath('/admin/progression');
+  await syncProgressionToBot(gameId);
 }
 
 export async function deleteTier(id: string) {
-  await requireGameAccess(await gameIdOfTier(id));
+  const gameId = await gameIdOfTier(id);
+  await requireGameAccess(gameId);
   await prisma.raidTier.delete({ where: { id } });
   revalidatePublic();
   revalidatePath('/admin/progression');
+  await syncProgressionToBot(gameId);
 }
 
 export async function createBoss(formData: FormData) {
   const tierId = formData.get('tierId') as string;
-  await requireGameAccess(await gameIdOfTier(tierId));
+  const gameId = await gameIdOfTier(tierId);
+  await requireGameAccess(gameId);
   const name = sanitizeText(formData.get('name'), 120);
   if (!tierId || !name) return;
   const count = await prisma.boss.count({ where: { tierId } });
   await prisma.boss.create({ data: { tierId, name, order: count } });
   revalidatePublic();
   revalidatePath('/admin/progression');
+  await syncProgressionToBot(gameId);
 }
 
 /** Met à jour un boss : statut, date de premier kill et visuel. */
 export async function updateBoss(formData: FormData) {
   const id = formData.get('id') as string;
-  await requireGameAccess(await gameIdOfBoss(id));
+  const gameId = await gameIdOfBoss(id);
+  await requireGameAccess(gameId);
   const status = formData.get('status') as 'KILLED' | 'PROGRESSING' | 'UNTESTED';
   const dateStr = formData.get('firstKillDate') as string;
   const name = sanitizeText(formData.get('name'), 120);
@@ -351,13 +362,16 @@ export async function updateBoss(formData: FormData) {
   });
   revalidatePublic();
   revalidatePath('/admin/progression');
+  await syncProgressionToBot(gameId);
 }
 
 export async function deleteBoss(id: string) {
-  await requireGameAccess(await gameIdOfBoss(id));
+  const gameId = await gameIdOfBoss(id);
+  await requireGameAccess(gameId);
   await prisma.boss.delete({ where: { id } });
   revalidatePublic();
   revalidatePath('/admin/progression');
+  await syncProgressionToBot(gameId);
 }
 
 // =============================================================================

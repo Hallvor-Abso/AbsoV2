@@ -9,6 +9,7 @@ import {
   type Client,
   type Guild,
   type GuildTextBasedChannel,
+  type RepliableInteraction,
   type StringSelectMenuInteraction,
 } from 'discord.js';
 import { SignupStatus } from '@prisma/client';
@@ -41,6 +42,13 @@ const STATUS_LABEL: Record<SignupStatus, string> = {
 function toColor(hex: string): number {
   const n = Number.parseInt(hex.replace('#', ''), 16);
   return Number.isNaN(n) ? ACCENT : n;
+}
+
+/** Supprime la réponse éphémère après un délai (par défaut 10 s) pour désencombrer. */
+function autoDelete(interaction: RepliableInteraction, ms = 10_000): void {
+  setTimeout(() => {
+    interaction.deleteReply().catch(() => {});
+  }, ms);
 }
 
 function formatDate(d: Date): string {
@@ -293,10 +301,12 @@ export async function handleRsvp(interaction: ButtonInteraction): Promise<void> 
     await registerWithMain(eventId, event.gameId!, interaction.user.id, displayName, status);
     await syncEvent(interaction.client, eventId);
     await interaction.editReply(`Réponse enregistrée : **${STATUS_LABEL[status]}**`);
+    autoDelete(interaction);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('handleRsvp a échoué :', err);
     await interaction.editReply(`Impossible d'enregistrer ta réponse : ${msg}`).catch(() => {});
+    autoDelete(interaction);
   }
 }
 
@@ -385,6 +395,7 @@ export async function handleRoleSelect(interaction: StringSelectMenuInteraction)
     content: `✅ Enregistré : **${cls.label}** (${ROLE_LABEL[role]}).`,
     components: [],
   });
+  autoDelete(interaction);
 }
 
 /** Étape 2 : une spé a été choisie → on enregistre le main (+ l'inscription). */
@@ -445,6 +456,7 @@ export async function handleSpecSelect(interaction: StringSelectMenuInteraction)
     content: `✅ Enregistré : **${cls.label} — ${spec.label}** (${ROLE_LABEL[spec.role]}).`,
     components: [],
   });
+  autoDelete(interaction);
 }
 
 /** Supprime le message Discord d'un événement (appelé quand on supprime l'event). */

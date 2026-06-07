@@ -8,6 +8,7 @@ import {
 } from 'discord.js';
 import { prisma } from '../prisma';
 import { gameRoleTag } from './roles';
+import { syncProgression } from './progression';
 
 /**
  * Construit (ou complète) la structure complète du serveur Discord :
@@ -264,6 +265,28 @@ export async function setupServer(guild: Guild): Promise<Acc> {
     await ensureChannel(guild, 'logs', staff, ChannelType.GuildText, acc);
     await ensureChannel(guild, 'modération', staff, ChannelType.GuildText, acc);
     await ensureChannel(guild, 'Réunion Staff', staff, ChannelType.GuildVoice, acc);
+  }
+
+  // ----- 📊 PROGRESSION (public, lecture seule) : un salon par jeu ------------
+  const botId = guild.client.user?.id;
+  const progression = await ensureCategory(
+    guild,
+    '📊 Progression',
+    [ow(everyone, [P.ViewChannel, P.ReadMessageHistory], [P.SendMessages]), ...gmAllow,
+     ...officerIds.map((id) => ow(id, [P.SendMessages])),
+     ...(botId ? [ow(botId, [P.ViewChannel, P.SendMessages, P.ReadMessageHistory])] : [])],
+    acc,
+  );
+  if (progression) {
+    for (const g of perGame) {
+      await ensureChannel(guild, `progression-${g.game.slug}`, progression, ChannelType.GuildText, acc);
+    }
+    // Publie / met à jour l'embed de progression de chaque jeu.
+    for (const g of perGame) {
+      await syncProgression(guild.client, g.game.id).catch((e) =>
+        acc.warnings.push(`Progression ${g.game.name} non publiée : ${e instanceof Error ? e.message : e}`),
+      );
+    }
   }
 
   return acc;

@@ -4,6 +4,7 @@ import { env } from './env';
 import { syncEvent, removeEventMessage } from './features/calendar';
 import { postApplication, postApplicationStatus, deleteApplicationChannel } from './features/recruitment';
 import { getMemberRoles, setMemberRoles } from './features/members';
+import { syncProgression } from './features/progression';
 
 /**
  * Petit serveur HTTP du bot : reçoit les notifications du site (site → bot)
@@ -54,6 +55,11 @@ export function startHttpServer(client: Client): void {
         case '/sync/event-deleted':
           void removeEventMessage(client, body.channelId ?? null, body.messageId ?? null).catch((e) =>
             console.error('removeEventMessage (bg) :', e),
+          );
+          return json(200, { ok: true });
+        case '/sync/progression':
+          void syncProgression(client, body.gameId).catch((e) =>
+            console.error('syncProgression (bg) :', e),
           );
           return json(200, { ok: true });
         case '/sync/application':
