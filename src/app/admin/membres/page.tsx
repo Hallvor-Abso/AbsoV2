@@ -31,6 +31,14 @@ export default async function AdminMembersPage() {
     adminGameIds: u.adminGames.map((g) => g.id),
   }));
 
+  // Tri : par rôle (du plus élevé au plus bas), puis alphabétique à rôle égal.
+  const ROLE_RANK: Record<string, number> = { SUPER_ADMIN: 0, ADMIN: 1, MEMBRE: 2, VISITEUR: 3 };
+  members.sort(
+    (a, b) =>
+      (ROLE_RANK[a.role] ?? 99) - (ROLE_RANK[b.role] ?? 99) ||
+      a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }),
+  );
+
   return (
     <div>
       <PageHeader
