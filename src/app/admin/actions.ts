@@ -83,6 +83,19 @@ async function gameIdOfBoss(bossId: string) {
   return b?.tier.gameId ?? null;
 }
 
+/** Journalise une action admin sensible (best-effort, n'interrompt jamais l'action). */
+async function logAudit(action: string, detail?: string) {
+  try {
+    const u = await getAppUser();
+    const name = (u as { name?: string } | null)?.name || 'Admin';
+    await prisma.auditLog.create({
+      data: { actorId: u?.id ?? null, actorName: name, action, detail: detail ?? null },
+    });
+  } catch (e) {
+    console.error('audit log :', e);
+  }
+}
+
 // =============================================================================
 //  MEMBRES (gestion des rôles)
 // =============================================================================
@@ -97,6 +110,10 @@ export async function updateMember(formData: FormData) {
     throw new Error('Non autorisé');
   }
 
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { displayName: true, username: true, email: true },
+  });
   await prisma.user.update({
     where: { id },
     data: {
@@ -104,13 +121,20 @@ export async function updateMember(formData: FormData) {
       adminGames: { set: gameIds.map((g) => ({ id: g })) },
     },
   });
+  const who = target?.displayName || target?.username || target?.email || id;
+  await logAudit('Membre modifié', `${who} → rôle ${role}${gameIds.length ? ` · admin de ${gameIds.length} jeu(x)` : ''}`);
   revalidatePath('/admin/membres');
 }
 
 export async function deleteMember(id: string) {
   const me = await requireManager();
   if (me.id === id) throw new Error('Vous ne pouvez pas supprimer votre propre compte.');
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { displayName: true, username: true, email: true },
+  });
   await prisma.user.delete({ where: { id } });
+  await logAudit('Membre supprimé', target?.displayName || target?.username || target?.email || id);
   revalidatePath('/admin/membres');
 }
 
@@ -180,13 +204,16 @@ export async function saveGame(formData: FormData) {
 /** Active / désactive un jeu (le retire entièrement du site public si OFF). */
 export async function toggleGame(id: string, isActive: boolean) {
   await requireManager();
-  await prisma.game.update({ where: { id }, data: { isActive } });
+  const game = await prisma.game.update({ where: { id }, data: { isActive }, select: { name: true } });
+  await logAudit(isActive ? 'Jeu réactivé' : 'Jeu désactivé', game.name);
   revalidatePublic();
 }
 
 export async function deleteGame(id: string) {
   await requireManager();
+  const game = await prisma.game.findUnique({ where: { id }, select: { name: true } });
   await prisma.game.delete({ where: { id } });
+  await logAudit('Jeu supprimé', game?.name ?? id);
   revalidatePublic();
 }
 
@@ -634,12 +661,13 @@ export async function updateApplication(formData: FormData) {
 export async function deleteApplication(id: string) {
   const app = await prisma.application.findUnique({
     where: { id },
-    select: { gameId: true, discordChannelId: true },
+    select: { gameId: true, discordChannelId: true, pseudo: true },
   });
   await requireGameAccess(app?.gameId);
   await prisma.application.delete({ where: { id } });
   // Supprime aussi le salon Discord dédié (no-op si pas de salon / bot non configuré).
   await deleteApplicationChannelFromBot(app?.discordChannelId ?? null);
+  await logAudit('Candidature supprimée', app?.pseudo ?? id);
   revalidatePath('/admin/candidatures');
 }
 
@@ -680,12 +708,13 @@ export async function saveEvent(formData: FormData) {
 export async function deleteEvent(id: string) {
   const ev = await prisma.event.findUnique({
     where: { id },
-    select: { gameId: true, discordChannelId: true, discordMessageId: true },
+    select: { gameId: true, discordChannelId: true, discordMessageId: true, title: true },
   });
   await requireGameAccess(ev?.gameId);
   await prisma.event.delete({ where: { id } });
   // Retire le message Discord associé (no-op si bot non configuré).
   await removeEventFromBot(ev?.discordChannelId ?? null, ev?.discordMessageId ?? null);
+  await logAudit('Événement supprimé', ev?.title ?? id);
   revalidatePublic();
   revalidatePath('/admin/calendrier');
 }

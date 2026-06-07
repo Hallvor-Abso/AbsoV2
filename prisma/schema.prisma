@@ -347,6 +347,20 @@ model MemberMain {
   @@unique([discordId, gameId])
 }
 
+// -----------------------------------------------------------------------------
+//  JOURNAL D'AUDIT — trace légère des actions admin sensibles.
+// -----------------------------------------------------------------------------
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String? // id du compte qui a agi
+  actorName String // pseudo (dénormalisé)
+  action    String // libellé court de l'action
+  detail    String? // précision (cible, ancienne/nouvelle valeur…)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 enum SignupStatus {
   GOING    // présent
   MAYBE    // peut-être
