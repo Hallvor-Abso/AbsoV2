@@ -36,4 +36,6 @@ export const env = {
   BOT_HTTP_SECRET: process.env.BOT_HTTP_SECRET || '',
   /** Salon Discord où le bot publie les événements du calendrier. */
   DISCORD_CALENDAR_CHANNEL_ID: process.env.DISCORD_CALENDAR_CHANNEL_ID || '',
+  /** URL publique du site (pour les liens dans les embeds, ex. /presentation). */
+  SITE_URL: (process.env.SITE_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, ''),
 };
