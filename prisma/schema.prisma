@@ -73,6 +73,7 @@ model Game {
   recruitmentSlots RecruitmentSlot[]
   recruitmentFields RecruitmentField[]
   applications    Application[]
+  memberMains     MemberMain[]
   events          Event[]
   admins          User[]    @relation("GameAdmins") // admins propres à ce jeu
 
@@ -308,10 +309,37 @@ model EventSignup {
   status      SignupStatus @default(GOING)
   source      String       @default("discord") // "site" ou "discord" (informatif)
 
+  // Classe/spé/rôle au moment de l'inscription (figés pour l'affichage).
+  role        String? // TANK / HEAL / DPS
+  classId     String? // identifiant de classe (ex. mage, juggernaut)
+  className   String? // libellé de classe
+  spec        String? // libellé de spécialisation
+
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
   @@unique([eventId, discordId])
+}
+
+// -----------------------------------------------------------------------------
+//  MAIN D'UN MEMBRE — sa classe/spé principale PAR JEU, mémorisée et réutilisée
+//  aux inscriptions (partagé site + Discord via discordId). Modifiable.
+// -----------------------------------------------------------------------------
+model MemberMain {
+  id        String   @id @default(cuid())
+  discordId String // identité pivot (même clé que EventSignup)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId    String
+  role      String // TANK / HEAL / DPS (déduit de la spé)
+  classId   String // identifiant de classe (ex. mage)
+  className String // libellé de classe
+  specId    String // identifiant de spé
+  spec      String // libellé de spé
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([discordId, gameId])
 }
 
 enum SignupStatus {

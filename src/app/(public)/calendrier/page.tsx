@@ -75,6 +75,14 @@ export default async function CalendarPage({
     signups: 'signups' in ev ? ev.signups.map((s) => ({ ...s })) : [],
   }));
 
+  // Mains du membre (classe/spé par jeu) pour pré-remplir / éviter de redemander.
+  const mains = me?.discordId
+    ? await prisma.memberMain.findMany({ where: { discordId: me.discordId } })
+    : [];
+  const myMains = Object.fromEntries(
+    mains.map((m) => [m.gameId, { classId: m.classId, className: m.className, spec: m.spec, role: m.role }]),
+  );
+
   const notice = searchParams.discord ? DISCORD_NOTICE[searchParams.discord] : null;
 
   return (
@@ -106,6 +114,7 @@ export default async function CalendarPage({
           events={calendarEvents}
           discordLinked={Boolean(me?.discordId)}
           myDiscordId={me?.discordId ?? null}
+          myMains={myMains}
           games={games.map((g) => ({
             id: g.id,
             name: g.name,

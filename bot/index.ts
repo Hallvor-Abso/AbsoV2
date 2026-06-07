@@ -1,7 +1,7 @@
 import { Client, Events, GatewayIntentBits, MessageFlags, Routes } from 'discord.js';
 import { env } from './env';
 import { commands, handleInteraction } from './commands';
-import { handleRsvp } from './features/calendar';
+import { handleRsvp, handleRespec, handleClassSelect, handleSpecSelect } from './features/calendar';
 import { reconcileMember } from './features/members';
 import { startHttpServer } from './server';
 import { prisma } from './prisma';
@@ -49,8 +49,23 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isButton()) {
     try {
       if (interaction.customId.startsWith('rsvp:')) await handleRsvp(interaction);
+      else if (interaction.customId.startsWith('respec:')) await handleRespec(interaction);
     } catch (err) {
       console.error('Erreur bouton :', err);
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: 'Une erreur est survenue.', flags: MessageFlags.Ephemeral }).catch(() => {});
+      }
+    }
+    return;
+  }
+
+  // Menus déroulants (choix de classe / spé pour l'inscription).
+  if (interaction.isStringSelectMenu()) {
+    try {
+      if (interaction.customId.startsWith('clsel:')) await handleClassSelect(interaction);
+      else if (interaction.customId.startsWith('spsel:')) await handleSpecSelect(interaction);
+    } catch (err) {
+      console.error('Erreur menu déroulant :', err);
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({ content: 'Une erreur est survenue.', flags: MessageFlags.Ephemeral }).catch(() => {});
       }

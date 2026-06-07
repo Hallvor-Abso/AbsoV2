@@ -8,6 +8,7 @@ import {
 import { prisma } from './prisma';
 import { setupServer } from './features/server-setup';
 import { postPresentation } from './features/presentation';
+import { CLASS_EMOJI_URLS } from './features/classes';
 
 const ACCENT = 0x4a9eff;
 
@@ -67,6 +68,10 @@ export const commands = [
     .setName('presentation')
     .setDescription('Publie/actualise l’embed de présentation de la guilde dans #présentation.')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+  new SlashCommandBuilder()
+    .setName('setup-class-emojis')
+    .setDescription('Crée les emojis d’icônes de classe (depuis les URLs configurées).')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 ].map((c) => c.toJSON());
 
 // --- Aiguillage --------------------------------------------------------------
@@ -80,9 +85,50 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
       return setupServeur(interaction);
     case 'presentation':
       return presentation(interaction);
+    case 'setup-class-emojis':
+      return setupClassEmojis(interaction);
     default:
       return;
   }
+}
+
+async function setupClassEmojis(interaction: ChatInputCommandInteraction) {
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  const guild = interaction.guild;
+  if (!guild) {
+    await interaction.editReply('Cette commande doit être utilisée sur un serveur.');
+    return;
+  }
+  if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+    await interaction.editReply('Réservé aux administrateurs du serveur.');
+    return;
+  }
+
+  await guild.emojis.fetch().catch(() => {});
+  const created: string[] = [];
+  const skipped: string[] = [];
+  const missingUrl: string[] = [];
+  const failed: string[] = [];
+
+  for (const [name, url] of Object.entries(CLASS_EMOJI_URLS)) {
+    if (!url) { missingUrl.push(name); continue; }
+    if (guild.emojis.cache.find((e) => e.name === name)) { skipped.push(name); continue; }
+    try {
+      await guild.emojis.create({ attachment: url, name });
+      created.push(name);
+    } catch {
+      failed.push(name);
+    }
+  }
+
+  const lines: string[] = [];
+  lines.push(created.length ? `✅ Créés (${created.length}) : ${created.join(', ')}` : '✅ Aucun nouvel emoji à créer.');
+  if (skipped.length) lines.push(`↩️ Déjà présents (${skipped.length}).`);
+  if (failed.length) lines.push(`⚠️ Échecs (${failed.length}) : ${failed.join(', ')} — limite d’emojis atteinte ou URL invalide ?`);
+  if (missingUrl.length) lines.push(`ℹ️ URL manquante (${missingUrl.length}) : à renseigner dans le code (CLASS_EMOJI_URLS).`);
+
+  const text = lines.join('\n');
+  await interaction.editReply(text.length > 1990 ? `${text.slice(0, 1989)}…` : text);
 }
 
 async function presentation(interaction: ChatInputCommandInteraction) {
