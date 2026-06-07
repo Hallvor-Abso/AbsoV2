@@ -38,25 +38,46 @@ function fill(tpl: string, a: Alert): string {
   return tpl.replace(/\{user\}/g, a.username || 'Quelqu’un').replace(/\{amount\}/g, String(a.amount));
 }
 
-function playChime() {
+function playChime(volume: number) {
   try {
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new Ctx();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g);
-    g.connect(ctx.destination);
-    o.type = 'sine';
-    o.frequency.setValueAtTime(660, ctx.currentTime);
-    o.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
-    g.gain.setValueAtTime(0.0001, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.55);
-    o.start();
-    o.stop(ctx.currentTime + 0.55);
+    ctx.resume?.();
+    const notes = [587.33, 783.99, 1046.5]; // ré5 → sol5 → do6 : petit motif ascendant
+    const master = ctx.createGain();
+    master.connect(ctx.destination);
+    master.gain.value = Math.max(0, Math.min(volume, 1));
+    notes.forEach((freq, i) => {
+      const t = ctx.currentTime + i * 0.13;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g);
+      g.connect(master);
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.6, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+      o.start(t);
+      o.stop(t + 0.34);
+    });
   } catch {
     /* audio indisponible : on ignore */
   }
+}
+
+function playSound(url: string | null, volume: number) {
+  if (url) {
+    try {
+      const a = new Audio(url);
+      a.volume = Math.max(0, Math.min(volume, 1));
+      a.play().catch(() => playChime(volume));
+      return;
+    } catch {
+      /* on retombe sur le carillon */
+    }
+  }
+  playChime(volume);
 }
 
 export default function AlertOverlay() {
@@ -65,13 +86,19 @@ export default function AlertOverlay() {
   const cursorRef = useRef(0);
   const [queue, setQueue] = useState<Alert[]>([]);
   const [current, setCurrent] = useState<Alert | null>(null);
-  const [cfg, setCfg] = useState<{ durationMs: number; sound: boolean } | null>(null);
+  const [cfg, setCfg] = useState<{ durationMs: number; sound: boolean; soundUrl: string | null; volume: number } | null>(null);
 
-  // Configuration (durée + son).
+  // Configuration (durée + son + volume + son personnalisé).
   useEffect(() => {
     if (!ready) return;
     const d = Number(get('duration'));
-    setCfg({ durationMs: (Number.isFinite(d) && d > 0 ? d : 6) * 1000, sound: get('sound') === '1' });
+    const v = Number(get('volume'));
+    setCfg({
+      durationMs: (Number.isFinite(d) && d > 0 ? d : 6) * 1000,
+      sound: get('sound') === '1',
+      soundUrl: get('soundUrl') || null,
+      volume: Number.isFinite(v) && v >= 0 && v <= 1 ? v : 0.8,
+    });
   }, [ready, get]);
 
   // Initialisation du curseur (on ne rejoue pas l'historique) + polling.
@@ -112,7 +139,7 @@ export default function AlertOverlay() {
     const [next, ...rest] = queue;
     setQueue(rest);
     setCurrent(next);
-    if (cfg.sound) playChime();
+    if (cfg.sound) playSound(cfg.soundUrl, cfg.volume);
     const t = setTimeout(() => setCurrent(null), cfg.durationMs);
     return () => clearTimeout(t);
   }, [cfg, current, queue]);

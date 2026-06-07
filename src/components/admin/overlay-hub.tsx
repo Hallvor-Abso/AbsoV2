@@ -166,6 +166,8 @@ const OVERLAYS: OverlayDef[] = [
     fields: [
       { param: 'duration', label: 'Durée (secondes)', kind: 'number', placeholder: '6' },
       { param: 'sound', label: 'Son d’alerte', kind: 'toggle', defaultOn: false, on: '1' },
+      { param: 'volume', label: 'Volume (0 à 1)', kind: 'number', placeholder: '0.8' },
+      { param: 'soundUrl', label: 'Son personnalisé (URL .mp3/.ogg)', kind: 'text', placeholder: 'https://… (vide = carillon par défaut)' },
       { param: 'followMsg', label: 'Message follow', kind: 'text', placeholder: 'vient de suivre la chaîne !' },
       { param: 'subMsg', label: 'Message sub', kind: 'text', placeholder: 's’abonne à la chaîne !' },
       { param: 'raidMsg', label: 'Message raid', kind: 'text', placeholder: 'débarque avec {amount} viewers !' },
