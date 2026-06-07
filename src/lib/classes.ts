@@ -73,6 +73,7 @@ export const CLASSES: Record<GameKey, ClassDef[]> = {
     { id: 'chasseur_demons', label: 'Chasseur de démons', specs: [
       { id: 'devastation', label: 'Dévastation', role: D },
       { id: 'vengeance', label: 'Vengeance', role: T },
+      { id: 'devoreur', label: 'Dévoreur', role: H },
     ] },
     { id: 'chevalier_mort', label: 'Chevalier de la mort', specs: [
       { id: 'sang', label: 'Sang', role: T },
