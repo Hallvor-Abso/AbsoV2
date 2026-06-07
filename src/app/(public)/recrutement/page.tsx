@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { SectionHeading } from '@/components/section-heading';
-import { RecruitmentView, type RecruitSlot, type RecruitRole } from '@/components/recruitment-view';
-import { getVisibleGames, getRecruitmentSlots, getRecruitmentRoles } from '@/lib/data';
+import { RecruitmentView, type RecruitSlot, type RecruitRole, type RecruitField } from '@/components/recruitment-view';
+import { getVisibleGames, getRecruitmentSlots, getRecruitmentRoles, getRecruitmentFields } from '@/lib/data';
+import type { RecruitFieldType } from '@/lib/recruitment-fields';
 import { getAppUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -14,10 +15,11 @@ export const metadata: Metadata = {
 };
 
 export default async function RecruitmentPage() {
-  const [games, slots, roles, user] = await Promise.all([
+  const [games, slots, roles, fields, user] = await Promise.all([
     getVisibleGames(),
     getRecruitmentSlots(),
     getRecruitmentRoles(),
+    getRecruitmentFields(),
     getAppUser(),
   ]);
   const me = user
@@ -51,6 +53,16 @@ export default async function RecruitmentPage() {
           }))}
           slots={slots as RecruitSlot[]}
           roles={roles as RecruitRole[]}
+          fields={fields.map((f) => ({
+            gameId: f.gameId,
+            key: f.key,
+            label: f.label,
+            type: f.type as RecruitFieldType,
+            placeholder: f.placeholder,
+            helpText: f.helpText,
+            required: f.required,
+            options: f.options,
+          })) as RecruitField[]}
           auth={auth}
         />
       )}

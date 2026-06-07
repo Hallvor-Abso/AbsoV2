@@ -96,6 +96,15 @@ export function getRecruitmentRoles() {
   });
 }
 
+/** Champs personnalisés des formulaires de candidature (jeux actifs). */
+export function getRecruitmentFields() {
+  if (IS_DEMO) return Promise.resolve([]);
+  return prisma.recruitmentField.findMany({
+    where: { game: { isActive: true } },
+    orderBy: { order: 'asc' },
+  });
+}
+
 /** Liste des news publiées (optionnellement filtrées par jeu). */
 export function getPublishedNews(gameSlug?: string) {
   if (IS_DEMO) return Promise.resolve(demo.demoNews(gameSlug));

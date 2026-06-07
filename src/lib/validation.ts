@@ -14,19 +14,14 @@ export const registerSchema = z.object({
   password: z.string().min(8, 'Mot de passe : 8 caractères minimum').max(200),
 });
 
-// Formulaire public de candidature
+// Formulaire public de candidature — partie fixe (identité + contact + jeu).
+// Les autres champs sont dynamiques (constructeur par jeu) et validés à part
+// d'après les définitions de `RecruitmentField` (voir lib/recruitment-fields).
 export const applicationSchema = z.object({
   pseudo: z.string().min(2, 'Pseudo trop court').max(60),
   discord: z.string().min(2, 'Pseudo Discord requis').max(60),
-  characterId: z.string().max(80).optional().or(z.literal('')),
-  className: z.string().min(1, 'Classe requise').max(60),
-  role: z.string().min(1, 'Rôle requis').max(60),
-  server: z.string().min(1, 'Serveur requis').max(80),
-  experience: z.string().min(5, 'Décris ton expérience').max(4000),
-  availability: z.string().min(2, 'Indique tes disponibilités').max(1000),
-  logsUrl: z.string().url('Lien invalide').max(500).optional().or(z.literal('')),
-  motivation: z.string().min(10, 'Développe ta motivation').max(4000),
   gameId: z.string().min(1, 'Jeu requis'),
+  values: z.record(z.string(), z.string()).default({}),
 });
 
 export type ApplicationInput = z.infer<typeof applicationSchema>;

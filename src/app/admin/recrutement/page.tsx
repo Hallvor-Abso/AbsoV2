@@ -18,6 +18,7 @@ export default async function AdminRecruitmentPage() {
     include: {
       recruitmentRoles: { orderBy: { order: 'asc' } },
       recruitmentSlots: { orderBy: { order: 'asc' } },
+      recruitmentFields: { orderBy: { order: 'asc' } },
     },
   });
 
@@ -33,6 +34,16 @@ export default async function AdminRecruitmentPage() {
       role: s.role,
       className: s.className,
       status: s.status,
+    })),
+    fields: g.recruitmentFields.map((f) => ({
+      id: f.id,
+      key: f.key,
+      label: f.label,
+      type: f.type,
+      placeholder: f.placeholder,
+      helpText: f.helpText,
+      required: f.required,
+      options: f.options,
     })),
   }));
 

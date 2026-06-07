@@ -71,6 +71,7 @@ model Game {
   news            News[]
   recruitmentRoles RecruitmentRole[]
   recruitmentSlots RecruitmentSlot[]
+  recruitmentFields RecruitmentField[]
   applications    Application[]
   events          Event[]
   admins          User[]    @relation("GameAdmins") // admins propres à ce jeu
@@ -194,20 +195,57 @@ enum SlotStatus {
 }
 
 // -----------------------------------------------------------------------------
+//  CHAMP DE FORMULAIRE — un champ personnalisable du formulaire de candidature,
+//  propre à un jeu. Permet d'adapter le formulaire selon le jeu (constructeur).
+// -----------------------------------------------------------------------------
+model RecruitmentField {
+  id          String           @id @default(cuid())
+  key         String // identifiant stable (slug), clé dans Application.answers
+  label       String
+  type        RecruitFieldType @default(TEXT)
+  placeholder String?
+  helpText    String?
+  required    Boolean          @default(false)
+  options     String[]         @default([]) // valeurs proposées pour les listes déroulantes (SELECT)
+  order       Int              @default(0)
+  game        Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId      String
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([gameId, key])
+}
+
+enum RecruitFieldType {
+  TEXT     // texte court
+  TEXTAREA // texte long
+  URL      // lien
+  NUMBER   // nombre
+  SELECT   // liste déroulante
+}
+
+// -----------------------------------------------------------------------------
 //  CANDIDATURE — soumise via le formulaire public de recrutement.
 // -----------------------------------------------------------------------------
 model Application {
   id            String            @id @default(cuid())
   pseudo        String
   discord       String? // pseudo Discord du candidat (pour le recontacter)
-  characterId   String? // BattleTag / ID de personnage
-  className     String
-  role          String
-  server        String
-  experience    String // expérience PvE / progress
-  availability  String // disponibilités
-  logsUrl       String? // lien Warcraftlogs / armory / parses
-  motivation    String
+
+  // Réponses au formulaire personnalisé du jeu : tableau [{ label, value }].
+  answers       Json?
+
+  // Anciennes colonnes fixes (formulaire WoW historique). Conservées en
+  // nullable pour l'affichage des candidatures antérieures au constructeur.
+  characterId   String?
+  className     String?
+  role          String?
+  server        String?
+  experience    String?
+  availability  String?
+  logsUrl       String?
+  motivation    String?
   status        ApplicationStatus @default(PENDING)
   internalNotes String? // notes internes (admin only)
   discordChannelId String? // salon « candid-pseudo » créé par le bot (mode catégorie)

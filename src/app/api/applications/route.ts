@@ -6,6 +6,12 @@ import { sanitizeText } from '@/lib/sanitize';
 import { notifyDiscord } from '@/lib/discord';
 import { syncApplicationToBot } from '@/lib/bot';
 import { getAppUser } from '@/lib/auth';
+import {
+  DEFAULT_RECRUIT_FIELDS,
+  validateFieldValue,
+  type FormFieldDef,
+  type StoredAnswer,
+} from '@/lib/recruitment-fields';
 
 /**
  * POST /api/applications — réception d'une candidature publique.
@@ -69,38 +75,58 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Jeu indisponible.' }, { status: 400 });
   }
 
-  // 4. Enregistrement (textes nettoyés)
-  const clean = {
-    pseudo: sanitizeText(data.pseudo, 60),
-    discord: sanitizeText(data.discord, 60) || null,
-    characterId: sanitizeText(data.characterId, 80) || null,
-    className: sanitizeText(data.className, 60),
-    role: sanitizeText(data.role, 60),
-    server: sanitizeText(data.server, 80),
-    experience: sanitizeText(data.experience, 4000),
-    availability: sanitizeText(data.availability, 1000),
-    logsUrl: sanitizeText(data.logsUrl, 500) || null,
-    motivation: sanitizeText(data.motivation, 4000),
-    gameId: game.id,
-    userId: appUser.id,
-  };
-  const application = await prisma.application.create({ data: clean });
+  // 4. Champs du formulaire de CE jeu (ou champs par défaut si non personnalisé).
+  const dbFields = await prisma.recruitmentField.findMany({
+    where: { gameId: game.id },
+    orderBy: { order: 'asc' },
+  });
+  const fields: FormFieldDef[] =
+    dbFields.length > 0
+      ? dbFields.map((f) => ({
+          key: f.key,
+          label: f.label,
+          type: f.type,
+          placeholder: f.placeholder,
+          helpText: f.helpText,
+          required: f.required,
+          options: f.options,
+        }))
+      : DEFAULT_RECRUIT_FIELDS;
 
-  // 5a. Publication dans le salon de candidatures du jeu (via le bot).
+  // 5. Validation dynamique + construction des réponses (libellés issus de la
+  //    base, jamais du client) et nettoyage des textes.
+  const answers: StoredAnswer[] = [];
+  for (const field of fields) {
+    const raw = data.values[field.key] ?? '';
+    const err = validateFieldValue(field, raw);
+    if (err) return NextResponse.json({ error: err }, { status: 400 });
+    const value = sanitizeText(raw, 4000);
+    if (value) answers.push({ label: field.label, value });
+  }
+
+  // 6. Enregistrement.
+  const application = await prisma.application.create({
+    data: {
+      pseudo: sanitizeText(data.pseudo, 60),
+      discord: sanitizeText(data.discord, 60) || null,
+      answers,
+      gameId: game.id,
+      userId: appUser.id,
+    },
+  });
+
+  // 7a. Publication dans le salon de candidatures du jeu (via le bot).
   await syncApplicationToBot(application.id);
 
-  // 5b. Notification Discord par webhook global (no-op si non configuré).
+  // 7b. Notification Discord par webhook global (no-op si non configuré).
   const base = process.env.NEXTAUTH_URL?.replace(/\/$/, '');
   await notifyDiscord({
     title: '📥 Nouvelle candidature',
-    description: `**${clean.pseudo}** a postulé pour **${game.name}**`,
+    description: `**${application.pseudo}** a postulé pour **${game.name}**`,
     url: base ? `${base}/admin/candidatures` : undefined,
     fields: [
-      ...(clean.discord ? [{ name: 'Discord', value: clean.discord, inline: true }] : []),
-      { name: 'Classe / Rôle', value: `${clean.className} · ${clean.role}`, inline: true },
-      { name: 'Serveur', value: clean.server, inline: true },
-      { name: 'Disponibilités', value: clean.availability },
-      ...(clean.logsUrl ? [{ name: 'Logs', value: clean.logsUrl }] : []),
+      ...(application.discord ? [{ name: 'Discord', value: application.discord, inline: true }] : []),
+      ...answers.slice(0, 5).map((a) => ({ name: a.label, value: a.value.slice(0, 1024) })),
     ],
   });
 

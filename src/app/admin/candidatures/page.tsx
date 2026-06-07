@@ -24,6 +24,9 @@ export default async function AdminApplicationsPage() {
     id: a.id,
     pseudo: a.pseudo,
     discord: a.discord,
+    answers: Array.isArray(a.answers)
+      ? (a.answers as { label: string; value: string }[])
+      : null,
     characterId: a.characterId,
     className: a.className,
     role: a.role,

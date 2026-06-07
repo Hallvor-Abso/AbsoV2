@@ -25,6 +25,12 @@ import { setupSubscriptions, deleteSubscription, clearBroadcaster } from '@/lib/
 import type { AlertType } from '@prisma/client';
 import { slugify } from '@/lib/utils';
 import {
+  DEFAULT_RECRUIT_FIELDS,
+  FIELD_TYPES,
+  slugifyKey,
+  type RecruitFieldType,
+} from '@/lib/recruitment-fields';
+import {
   syncEventToBot,
   removeEventFromBot,
   syncApplicationStatusToBot,
@@ -456,6 +462,136 @@ export async function cycleSlotStatus(id: string) {
   const next =
     slot?.status === 'OPEN' ? 'CLOSED' : slot?.status === 'CLOSED' ? 'LIMITED' : 'OPEN';
   await prisma.recruitmentSlot.update({ where: { id }, data: { status: next } });
+  revalidatePublic();
+  revalidatePath('/admin/recrutement');
+}
+
+// =============================================================================
+//  CHAMPS DU FORMULAIRE DE CANDIDATURE (constructeur par jeu)
+// =============================================================================
+
+/** Lit et normalise le type de champ depuis le formulaire. */
+function parseFieldType(raw: FormDataEntryValue | null): RecruitFieldType {
+  const value = String(raw ?? 'TEXT') as RecruitFieldType;
+  return FIELD_TYPES.includes(value) ? value : 'TEXT';
+}
+
+/** Parse les options d'une liste déroulante (une par ligne ou séparées par des virgules). */
+function parseOptions(raw: FormDataEntryValue | null): string[] {
+  return String(raw ?? '')
+    .split(/[\n,]/)
+    .map((o) => sanitizeText(o, 200))
+    .filter(Boolean)
+    .slice(0, 50);
+}
+
+/** Génère une clé unique pour un nouveau champ d'un jeu. */
+async function uniqueFieldKey(gameId: string, label: string): Promise<string> {
+  const base = slugifyKey(label) || 'champ';
+  let key = base;
+  let i = 2;
+  while (await prisma.recruitmentField.findUnique({ where: { gameId_key: { gameId, key } } })) {
+    key = `${base}_${i++}`;
+  }
+  return key;
+}
+
+/** Crée un champ de formulaire pour un jeu. */
+export async function createRecruitField(formData: FormData) {
+  const gameId = formData.get('gameId') as string;
+  await requireGameAccess(gameId);
+  const label = sanitizeText(formData.get('label'), 80);
+  if (!label) return;
+  const type = parseFieldType(formData.get('type'));
+  const count = await prisma.recruitmentField.count({ where: { gameId } });
+  await prisma.recruitmentField.create({
+    data: {
+      gameId,
+      key: await uniqueFieldKey(gameId, label),
+      label,
+      type,
+      placeholder: sanitizeText(formData.get('placeholder'), 200) || null,
+      helpText: sanitizeText(formData.get('helpText'), 300) || null,
+      required: formData.get('required') === 'on',
+      options: type === 'SELECT' ? parseOptions(formData.get('options')) : [],
+      order: count,
+    },
+  });
+  revalidatePublic();
+  revalidatePath('/admin/recrutement');
+}
+
+/** Met à jour un champ de formulaire. */
+export async function updateRecruitField(formData: FormData) {
+  const id = formData.get('id') as string;
+  const field = await prisma.recruitmentField.findUnique({ where: { id } });
+  await requireGameAccess(field?.gameId);
+  if (!field) return;
+  const label = sanitizeText(formData.get('label'), 80) || field.label;
+  const type = parseFieldType(formData.get('type'));
+  await prisma.recruitmentField.update({
+    where: { id },
+    data: {
+      label,
+      type,
+      placeholder: sanitizeText(formData.get('placeholder'), 200) || null,
+      helpText: sanitizeText(formData.get('helpText'), 300) || null,
+      required: formData.get('required') === 'on',
+      options: type === 'SELECT' ? parseOptions(formData.get('options')) : [],
+    },
+  });
+  revalidatePublic();
+  revalidatePath('/admin/recrutement');
+}
+
+/** Supprime un champ de formulaire. */
+export async function deleteRecruitField(id: string) {
+  const field = await prisma.recruitmentField.findUnique({ where: { id }, select: { gameId: true } });
+  await requireGameAccess(field?.gameId);
+  await prisma.recruitmentField.delete({ where: { id } });
+  revalidatePublic();
+  revalidatePath('/admin/recrutement');
+}
+
+/** Déplace un champ vers le haut/bas (échange l'ordre avec le voisin). */
+export async function moveRecruitField(id: string, direction: 'up' | 'down') {
+  const field = await prisma.recruitmentField.findUnique({ where: { id } });
+  await requireGameAccess(field?.gameId);
+  if (!field) return;
+  const neighbor = await prisma.recruitmentField.findFirst({
+    where: {
+      gameId: field.gameId,
+      order: direction === 'up' ? { lt: field.order } : { gt: field.order },
+    },
+    orderBy: { order: direction === 'up' ? 'desc' : 'asc' },
+  });
+  if (!neighbor) return;
+  await prisma.$transaction([
+    prisma.recruitmentField.update({ where: { id: field.id }, data: { order: neighbor.order } }),
+    prisma.recruitmentField.update({ where: { id: neighbor.id }, data: { order: field.order } }),
+  ]);
+  revalidatePublic();
+  revalidatePath('/admin/recrutement');
+}
+
+/** Crée les champs par défaut pour un jeu (modèle de départ, si vide). */
+export async function seedDefaultRecruitFields(gameId: string) {
+  await requireGameAccess(gameId);
+  const existing = await prisma.recruitmentField.count({ where: { gameId } });
+  if (existing > 0) return;
+  await prisma.recruitmentField.createMany({
+    data: DEFAULT_RECRUIT_FIELDS.map((f, i) => ({
+      gameId,
+      key: f.key,
+      label: f.label,
+      type: f.type,
+      placeholder: f.placeholder ?? null,
+      helpText: f.helpText ?? null,
+      required: f.required,
+      options: f.options ?? [],
+      order: i,
+    })),
+  });
   revalidatePublic();
   revalidatePath('/admin/recrutement');
 }
