@@ -32,6 +32,7 @@ export function AdminNav({
     { href: '/admin/candidatures', label: 'Candidatures', show: true },
     { href: '/admin/calendrier', label: 'Calendrier', show: true },
     { href: '/admin/membres', label: 'Membres', show: canManageGlobally },
+    { href: '/admin/presence', label: 'Présence', show: canContenu },
     { href: '/admin/contenu', label: 'Contenu du site', show: canContenu },
     { href: '/admin/overlays', label: 'Overlays Stream', show: canOverlays },
   ].filter((l) => l.show);
