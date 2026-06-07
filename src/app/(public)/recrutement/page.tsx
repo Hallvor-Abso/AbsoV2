@@ -14,7 +14,11 @@ export const metadata: Metadata = {
   description: 'Postes ouverts et candidature pour rejoindre la guilde Absolution.',
 };
 
-export default async function RecruitmentPage() {
+export default async function RecruitmentPage({
+  searchParams,
+}: {
+  searchParams: { jeu?: string };
+}) {
   const [games, slots, roles, fields, user] = await Promise.all([
     getVisibleGames(),
     getRecruitmentSlots(),
@@ -63,6 +67,7 @@ export default async function RecruitmentPage() {
             required: f.required,
             options: f.options,
           })) as RecruitField[]}
+          initialGameId={games.find((g) => g.slug === searchParams.jeu)?.id ?? null}
           auth={auth}
         />
       )}

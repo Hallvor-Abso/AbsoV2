@@ -9,6 +9,7 @@ import {
 import { prisma } from '../prisma';
 import { gameRoleTag } from './roles';
 import { syncProgression } from './progression';
+import { postRecruitInfo } from './recruit-info';
 
 /**
  * Construit (ou complète) la structure complète du serveur Discord :
@@ -186,20 +187,24 @@ export async function setupServer(guild: Guild): Promise<Acc> {
   }
 
   const gmAllow = gm ? [ow(gm, MEMBER_ALLOW)] : [];
+  const botId = guild.client.user?.id;
+  const botAllow = botId ? [ow(botId, [P.ViewChannel, P.SendMessages, P.ReadMessageHistory])] : [];
 
-  // ----- 🌐 ACCUEIL (public, lecture seule sauf #général) ---------------------
+  // ----- 🌐 ACCUEIL (public, lecture seule) -----------------------------------
   const accueil = await ensureCategory(
     guild,
     '🌐 Accueil',
     [ow(everyone, [P.ViewChannel, P.ReadMessageHistory], [P.SendMessages]), ...gmAllow,
-     ...officerIds.map((id) => ow(id, [P.SendMessages]))],
+     ...officerIds.map((id) => ow(id, [P.SendMessages])), ...botAllow],
     acc,
   );
   if (accueil) {
     await ensureChannel(guild, 'présentation', accueil, ChannelType.GuildText, acc);
-    await ensureChannel(guild, 'général', accueil, ChannelType.GuildText, acc, [
-      ow(everyone, [P.ViewChannel, P.SendMessages, P.ReadMessageHistory, P.AddReactions]),
-    ]);
+    // #rejoins-nous : lecture seule, contient l'embed de recrutement (boutons par jeu).
+    await ensureChannel(guild, 'rejoins-nous', accueil, ChannelType.GuildText, acc);
+    await postRecruitInfo(guild).catch((e) =>
+      acc.warnings.push(`Embed recrutement non publié : ${e instanceof Error ? e.message : e}`),
+    );
   }
 
   // ----- 🏰 GUILDE (tous les grades + GM) -------------------------------------
@@ -236,6 +241,10 @@ export async function setupServer(guild: Guild): Promise<Acc> {
     await ensureChannel(guild, `${g.tag}-général`, cat, ChannelType.GuildText, acc);
     await ensureChannel(guild, `${g.tag}-annonces`, cat, ChannelType.GuildText, acc, annoncesDeny);
     await ensureChannel(guild, `${g.tag}-stratégies`, cat, ChannelType.GuildText, acc);
+    // Salon public du jeu : visible et ouvert à TOUS (y compris visiteurs).
+    await ensureChannel(guild, `${g.tag}-public`, cat, ChannelType.GuildText, acc, [
+      ow(everyone, [P.ViewChannel, P.SendMessages, P.ReadMessageHistory, P.AddReactions]),
+    ]);
     await ensureChannel(guild, `${g.tag} Général`, cat, ChannelType.GuildVoice, acc);
     await ensureChannel(guild, `${g.tag} Raid 1`, cat, ChannelType.GuildVoice, acc);
     await ensureChannel(guild, `${g.tag} Raid 2`, cat, ChannelType.GuildVoice, acc);
@@ -268,13 +277,11 @@ export async function setupServer(guild: Guild): Promise<Acc> {
   }
 
   // ----- 📊 PROGRESSION (public, lecture seule) : un salon par jeu ------------
-  const botId = guild.client.user?.id;
   const progression = await ensureCategory(
     guild,
     '📊 Progression',
     [ow(everyone, [P.ViewChannel, P.ReadMessageHistory], [P.SendMessages]), ...gmAllow,
-     ...officerIds.map((id) => ow(id, [P.SendMessages])),
-     ...(botId ? [ow(botId, [P.ViewChannel, P.SendMessages, P.ReadMessageHistory])] : [])],
+     ...officerIds.map((id) => ow(id, [P.SendMessages])), ...botAllow],
     acc,
   );
   if (progression) {
