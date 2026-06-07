@@ -40,4 +40,15 @@ export const env = {
   SITE_URL: (process.env.SITE_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, ''),
   /** Bannière de l'embed de présentation (image large). Vide = repli auto. */
   PRESENTATION_BANNER_URL: process.env.PRESENTATION_BANNER_URL || '',
+
+  // --- Bot Twitch (chat) : tout vide → le bot Twitch ne démarre pas. ---
+  /** Pseudo du compte Twitch du bot. */
+  TWITCH_BOT_USERNAME: process.env.TWITCH_BOT_USERNAME || '',
+  /** Token OAuth chat du bot (format « oauth:xxxxx »). */
+  TWITCH_BOT_TOKEN: process.env.TWITCH_BOT_TOKEN || '',
+  /** Chaîne Twitch à rejoindre (nom du broadcaster). */
+  TWITCH_CHANNEL: process.env.TWITCH_CHANNEL || '',
+  /** App Twitch (pour les appels Helix : uptime, jeu, titre…). */
+  TWITCH_CLIENT_ID: process.env.TWITCH_CLIENT_ID || '',
+  TWITCH_CLIENT_SECRET: process.env.TWITCH_CLIENT_SECRET || '',
 };

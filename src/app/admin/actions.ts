@@ -853,3 +853,53 @@ export async function disconnectTwitch() {
   await clearBroadcaster();
   revalidatePath('/admin/overlays');
 }
+
+// =============================================================================
+//  BOT TWITCH — commandes de chat personnalisées
+// =============================================================================
+const TWITCH_LEVELS = new Set(['EVERYONE', 'SUB', 'MOD']);
+
+function cleanCommandName(raw: FormDataEntryValue | null): string {
+  return sanitizeText(raw, 40).toLowerCase().replace(/^!/, '').replace(/[^a-z0-9_]/g, '');
+}
+
+export async function createTwitchCommand(formData: FormData) {
+  await requireOverlays();
+  const name = cleanCommandName(formData.get('name'));
+  const response = sanitizeText(formData.get('response'), 400);
+  if (!name || !response) return;
+  const userLevel = String(formData.get('userLevel') || 'EVERYONE');
+  const cooldown = Math.max(0, Math.min(3600, Number(formData.get('cooldownSeconds')) || 5));
+  await prisma.twitchCommand.upsert({
+    where: { name },
+    update: { response, userLevel: TWITCH_LEVELS.has(userLevel) ? userLevel : 'EVERYONE', cooldownSeconds: cooldown },
+    create: { name, response, userLevel: TWITCH_LEVELS.has(userLevel) ? userLevel : 'EVERYONE', cooldownSeconds: cooldown },
+  });
+  revalidatePath('/admin/twitch');
+}
+
+export async function updateTwitchCommand(formData: FormData) {
+  await requireOverlays();
+  const id = formData.get('id') as string;
+  const response = sanitizeText(formData.get('response'), 400);
+  const userLevel = String(formData.get('userLevel') || 'EVERYONE');
+  const cooldown = Math.max(0, Math.min(3600, Number(formData.get('cooldownSeconds')) || 5));
+  if (!response) return;
+  await prisma.twitchCommand.update({
+    where: { id },
+    data: { response, userLevel: TWITCH_LEVELS.has(userLevel) ? userLevel : 'EVERYONE', cooldownSeconds: cooldown },
+  });
+  revalidatePath('/admin/twitch');
+}
+
+export async function toggleTwitchCommand(id: string, enabled: boolean) {
+  await requireOverlays();
+  await prisma.twitchCommand.update({ where: { id }, data: { enabled } });
+  revalidatePath('/admin/twitch');
+}
+
+export async function deleteTwitchCommand(id: string) {
+  await requireOverlays();
+  await prisma.twitchCommand.delete({ where: { id } });
+  revalidatePath('/admin/twitch');
+}
