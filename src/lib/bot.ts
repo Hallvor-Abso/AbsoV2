@@ -99,6 +99,12 @@ export function removeEventFromBot(channelId: string | null, messageId: string |
   return callBot('/sync/event-deleted', { channelId, messageId });
 }
 
+/** Demande au bot de publier / mettre à jour l'embed de progression d'un jeu. */
+export function syncProgressionToBot(gameId: string | null) {
+  if (!gameId) return Promise.resolve();
+  return callBot('/sync/progression', { gameId });
+}
+
 /** Demande au bot de publier une candidature dans le salon de candidatures du jeu. */
 export function syncApplicationToBot(applicationId: string) {
   return callBot('/sync/application', { applicationId });
