@@ -11,6 +11,7 @@ import { canAccessAdmin, canAccessCalendar, type SessionUser } from '@/lib/permi
 const BASE_LINKS = [
   { href: '/', label: 'Accueil' },
   { href: '/progression', label: 'Progression' },
+  { href: '/roster', label: 'Effectif' },
   { href: '/news', label: 'News' },
   { href: '/recrutement', label: 'Recrutement' },
 ];
