@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { EVENT_TYPE } from '@/lib/labels';
 import { GameTabBar, type GameTabInfo } from './game-tab-bar';
+import { GameChooser } from './game-chooser';
 import { rsvpEvent, rsvpWithSpec, changeSpec, cancelRsvp } from '@/app/(public)/calendrier/actions';
 import { CLASSES, ROLE_EMOJI, ROLE_LABEL, ROLE_ORDER, findClass, gameKey, type GameKey, type SpecRole } from '@/lib/classes';
 
@@ -71,7 +72,8 @@ export function CalendarView({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = selectedId ? events.find((e) => e.id === selectedId) ?? null : null;
   // Un seul jeu affiché à la fois pour éviter un calendrier surchargé.
-  const [activeId, setActiveId] = useState(games[0]?.id);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const activeGame = activeId ? games.find((g) => g.id === activeId) ?? null : null;
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -112,10 +114,30 @@ export function CalendarView({
     today.getMonth() === month &&
     today.getDate() === day;
 
+  // Aucun jeu sélectionné → écran de choix neutre (comme Recrutement/Progression).
+  if (!activeGame) {
+    if (games.length === 0) return null;
+    return (
+      <GameChooser
+        games={games}
+        onSelect={setActiveId}
+        title="Pour quel jeu veux-tu voir le calendrier ?"
+        cta="Voir le calendrier →"
+      />
+    );
+  }
+
   return (
     <div>
+      <button
+        type="button"
+        onClick={() => setActiveId(null)}
+        className="mb-4 text-sm text-muted transition-colors hover:text-accent"
+      >
+        ← Choisir un autre jeu
+      </button>
       {/* Onglets par jeu : un calendrier distinct par jeu */}
-      <GameTabBar games={games} activeId={activeId ?? ''} onSelect={setActiveId} />
+      <GameTabBar games={games} activeId={activeGame.id} onSelect={setActiveId} />
 
       {/* En-tête de navigation */}
       <div className="mb-6 flex items-center justify-between">
