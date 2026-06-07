@@ -10,7 +10,6 @@ import { env } from '../env';
 
 const ACCENT = 0x4a9eff;
 const MARKER = 'Progression officielle · Absolution';
-const BOSS_ICON = { KILLED: '✅', PROGRESSING: '🔶', UNTESTED: '⬜' } as const;
 
 function toColor(hex: string): number {
   const n = Number.parseInt(hex.replace('#', ''), 16);
@@ -61,11 +60,20 @@ export async function syncProgression(client: Client, gameId: string): Promise<v
   if (game.raidTiers.length === 0) {
     embed.setDescription('Aucun contenu de raid pour le moment.');
   } else {
+    const hay = `${game.slug} ${game.name}`.toLowerCase();
+    const isWow = /wow|warcraft/.test(hay);
+    const isSwtor = /swtor|old republic|star wars/.test(hay);
+    // Boss non validé : ❌ pour WoW, ⬜ pour les autres (SWTOR).
+    const icon = (status: string) =>
+      status === 'KILLED' ? '✅' : status === 'PROGRESSING' ? '🔶' : isWow ? '❌' : '⬜';
+
     for (const tier of game.raidTiers.slice(0, 10)) {
       const killed = tier.bosses.filter((b) => b.status === 'KILLED').length;
       const total = tier.bosses.length;
-      const body = tier.bosses.map((b) => `${BOSS_ICON[b.status]} ${b.name}`).join('\n') || '—';
-      const title = `${tier.name}${tier.expansion ? ` — ${tier.expansion}` : ''} (${killed}/${total})`;
+      const body = tier.bosses.map((b) => `${icon(b.status)} ${b.name}`).join('\n') || '—';
+      let title = `${tier.name}${tier.expansion ? ` — ${tier.expansion}` : ''} (${killed}/${total})`;
+      // SWTOR : statut du Succès « timer » de l'opération.
+      if (isSwtor) title += ` · ⏱️ ${tier.timerDone ? '✅' : '❌'}`;
       embed.addFields({ name: title, value: clamp(body) });
     }
   }
