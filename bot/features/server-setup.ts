@@ -190,12 +190,11 @@ export async function setupServer(guild: Guild): Promise<Acc> {
   const botId = guild.client.user?.id;
   const botAllow = botId ? [ow(botId, [P.ViewChannel, P.SendMessages, P.ReadMessageHistory])] : [];
 
-  // ----- 🌐 ACCUEIL (public, lecture seule) -----------------------------------
+  // ----- 🌐 ACCUEIL (public, ENTIÈREMENT verrouillé : seul le bot écrit) -------
   const accueil = await ensureCategory(
     guild,
     '🌐 Accueil',
-    [ow(everyone, [P.ViewChannel, P.ReadMessageHistory], [P.SendMessages]), ...gmAllow,
-     ...officerIds.map((id) => ow(id, [P.SendMessages])), ...botAllow],
+    [ow(everyone, [P.ViewChannel, P.ReadMessageHistory], [P.SendMessages]), ...botAllow],
     acc,
   );
   if (accueil) {
@@ -238,13 +237,12 @@ export async function setupServer(guild: Guild): Promise<Acc> {
       .filter(Boolean)
       .map((id) => ow(id, [], [P.SendMessages]));
 
-    await ensureChannel(guild, `${g.tag}-général`, cat, ChannelType.GuildText, acc);
-    await ensureChannel(guild, `${g.tag}-annonces`, cat, ChannelType.GuildText, acc, annoncesDeny);
-    await ensureChannel(guild, `${g.tag}-stratégies`, cat, ChannelType.GuildText, acc);
-    // Salon public du jeu : visible et ouvert à TOUS (y compris visiteurs).
-    await ensureChannel(guild, `${g.tag}-public`, cat, ChannelType.GuildText, acc, [
+    // #général : ouvert à TOUS (y compris visiteurs).
+    await ensureChannel(guild, `${g.tag}-général`, cat, ChannelType.GuildText, acc, [
       ow(everyone, [P.ViewChannel, P.SendMessages, P.ReadMessageHistory, P.AddReactions]),
     ]);
+    await ensureChannel(guild, `${g.tag}-annonces`, cat, ChannelType.GuildText, acc, annoncesDeny);
+    await ensureChannel(guild, `${g.tag}-stratégies`, cat, ChannelType.GuildText, acc);
     await ensureChannel(guild, `${g.tag} Général`, cat, ChannelType.GuildVoice, acc);
     await ensureChannel(guild, `${g.tag} Raid 1`, cat, ChannelType.GuildVoice, acc);
     await ensureChannel(guild, `${g.tag} Raid 2`, cat, ChannelType.GuildVoice, acc);
