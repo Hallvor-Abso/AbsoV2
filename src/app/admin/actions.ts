@@ -198,16 +198,22 @@ export async function saveNews(formData: FormData) {
   const existing = await prisma.news.findUnique({ where: { slug } });
   if (existing && existing.id !== id) slug = `${slug}-${Date.now().toString(36)}`;
 
-  // Date de publication : champ fourni (permet de PROGRAMMER dans le futur),
-  // sinon maintenant. Un article publié dont la date est future reste invisible
-  // jusqu'à cette date (voir getPublishedNews).
+  // Date de publication (instant UTC ISO envoyé par le formulaire).
+  // - une date fournie PROGRAMME la publication (future = masquée jusque-là) ;
+  // - champ vidé = publie MAINTENANT, sauf si l'article est déjà en ligne
+  //   (date passée) : on conserve alors sa date d'origine pour ne pas la
+  //   « rajeunir » à chaque édition.
+  // Un article publié dont la date est future reste invisible (voir getPublishedNews).
   const scheduledRaw = formData.get('publishedAt') as string;
   const current = id ? await prisma.news.findUnique({ where: { id } }) : null;
+  const now = new Date();
   const publishedAt =
     status === 'PUBLISHED'
       ? scheduledRaw
         ? new Date(scheduledRaw)
-        : current?.publishedAt ?? new Date()
+        : current?.publishedAt && current.publishedAt <= now
+          ? current.publishedAt
+          : now
       : null;
 
   const data = {
