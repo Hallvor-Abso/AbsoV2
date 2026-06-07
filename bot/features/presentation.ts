@@ -33,6 +33,26 @@ const DEFAULTS: Record<string, string> = {
   'site.logoUrl': '',
 };
 
+/** Convertit le HTML éventuel (éditeur du site) en texte simple pour Discord. */
+function stripHtml(input: string): string {
+  return input
+    .replace(/<\s*br\s*\/?>/gi, '\n')
+    .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
+    .replace(/<\/(p|div|h[1-6]|li|ul|ol)>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '• ')
+    .replace(/<[^>]+>/g, '') // toutes les autres balises
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&(#39|apos);/gi, "'")
+    .replace(/&(#8217|rsquo);/gi, '’')
+    .replace(/&quot;/gi, '"')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 /** Tronque proprement un champ d'embed (limite Discord : 1024 caractères). */
 function clamp(value: string, max = 1024): string {
   return value.length > max ? `${value.slice(0, max - 1)}…` : value;
@@ -41,25 +61,56 @@ function clamp(value: string, max = 1024): string {
 async function siteContent(): Promise<Record<string, string>> {
   const rows = await prisma.siteContent.findMany();
   const overrides = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-  return { ...DEFAULTS, ...overrides };
+  const merged = { ...DEFAULTS, ...overrides };
+  // Nettoyage HTML systématique des textes affichés.
+  for (const key of ['hero.tagline', 'hero.subtitle', 'about.body', 'philosophy.body']) {
+    if (merged[key]) merged[key] = stripHtml(merged[key]);
+  }
+  return merged;
 }
 
-function buildEmbed(c: Record<string, string>, games: { name: string }[]): EmbedBuilder {
+function buildEmbed(
+  c: Record<string, string>,
+  games: { name: string; coverImageUrl: string | null }[],
+): EmbedBuilder {
+  const logo = c['site.logoUrl'] || undefined;
+  const banner = games.find((g) => g.coverImageUrl)?.coverImageUrl || undefined;
+
   const embed = new EmbedBuilder()
     .setColor(ACCENT)
-    .setTitle('Absolution')
-    .setDescription(clamp(`*${c['hero.tagline']}*\n\n${c['hero.subtitle']}`, 4000))
-    .setFooter({ text: MARKER });
+    .setAuthor({ name: 'Guilde Absolution', iconURL: logo })
+    .setTitle(c['hero.tagline'])
+    .setDescription(clamp(c['hero.subtitle'], 4000))
+    .setFooter({ text: MARKER, iconURL: logo })
+    .setTimestamp();
 
-  if (c['about.body']) embed.addFields({ name: c['about.title'], value: clamp(c['about.body']) });
+  if (env.SITE_URL) embed.setURL(env.SITE_URL);
+
+  if (c['about.body']) {
+    embed.addFields({ name: `📜 ${c['about.title']}`, value: clamp(c['about.body']) });
+  }
   if (c['philosophy.body']) {
-    embed.addFields({ name: c['philosophy.title'], value: clamp(c['philosophy.body']) });
+    embed.addFields({ name: `⚔️ ${c['philosophy.title']}`, value: clamp(c['philosophy.body']) });
   }
   if (games.length > 0) {
-    embed.addFields({ name: 'Nos jeux', value: games.map((g) => `• ${g.name}`).join('\n') });
+    embed.addFields({
+      name: '🎮 Nos jeux',
+      value: games.map((g) => `🔹 ${g.name}`).join('\n'),
+    });
   }
-  if (c['site.logoUrl']) embed.setThumbnail(c['site.logoUrl']);
-  if (env.SITE_URL) embed.setURL(env.SITE_URL);
+
+  // Appel à l'action (le lien cliquable n'apparaît que si SITE_URL est défini).
+  embed.addFields({
+    name: '​',
+    value: env.SITE_URL
+      ? `**Envie de nous rejoindre ?** Découvre les postes ouverts et postule sur [notre site](${env.SITE_URL}/recrutement).`
+      : '**Envie de nous rejoindre ?** Consulte le salon de recrutement et postule sur notre site.',
+  });
+
+  // Visuel : grande bannière (art d'un jeu) si dispo, sinon le logo en vignette.
+  if (banner) embed.setImage(banner);
+  else if (logo) embed.setThumbnail(logo);
+
   return embed;
 }
 
@@ -93,7 +144,7 @@ export async function postPresentation(guild: Guild): Promise<PresentationResult
     prisma.game.findMany({
       where: { isActive: true },
       orderBy: [{ status: 'asc' }, { order: 'asc' }],
-      select: { name: true },
+      select: { name: true, coverImageUrl: true },
     }),
   ]);
 
