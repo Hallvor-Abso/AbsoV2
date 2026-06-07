@@ -7,6 +7,7 @@ import {
 } from 'discord.js';
 import { prisma } from './prisma';
 import { setupServer } from './features/server-setup';
+import { postPresentation } from './features/presentation';
 
 const ACCENT = 0x4a9eff;
 
@@ -62,6 +63,10 @@ export const commands = [
     .setName('setup-serveur')
     .setDescription('Construit/complète la structure du serveur (catégories, salons, permissions).')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+  new SlashCommandBuilder()
+    .setName('presentation')
+    .setDescription('Publie/actualise l’embed de présentation de la guilde dans #présentation.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 ].map((c) => c.toJSON());
 
 // --- Aiguillage --------------------------------------------------------------
@@ -73,9 +78,34 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
       return progression(interaction);
     case 'setup-serveur':
       return setupServeur(interaction);
+    case 'presentation':
+      return presentation(interaction);
     default:
       return;
   }
+}
+
+async function presentation(interaction: ChatInputCommandInteraction) {
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  if (!interaction.guild) {
+    await interaction.editReply('Cette commande doit être utilisée sur un serveur.');
+    return;
+  }
+  if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+    await interaction.editReply('Réservé aux administrateurs du serveur.');
+    return;
+  }
+
+  const result = await postPresentation(interaction.guild);
+  if (!result.ok) {
+    await interaction.editReply(`❌ ${result.reason}`);
+    return;
+  }
+  await interaction.editReply(
+    result.updated
+      ? '✅ Embed de présentation mis à jour dans #présentation.'
+      : '✅ Embed de présentation publié dans #présentation.',
+  );
 }
 
 async function setupServeur(interaction: ChatInputCommandInteraction) {
