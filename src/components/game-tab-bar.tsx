@@ -8,6 +8,7 @@ export type GameTabInfo = {
   name: string;
   color: string;
   logoUrl?: string | null;
+  coverImageUrl?: string | null;
   status?: 'ACTIVE' | 'UPCOMING';
 };
 
