@@ -208,6 +208,8 @@ model Event {
 
   discordChannelId String?
   discordMessageId String?
+  reminder24hSentAt DateTime?
+  reminder1hSentAt  DateTime?
   signups          EventSignup[]
 
   createdAt        DateTime  @default(now())
