@@ -5,6 +5,7 @@ import { handleRsvp, handleRespec, handleClassSelect, handleSpecSelect, handleRo
 import { reconcileMember } from './features/members';
 import { startHttpServer } from './server';
 import { startReminderLoop } from './features/reminders';
+import { startTwitchBot } from './features/twitch/chat';
 import { prisma } from './prisma';
 
 /**
@@ -46,6 +47,9 @@ client.once(Events.ClientReady, async (c) => {
 
   // Boucle de rappels de raid (MP aux inscrits).
   startReminderLoop(c);
+
+  // Bot de chat Twitch (no-op si non configuré).
+  startTwitchBot().catch((e) => console.error('Bot Twitch :', e));
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {

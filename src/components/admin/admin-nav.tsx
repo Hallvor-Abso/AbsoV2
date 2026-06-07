@@ -36,6 +36,7 @@ export function AdminNav({
     { href: '/admin/audit', label: 'Journal', show: canContenu },
     { href: '/admin/contenu', label: 'Contenu du site', show: canContenu },
     { href: '/admin/overlays', label: 'Overlays Stream', show: canOverlays },
+    { href: '/admin/twitch', label: 'Bot Twitch', show: canOverlays },
   ].filter((l) => l.show);
 
   const links = (

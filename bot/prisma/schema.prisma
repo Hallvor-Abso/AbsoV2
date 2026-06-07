@@ -242,6 +242,41 @@ enum SignupStatus {
   DECLINED
 }
 
+model TwitchCommand {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  response        String
+  enabled         Boolean  @default(true)
+  cooldownSeconds Int      @default(5)
+  userLevel       String   @default("EVERYONE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TwitchTimer {
+  id              String   @id @default(cuid())
+  name            String
+  message         String
+  intervalMinutes Int      @default(15)
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TwitchModConfig {
+  id            String   @id @default("default")
+  blockLinks    Boolean  @default(false)
+  permitSeconds Int      @default(60)
+  capsEnabled   Boolean  @default(false)
+  capsMinLength Int      @default(12)
+  capsPercent   Int      @default(70)
+  blacklist     String[] @default([])
+  timeoutSeconds Int      @default(30)
+  warnMessage   String?
+  modsImmune    Boolean  @default(true)
+  updatedAt     DateTime @updatedAt
+}
+
 model MemberMain {
   id        String   @id @default(cuid())
   discordId String
