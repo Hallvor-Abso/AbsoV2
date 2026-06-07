@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { BOSS_STATUS } from '@/lib/labels';
 import { formatDate, cn, expansionColor } from '@/lib/utils';
 import { GameTabBar } from './game-tab-bar';
+import { GameChooser } from './game-chooser';
 
 type Boss = {
   id: string;
@@ -34,6 +35,7 @@ export type ProgressionGame = {
   slug: string;
   color: string;
   logoUrl: string | null;
+  coverImageUrl: string | null;
   status: 'ACTIVE' | 'UPCOMING';
   tiers: Tier[];
 };
@@ -50,14 +52,40 @@ export function ProgressionView({
   games: ProgressionGame[];
   initialSlug?: string;
 }) {
-  const [activeId, setActiveId] = useState(
-    games.find((g) => g.slug === initialSlug)?.id ?? games[0]?.id
+  const [activeId, setActiveId] = useState<string | null>(
+    games.find((g) => g.slug === initialSlug)?.id ?? null
   );
-  const activeGame = games.find((g) => g.id === activeId) ?? games[0];
-  if (!activeGame) return null;
+  const activeGame = activeId ? games.find((g) => g.id === activeId) ?? null : null;
+
+  // Aucun jeu sélectionné → écran de choix neutre (pas de jeu imposé).
+  if (!activeGame) {
+    if (games.length === 0) return null;
+    return (
+      <GameChooser
+        games={games.map((g) => ({
+          id: g.id,
+          name: g.name,
+          color: g.color,
+          logoUrl: g.logoUrl,
+          coverImageUrl: g.coverImageUrl,
+          status: g.status,
+        }))}
+        onSelect={setActiveId}
+        title="Pour quel jeu veux-tu voir la progression ?"
+        cta="Voir la progression →"
+      />
+    );
+  }
 
   return (
     <div>
+      <button
+        type="button"
+        onClick={() => setActiveId(null)}
+        className="mb-4 text-sm text-muted transition-colors hover:text-accent"
+      >
+        ← Choisir un autre jeu
+      </button>
       <GameTabBar games={games} activeId={activeGame.id} onSelect={setActiveId} />
 
       {activeGame.tiers.length === 0 ? (
