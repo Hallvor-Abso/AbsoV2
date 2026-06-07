@@ -77,7 +77,7 @@ export default async function NewsPage({
                       fill
                       unoptimized
                       sizes="(max-width: 768px) 100vw, 50vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      className={`${featured.imageFit === 'contain' ? 'object-contain' : 'object-cover'} transition-transform duration-500 group-hover:scale-105`}
                       priority
                     />
                   ) : (
@@ -134,7 +134,7 @@ export default async function NewsPage({
                           fill
                           unoptimized
                           sizes="(max-width: 768px) 100vw, 33vw"
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          className={`${article.imageFit === 'contain' ? 'object-contain' : 'object-cover'} transition-transform duration-500 group-hover:scale-105`}
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center text-muted">

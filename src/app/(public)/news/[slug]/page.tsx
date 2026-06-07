@@ -73,7 +73,7 @@ export default async function NewsArticlePage({
             fill
             unoptimized
             sizes="(max-width: 768px) 100vw, 768px"
-            className="object-cover"
+            className={article.imageFit === 'contain' ? 'object-contain' : 'object-cover'}
             priority
           />
         </div>

@@ -42,6 +42,7 @@ export default async function EditNewsPage({
           excerpt: news.excerpt,
           content: news.content,
           imageUrl: news.imageUrl,
+          imageFit: news.imageFit,
           status: news.status,
           gameId: news.gameId,
           publishedAt: news.publishedAt?.toISOString() ?? '',
