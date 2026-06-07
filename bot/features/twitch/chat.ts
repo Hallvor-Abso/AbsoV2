@@ -1,7 +1,9 @@
 import tmi from 'tmi.js';
 import { env } from '../../env';
-import { getUserByLogin } from './helix';
+import { prisma } from '../../prisma';
+import { getStreamStart, getUserByLogin } from './helix';
 import { resolveCommand } from './commands';
+import { checkMessage, getModConfig, grantPermit, modActive } from './moderation';
 
 /** Le bot Twitch est-il configuré ? (pseudo + token + chaîne) */
 export function twitchConfigured(): boolean {
@@ -32,12 +34,6 @@ export async function startTwitchBot(): Promise<void> {
   client.on('message', async (ch, tags, message, self) => {
     if (self) return;
     const text = message.trim();
-    if (!text.startsWith('!')) return; // (la modération s'ajoutera ici plus tard)
-
-    const parts = text.slice(1).split(/\s+/);
-    const name = parts[0].toLowerCase();
-    const args = parts.slice(1);
-
     const ctx = {
       login: (tags.username ?? '').toLowerCase(),
       display: tags['display-name'] ?? tags.username ?? '',
@@ -47,9 +43,39 @@ export async function startTwitchBot(): Promise<void> {
       channel,
     };
 
+    // --- Modération (avant tout) ---
+    try {
+      const cfg = await getModConfig();
+      // !permit @user : un mod autorise un viewer à poster un lien.
+      if (ctx.isMod && /^!permit\b/i.test(text)) {
+        const target = text.split(/\s+/)[1]?.replace(/^@/, '');
+        if (target) {
+          grantPermit(target, cfg.permitSeconds);
+          await client.say(ch, `@${target} peut poster un lien (${cfg.permitSeconds}s).`).catch(() => {});
+        }
+        return;
+      }
+      if (modActive(cfg)) {
+        const reason = checkMessage(cfg, text, ctx);
+        if (reason) {
+          if (tags.id) await client.deletemessage(ch, tags.id).catch(() => {});
+          await client.timeout(ch, ctx.login, cfg.timeoutSeconds, reason).catch(() => {});
+          if (cfg.warnMessage) await client.say(ch, `@${ctx.display} ${cfg.warnMessage}`).catch(() => {});
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Modération Twitch :', e);
+    }
+
+    // --- Commandes ---
+    if (!text.startsWith('!')) return;
+    const parts = text.slice(1).split(/\s+/);
+    const name = parts[0].toLowerCase();
+    const args = parts.slice(1);
     try {
       const now = Date.now();
-      if (now - (cooldowns.get(name) ?? 0) < 4000) return; // cooldown simple
+      if (now - (cooldowns.get(name) ?? 0) < 4000) return;
       const reply = await resolveCommand(name, args, ctx);
       if (reply == null) return;
       cooldowns.set(name, now);
@@ -60,4 +86,37 @@ export async function startTwitchBot(): Promise<void> {
   });
 
   client.connect().catch((e) => console.error('Connexion Twitch :', e));
+
+  startTimers(client, channel, broadcasterId);
+}
+
+/** Timers : messages périodiques (uniquement quand le live est en cours). */
+function startTimers(client: tmi.Client, channel: string, broadcasterId: string | null): void {
+  const lastPosted = new Map<string, number>();
+
+  const tick = async () => {
+    try {
+      // On ne poste que si le stream est en live (évite de spammer hors-ligne).
+      if (broadcasterId) {
+        const start = await getStreamStart(broadcasterId);
+        if (!start) return;
+      }
+      const timers = await prisma.twitchTimer.findMany({ where: { enabled: true } });
+      const now = Date.now();
+      for (const t of timers) {
+        if (!lastPosted.has(t.id)) {
+          lastPosted.set(t.id, now); // attend un intervalle avant le 1er envoi
+          continue;
+        }
+        if (now - (lastPosted.get(t.id) ?? 0) >= t.intervalMinutes * 60_000) {
+          await client.say(`#${channel}`, t.message).catch(() => {});
+          lastPosted.set(t.id, now);
+        }
+      }
+    } catch (e) {
+      console.error('Timers Twitch :', e);
+    }
+  };
+
+  setInterval(tick, 60_000);
 }

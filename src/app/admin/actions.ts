@@ -903,3 +903,62 @@ export async function deleteTwitchCommand(id: string) {
   await prisma.twitchCommand.delete({ where: { id } });
   revalidatePath('/admin/twitch');
 }
+
+// --- Bot Twitch : timers ----------------------------------------------------
+export async function createTwitchTimer(formData: FormData) {
+  await requireOverlays();
+  const name = sanitizeText(formData.get('name'), 60);
+  const message = sanitizeText(formData.get('message'), 400);
+  const interval = Math.max(1, Math.min(720, Number(formData.get('intervalMinutes')) || 15));
+  if (!name || !message) return;
+  await prisma.twitchTimer.create({ data: { name, message, intervalMinutes: interval } });
+  revalidatePath('/admin/twitch');
+}
+
+export async function updateTwitchTimer(formData: FormData) {
+  await requireOverlays();
+  const id = formData.get('id') as string;
+  const name = sanitizeText(formData.get('name'), 60);
+  const message = sanitizeText(formData.get('message'), 400);
+  const interval = Math.max(1, Math.min(720, Number(formData.get('intervalMinutes')) || 15));
+  if (!message) return;
+  await prisma.twitchTimer.update({ where: { id }, data: { name, message, intervalMinutes: interval } });
+  revalidatePath('/admin/twitch');
+}
+
+export async function toggleTwitchTimer(id: string, enabled: boolean) {
+  await requireOverlays();
+  await prisma.twitchTimer.update({ where: { id }, data: { enabled } });
+  revalidatePath('/admin/twitch');
+}
+
+export async function deleteTwitchTimer(id: string) {
+  await requireOverlays();
+  await prisma.twitchTimer.delete({ where: { id } });
+  revalidatePath('/admin/twitch');
+}
+
+// --- Bot Twitch : modération ------------------------------------------------
+export async function saveTwitchModConfig(formData: FormData) {
+  await requireOverlays();
+  const blacklist = String(formData.get('blacklist') || '')
+    .split(/[\n,]/)
+    .map((w) => sanitizeText(w, 60))
+    .filter(Boolean)
+    .slice(0, 200);
+  const num = (key: string, def: number, min: number, max: number) =>
+    Math.max(min, Math.min(max, Number(formData.get(key)) || def));
+  const data = {
+    blockLinks: formData.get('blockLinks') === 'on',
+    permitSeconds: num('permitSeconds', 60, 5, 3600),
+    capsEnabled: formData.get('capsEnabled') === 'on',
+    capsMinLength: num('capsMinLength', 12, 1, 500),
+    capsPercent: num('capsPercent', 70, 10, 100),
+    blacklist,
+    timeoutSeconds: num('timeoutSeconds', 30, 1, 1209600),
+    warnMessage: sanitizeText(formData.get('warnMessage'), 200) || null,
+    modsImmune: formData.get('modsImmune') === 'on',
+  };
+  await prisma.twitchModConfig.upsert({ where: { id: 'default' }, update: data, create: { id: 'default', ...data } });
+  revalidatePath('/admin/twitch');
+}
