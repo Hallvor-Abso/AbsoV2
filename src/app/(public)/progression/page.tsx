@@ -38,6 +38,7 @@ export default async function ProgressionPage({
         slug: game.slug,
         color: game.color,
         logoUrl: game.logoUrl,
+        coverImageUrl: game.coverImageUrl,
         status: game.status,
         tiers: await Promise.all(
           tiers.map(async (t) => {
