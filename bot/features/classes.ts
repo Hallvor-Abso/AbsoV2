@@ -229,6 +229,12 @@ export const SPEC_EMOJI_URLS: Record<string, string> = {};
 for (const name of SPEC_EMOJI_NAMES.values()) {
   SPEC_EMOJI_URLS[name] = WOW_SPEC_ICONS[name] ? zam(WOW_SPEC_ICONS[name]) : '';
 }
+// Icônes fournies en URL complète (ex. spés récentes absentes de la CDN Wowhead).
+const SPEC_ICON_URL_OVERRIDES: Record<string, string> = {
+  wow_chasseur_demons_devoreur:
+    'https://w5twhbqprmpdjcud.public.blob.vercel-storage.com/uploads/1780850404552-udodk9u.png',
+};
+Object.assign(SPEC_EMOJI_URLS, SPEC_ICON_URL_OVERRIDES);
 
 /** Nom d'emoji Discord au niveau CLASSE (repli quand pas d'icône de spé). */
 export function classEmojiName(key: GameKey, classId: string): string {
