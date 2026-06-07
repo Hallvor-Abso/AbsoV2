@@ -36,15 +36,17 @@ export function RecruitmentView({
   slots,
   roles: roleCategories = [],
   fields = [],
+  initialGameId = null,
   auth,
 }: {
   games: GameTabInfo[];
   slots: RecruitSlot[];
   roles?: RecruitRole[];
   fields?: RecruitField[];
+  initialGameId?: string | null;
   auth: RecruitAuth;
 }) {
-  const [activeId, setActiveId] = useState(games[0]?.id);
+  const [activeId, setActiveId] = useState(initialGameId ?? games[0]?.id);
   const activeGame = games.find((g) => g.id === activeId) ?? games[0];
   if (!activeGame) return null;
 
