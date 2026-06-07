@@ -635,15 +635,18 @@ export async function saveEvent(formData: FormData) {
   const id = formData.get('id') as string | null;
   const gameId = formData.get('gameId') as string;
   await requireGameAccess(gameId);
+  // Instants UTC (ISO) envoyés par le formulaire (DateTimeInput).
   const start = formData.get('startDate') as string;
   const end = formData.get('endDate') as string;
+  const startDate = start ? new Date(start) : null;
+  if (!startDate || Number.isNaN(startDate.getTime())) return; // date de début requise
 
   const data = {
     gameId,
     title: sanitizeText(formData.get('title'), 180),
     description: sanitizeText(formData.get('description'), 2000) || null,
     type: (formData.get('type') as string) || 'RAID',
-    startDate: new Date(start),
+    startDate,
     endDate: end ? new Date(end) : null,
   };
   let eventId = id;

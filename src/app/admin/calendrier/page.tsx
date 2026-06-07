@@ -6,14 +6,6 @@ import { allowedGameIds } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
-/** Formate une date pour un champ <input type="datetime-local"> (heure locale). */
-function toDateTimeInput(d: Date | null): string {
-  if (!d) return '';
-  const date = new Date(d);
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
-  return local.toISOString().slice(0, 16);
-}
-
 export default async function AdminCalendarPage() {
   const scope = allowedGameIds(await getAppUser());
   const gameWhere = scope !== 'all' ? { id: { in: scope } } : {};
@@ -31,8 +23,8 @@ export default async function AdminCalendarPage() {
     description: ev.description,
     type: ev.type,
     gameId: ev.gameId,
-    startDate: toDateTimeInput(ev.startDate),
-    endDate: toDateTimeInput(ev.endDate),
+    startDate: ev.startDate.toISOString(),
+    endDate: ev.endDate ? ev.endDate.toISOString() : '',
   }));
 
   return (

@@ -70,12 +70,32 @@ export async function rsvpEvent(eventId: string, status: string): Promise<Result
   return { ok: true };
 }
 
-/** Inscription en fournissant la spé (1ʳᵉ fois) : enregistre le main + l'inscription. */
+const ROLES = new Set(['TANK', 'HEAL', 'DPS']);
+
+/**
+ * Résout la sélection en (rôle, classe, spé) selon le jeu.
+ * - WoW : `choice` = id de spé → la spé donne le rôle.
+ * - SWTOR : `choice` = rôle (TANK/HEAL/DPS), pas de spé.
+ */
+function resolveChoice(key: ReturnType<typeof gameKey>, classId: string, choice: string) {
+  if (!key) return null;
+  const cls = findClass(key, classId);
+  if (!cls) return null;
+  if (key === 'wow') {
+    const spec = findSpec(key, classId, choice);
+    if (!spec) return null;
+    return { role: spec.role, classId: cls.id, className: cls.label, specId: spec.id, spec: spec.label };
+  }
+  if (!ROLES.has(choice)) return null;
+  return { role: choice, classId: cls.id, className: cls.label, specId: '', spec: '' };
+}
+
+/** Inscription en fournissant la spé/rôle (1ʳᵉ fois) : enregistre le main + l'inscription. */
 export async function rsvpWithSpec(
   eventId: string,
   status: string,
   classId: string,
-  specId: string,
+  choice: string,
 ): Promise<Result> {
   const me = await requireMe();
   if (!me.ok) return { error: me.error };
@@ -84,28 +104,23 @@ export async function rsvpWithSpec(
   const event = await prisma.event.findUnique({ where: { id: eventId }, include: { game: true } });
   if (!event) return { error: 'Événement introuvable.' };
   const key = gameKey(event.game.slug) ?? gameKey(event.game.name);
-  if (!key) return { error: 'Jeu non pris en charge.' };
-  const cls = findClass(key, classId);
-  const spec = findSpec(key, classId, specId);
-  if (!cls || !spec) return { error: 'Spécialisation invalide.' };
+  const r = resolveChoice(key, classId, choice);
+  if (!r) return { error: 'Choix invalide.' };
 
   await prisma.memberMain.upsert({
     where: { discordId_gameId: { discordId: me.discordId, gameId: event.gameId } },
-    create: {
-      discordId: me.discordId, gameId: event.gameId, role: spec.role,
-      classId: cls.id, className: cls.label, specId: spec.id, spec: spec.label,
-    },
-    update: { role: spec.role, classId: cls.id, className: cls.label, specId: spec.id, spec: spec.label },
+    create: { discordId: me.discordId, gameId: event.gameId, ...r },
+    update: r,
   });
   await prisma.eventSignup.upsert({
     where: { eventId_discordId: { eventId, discordId: me.discordId } },
     create: {
       eventId, discordId: me.discordId, displayName: me.displayName, status: status as SignupStatus, source: 'site',
-      role: spec.role, classId: cls.id, className: cls.label, spec: spec.label,
+      role: r.role, classId: r.classId, className: r.className, spec: r.spec,
     },
     update: {
       status: status as SignupStatus, displayName: me.displayName,
-      role: spec.role, classId: cls.id, className: cls.label, spec: spec.label,
+      role: r.role, classId: r.classId, className: r.className, spec: r.spec,
     },
   });
 
@@ -114,30 +129,25 @@ export async function rsvpWithSpec(
   return { ok: true };
 }
 
-/** Change la spé (main) et met à jour l'inscription en cours, sans changer le statut. */
-export async function changeSpec(eventId: string, classId: string, specId: string): Promise<Result> {
+/** Change la spé/rôle (main) et met à jour l'inscription en cours, sans changer le statut. */
+export async function changeSpec(eventId: string, classId: string, choice: string): Promise<Result> {
   const me = await requireMe();
   if (!me.ok) return { error: me.error };
 
   const event = await prisma.event.findUnique({ where: { id: eventId }, include: { game: true } });
   if (!event) return { error: 'Événement introuvable.' };
   const key = gameKey(event.game.slug) ?? gameKey(event.game.name);
-  if (!key) return { error: 'Jeu non pris en charge.' };
-  const cls = findClass(key, classId);
-  const spec = findSpec(key, classId, specId);
-  if (!cls || !spec) return { error: 'Spécialisation invalide.' };
+  const r = resolveChoice(key, classId, choice);
+  if (!r) return { error: 'Choix invalide.' };
 
   await prisma.memberMain.upsert({
     where: { discordId_gameId: { discordId: me.discordId, gameId: event.gameId } },
-    create: {
-      discordId: me.discordId, gameId: event.gameId, role: spec.role,
-      classId: cls.id, className: cls.label, specId: spec.id, spec: spec.label,
-    },
-    update: { role: spec.role, classId: cls.id, className: cls.label, specId: spec.id, spec: spec.label },
+    create: { discordId: me.discordId, gameId: event.gameId, ...r },
+    update: r,
   });
   await prisma.eventSignup.updateMany({
     where: { eventId, discordId: me.discordId },
-    data: { role: spec.role, classId: cls.id, className: cls.label, spec: spec.label },
+    data: { role: r.role, classId: r.classId, className: r.className, spec: r.spec },
   });
 
   await syncEventToBot(eventId);

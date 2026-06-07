@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { GameTabBar, type GameTabInfo } from '@/components/game-tab-bar';
 import { ConfirmButton } from './confirm-button';
 import { ActionForm } from './action-form';
+import { DateTimeInput } from './datetime-input';
 import { saveEvent, deleteEvent } from '@/app/admin/actions';
 
 export type AdminEvent = {
@@ -12,7 +13,7 @@ export type AdminEvent = {
   description: string | null;
   type: string;
   gameId: string;
-  startDate: string; // valeur datetime-local
+  startDate: string; // instant UTC au format ISO ('' si vide)
   endDate: string;
 };
 
@@ -83,11 +84,11 @@ function EventForm({ gameId, event }: { gameId: string; event?: AdminEvent }) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="label">Début</label>
-          <input type="datetime-local" name="startDate" required defaultValue={event?.startDate} className="field" />
+          <DateTimeInput name="startDate" defaultValue={event?.startDate} />
         </div>
         <div>
           <label className="label">Fin (optionnel)</label>
-          <input type="datetime-local" name="endDate" defaultValue={event?.endDate} className="field" />
+          <DateTimeInput name="endDate" defaultValue={event?.endDate} />
         </div>
       </div>
 
