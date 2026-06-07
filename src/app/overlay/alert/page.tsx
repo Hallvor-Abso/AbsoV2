@@ -67,17 +67,16 @@ function playChime(volume: number) {
 }
 
 function playSound(url: string | null, volume: number) {
-  if (url) {
-    try {
-      const a = new Audio(url);
-      a.volume = Math.max(0, Math.min(volume, 1));
-      a.play().catch(() => playChime(volume));
-      return;
-    } catch {
-      /* on retombe sur le carillon */
-    }
+  // Par défaut : vrai fichier audio livré avec le site (fiable dans OBS).
+  const src = url || '/sounds/alert.wav';
+  try {
+    const a = new Audio(src);
+    a.volume = Math.max(0, Math.min(volume, 1));
+    a.play().catch(() => playChime(volume));
+    return;
+  } catch {
+    playChime(volume);
   }
-  playChime(volume);
 }
 
 export default function AlertOverlay() {
