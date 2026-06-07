@@ -139,6 +139,7 @@ model News {
   excerpt     String? // résumé court affiché dans la grille
   content     String // HTML riche produit par l'éditeur
   imageUrl    String? // image de couverture
+  imageFit    String     @default("cover") // "cover" (rogne) ou "contain" (image entière)
   featured    Boolean    @default(false) // article mis « À la Une »
   status      NewsStatus @default(DRAFT)
   publishedAt DateTime? // date de publication

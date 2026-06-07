@@ -9,6 +9,7 @@ type NewsData = {
   excerpt: string | null;
   content: string;
   imageUrl: string | null;
+  imageFit: string; // "cover" | "contain"
   status: string;
   gameId: string | null;
   publishedAt: string; // instant UTC au format ISO ('' si vide)
@@ -41,7 +42,14 @@ export function NewsForm({
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <ImageInput name="imageUrl" defaultValue={news?.imageUrl ?? ''} label="Image de couverture" />
+        <div>
+          <ImageInput name="imageUrl" defaultValue={news?.imageUrl ?? ''} label="Image de couverture" />
+          <label className="label mt-3">Affichage de l'image</label>
+          <select name="imageFit" defaultValue={news?.imageFit ?? 'cover'} className="field">
+            <option value="cover">Remplir le cadre (rogne ce qui dépasse)</option>
+            <option value="contain">Image entière (pas de rognage — idéal logo)</option>
+          </select>
+        </div>
         <div>
           <label className="label">Jeu associé</label>
           <select name="gameId" defaultValue={news?.gameId ?? presetGameId ?? ''} className="field">

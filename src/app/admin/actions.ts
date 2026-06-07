@@ -229,6 +229,7 @@ export async function saveNews(formData: FormData) {
     excerpt: sanitizeText(formData.get('excerpt'), 400) || null,
     content: sanitizeHtml((formData.get('content') as string) || ''),
     imageUrl: sanitizeText(formData.get('imageUrl'), 500) || null,
+    imageFit: (formData.get('imageFit') as string) === 'contain' ? 'contain' : 'cover',
     // NB : « À la Une » se gère via un bouton dans la liste (toggleFeatured),
     // pas ici, pour ne pas l'écraser à chaque édition.
     status,
