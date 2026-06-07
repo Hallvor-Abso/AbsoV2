@@ -228,3 +228,17 @@ export const SPEC_EMOJI_URLS: Record<string, string> = {};
 for (const name of SPEC_EMOJI_NAMES.values()) {
   SPEC_EMOJI_URLS[name] = WOW_SPEC_ICONS[name] ? zam(WOW_SPEC_ICONS[name]) : '';
 }
+
+/** Nom d'emoji Discord au niveau CLASSE (repli quand pas d'icône de spé). */
+export function classEmojiName(key: GameKey, classId: string): string {
+  return `${key}_${classId}`.replace(/[^a-z0-9_]/gi, '').toLowerCase().slice(0, 32);
+}
+
+/**
+ * URLs des icônes au niveau CLASSE. Utile pour SWTOR (une icône par classe,
+ * réutilisée pour ses spés). Clé = `swtor_juggernaut`, `swtor_sorcerer`…
+ */
+export const CLASS_EMOJI_URLS: Record<string, string> = {};
+for (const key of Object.keys(CLASSES) as GameKey[]) {
+  for (const c of CLASSES[key]) CLASS_EMOJI_URLS[classEmojiName(key, c.id)] ||= '';
+}

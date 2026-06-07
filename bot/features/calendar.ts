@@ -21,6 +21,7 @@ import {
   ROLE_LABEL,
   ROLE_ORDER,
   specEmojiName,
+  classEmojiName,
   findClass,
   findSpec,
   findSpecByLabel,
@@ -66,13 +67,20 @@ function specEmoji(
   specLabel: string | null,
   role: string | null,
 ): string {
-  if (guild && classId && specLabel) {
-    const spec = findSpecByLabel(key, classId, specLabel);
-    if (spec) {
-      const found = guild.emojis.cache.find((e) => e.name === specEmojiName(key, classId, spec.id));
-      if (found) return found.toString();
+  if (guild && classId) {
+    // 1) icône de spé si disponible
+    if (specLabel) {
+      const spec = findSpecByLabel(key, classId, specLabel);
+      if (spec) {
+        const found = guild.emojis.cache.find((e) => e.name === specEmojiName(key, classId, spec.id));
+        if (found) return found.toString();
+      }
     }
+    // 2) repli : icône de classe
+    const byClass = guild.emojis.cache.find((e) => e.name === classEmojiName(key, classId));
+    if (byClass) return byClass.toString();
   }
+  // 3) repli final : emoji de rôle
   return ROLE_EMOJI[(role as SpecRole) ?? 'DPS'] ?? '•';
 }
 

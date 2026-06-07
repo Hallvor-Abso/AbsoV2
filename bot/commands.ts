@@ -8,7 +8,7 @@ import {
 import { prisma } from './prisma';
 import { setupServer } from './features/server-setup';
 import { postPresentation } from './features/presentation';
-import { SPEC_EMOJI_URLS } from './features/classes';
+import { SPEC_EMOJI_URLS, CLASS_EMOJI_URLS } from './features/classes';
 
 const ACCENT = 0x4a9eff;
 
@@ -110,7 +110,7 @@ async function setupClassEmojis(interaction: ChatInputCommandInteraction) {
   const missingUrl: string[] = [];
   const failed: string[] = [];
 
-  for (const [name, url] of Object.entries(SPEC_EMOJI_URLS)) {
+  for (const [name, url] of Object.entries({ ...SPEC_EMOJI_URLS, ...CLASS_EMOJI_URLS })) {
     if (!url) { missingUrl.push(name); continue; }
     if (guild.emojis.cache.find((e) => e.name === name)) { skipped.push(name); continue; }
     try {
