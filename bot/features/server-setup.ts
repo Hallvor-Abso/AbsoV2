@@ -189,18 +189,20 @@ export async function setupServer(guild: Guild): Promise<Acc> {
   const gmAllow = gm ? [ow(gm, MEMBER_ALLOW)] : [];
   const botId = guild.client.user?.id;
   const botAllow = botId ? [ow(botId, [P.ViewChannel, P.SendMessages, P.ReadMessageHistory])] : [];
+  // Verrou « lecture seule public » : @everyone voit mais ne peut pas écrire ;
+  // seul le bot (et les Administrateurs serveur, qui passent outre) écrivent.
+  const readOnlyPublic = [
+    ow(everyone, [P.ViewChannel, P.ReadMessageHistory], [P.SendMessages]),
+    ...botAllow,
+  ];
 
   // ----- 🌐 ACCUEIL (public, ENTIÈREMENT verrouillé : seul le bot écrit) -------
-  const accueil = await ensureCategory(
-    guild,
-    '🌐 Accueil',
-    [ow(everyone, [P.ViewChannel, P.ReadMessageHistory], [P.SendMessages]), ...botAllow],
-    acc,
-  );
+  const accueil = await ensureCategory(guild, '🌐 Accueil', readOnlyPublic, acc);
   if (accueil) {
-    await ensureChannel(guild, 'présentation', accueil, ChannelType.GuildText, acc);
-    // #rejoins-nous : lecture seule, contient l'embed de recrutement (boutons par jeu).
-    await ensureChannel(guild, 'rejoins-nous', accueil, ChannelType.GuildText, acc);
+    // Salons verrouillés EXPLICITEMENT (les perms de catégorie ne se propagent
+    // pas aux salons existants → on les pose sur chaque salon).
+    await ensureChannel(guild, 'présentation', accueil, ChannelType.GuildText, acc, readOnlyPublic);
+    await ensureChannel(guild, 'rejoins-nous', accueil, ChannelType.GuildText, acc, readOnlyPublic);
     await postRecruitInfo(guild).catch((e) =>
       acc.warnings.push(`Embed recrutement non publié : ${e instanceof Error ? e.message : e}`),
     );
@@ -284,7 +286,7 @@ export async function setupServer(guild: Guild): Promise<Acc> {
   );
   if (progression) {
     for (const g of perGame) {
-      await ensureChannel(guild, `progression-${g.game.slug}`, progression, ChannelType.GuildText, acc);
+      await ensureChannel(guild, `progression-${g.game.slug}`, progression, ChannelType.GuildText, acc, readOnlyPublic);
     }
     // Publie / met à jour l'embed de progression de chaque jeu.
     for (const g of perGame) {
