@@ -234,7 +234,7 @@ function classSelect(eventId: string, status: string, key: GameKey) {
   );
 }
 
-/** Menu de sélection de spé pour une classe (2ᵉ étape). */
+/** Menu de sélection de spé pour une classe (2ᵉ étape, WoW). */
 function specSelect(eventId: string, status: string, key: GameKey, classId: string) {
   const cls = findClass(key, classId);
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
@@ -243,6 +243,21 @@ function specSelect(eventId: string, status: string, key: GameKey, classId: stri
       .setPlaceholder('Choisis ta spécialisation')
       .addOptions((cls?.specs ?? []).map((s) => ({ label: `${s.label} (${ROLE_LABEL[s.role]})`, value: s.id }))),
   );
+}
+
+/** Menu de sélection de rôle pour une classe (2ᵉ étape, SWTOR). */
+function roleSelect(eventId: string, status: string, classId: string) {
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId(`rolsel:${eventId}:${status}:${classId}`)
+      .setPlaceholder('Choisis ton rôle')
+      .addOptions(ROLE_ORDER.map((r) => ({ label: `${ROLE_EMOJI[r]} ${ROLE_LABEL[r]}`, value: r }))),
+  );
+}
+
+/** WoW demande la spé ; les autres jeux (SWTOR) demandent juste le rôle. */
+function usesSpec(key: GameKey): boolean {
+  return key === 'wow';
 }
 
 /** Clic sur un bouton RSVP (Présent / Peut-être / Absent). */
@@ -315,9 +330,60 @@ export async function handleClassSelect(interaction: StringSelectMenuInteraction
     await interaction.update({ content: 'Jeu non reconnu.', components: [] });
     return;
   }
-  await interaction.update({
-    content: 'Et ta **spécialisation** :',
-    components: [specSelect(eventId, status, key, classId)],
+  await interaction.update(
+    usesSpec(key)
+      ? { content: 'Et ta **spécialisation** :', components: [specSelect(eventId, status, key, classId)] }
+      : { content: 'Et ton **rôle** :', components: [roleSelect(eventId, status, classId)] },
+  );
+}
+
+/** Étape 2 (SWTOR) : un rôle a été choisi → on enregistre le main (+ l'inscription). */
+export async function handleRoleSelect(interaction: StringSelectMenuInteraction): Promise<void> {
+  const [, eventId, status, classId] = interaction.customId.split(':');
+  const role = interaction.values[0] as SpecRole;
+  await interaction.deferUpdate();
+
+  const event = await prisma.event.findUnique({ where: { id: eventId }, include: { game: true } });
+  const key = event ? gameKey(event.game.slug) ?? gameKey(event.game.name) : null;
+  if (!event || !key) {
+    await interaction.editReply({ content: 'Jeu non reconnu.', components: [] });
+    return;
+  }
+  const cls = findClass(key, classId);
+  if (!cls || !ROLE_ORDER.includes(role)) {
+    await interaction.editReply({ content: 'Choix invalide.', components: [] });
+    return;
+  }
+
+  const discordId = interaction.user.id;
+  const displayName = interaction.user.globalName ?? interaction.user.username;
+
+  await prisma.memberMain.upsert({
+    where: { discordId_gameId: { discordId, gameId: event.gameId! } },
+    create: { discordId, gameId: event.gameId!, role, classId: cls.id, className: cls.label, specId: '', spec: '' },
+    update: { role, classId: cls.id, className: cls.label, specId: '', spec: '' },
+  });
+
+  if (status === 'RESPEC') {
+    await prisma.eventSignup.updateMany({
+      where: { eventId, discordId },
+      data: { role, classId: cls.id, className: cls.label, spec: '' },
+    });
+  } else {
+    await prisma.eventSignup.upsert({
+      where: { eventId_discordId: { eventId, discordId } },
+      create: {
+        eventId, discordId, displayName, status: status as SignupStatus, source: 'discord',
+        role, classId: cls.id, className: cls.label, spec: '',
+      },
+      update: { status: status as SignupStatus, displayName, role, classId: cls.id, className: cls.label, spec: '' },
+    });
+  }
+
+  await syncEvent(interaction.client, eventId);
+  await interaction.editReply({
+    content: `✅ Enregistré : **${cls.label}** (${ROLE_LABEL[role]}).`,
+    components: [],
   });
 }
 

@@ -1,7 +1,7 @@
 import { Client, Events, GatewayIntentBits, MessageFlags, Routes } from 'discord.js';
 import { env } from './env';
 import { commands, handleInteraction } from './commands';
-import { handleRsvp, handleRespec, handleClassSelect, handleSpecSelect } from './features/calendar';
+import { handleRsvp, handleRespec, handleClassSelect, handleSpecSelect, handleRoleSelect } from './features/calendar';
 import { reconcileMember } from './features/members';
 import { startHttpServer } from './server';
 import { prisma } from './prisma';
@@ -64,6 +64,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     try {
       if (interaction.customId.startsWith('clsel:')) await handleClassSelect(interaction);
       else if (interaction.customId.startsWith('spsel:')) await handleSpecSelect(interaction);
+      else if (interaction.customId.startsWith('rolsel:')) await handleRoleSelect(interaction);
     } catch (err) {
       console.error('Erreur menu déroulant :', err);
       if (!interaction.replied && !interaction.deferred) {

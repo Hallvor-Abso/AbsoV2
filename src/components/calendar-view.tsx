@@ -465,31 +465,45 @@ function SpecPicker({
   onConfirm: (classId: string, specId: string) => void;
   onCancel: () => void;
 }) {
+  const isWow = key === 'wow';
   const [classId, setClassId] = useState(initial?.classId ?? CLASSES[key][0].id);
   const cls = findClass(key, classId) ?? CLASSES[key][0];
-  const [specId, setSpecId] = useState(cls.specs[0].id);
+  // « choice » = id de spé (WoW) ou rôle TANK/HEAL/DPS (SWTOR).
+  const [choice, setChoice] = useState<string>(isWow ? cls.specs[0].id : initial?.role ?? 'DPS');
 
   const onClass = (id: string) => {
     setClassId(id);
-    const c = findClass(key, id);
-    if (c) setSpecId(c.specs[0].id);
+    if (isWow) {
+      const c = findClass(key, id);
+      if (c) setChoice(c.specs[0].id);
+    }
   };
 
   return (
     <div className="mt-3 rounded-lg border border-border bg-ink-soft/40 p-3">
-      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Ta classe &amp; spécialisation</p>
+      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+        {isWow ? 'Ta classe & spécialisation' : 'Ta classe & rôle'}
+      </p>
       <div className="flex flex-wrap items-center gap-2">
         <select value={classId} onChange={(e) => onClass(e.target.value)} className="field max-w-[10rem] py-1.5 text-sm">
           {CLASSES[key].map((c) => (
             <option key={c.id} value={c.id}>{c.label}</option>
           ))}
         </select>
-        <select value={specId} onChange={(e) => setSpecId(e.target.value)} className="field max-w-[12rem] py-1.5 text-sm">
-          {cls.specs.map((s) => (
-            <option key={s.id} value={s.id}>{s.label} ({ROLE_LABEL[s.role as SpecRole]})</option>
-          ))}
-        </select>
-        <button type="button" disabled={pending} onClick={() => onConfirm(classId, specId)} className="btn-primary py-1.5 text-sm disabled:opacity-50">
+        {isWow ? (
+          <select value={choice} onChange={(e) => setChoice(e.target.value)} className="field max-w-[12rem] py-1.5 text-sm">
+            {cls.specs.map((s) => (
+              <option key={s.id} value={s.id}>{s.label} ({ROLE_LABEL[s.role as SpecRole]})</option>
+            ))}
+          </select>
+        ) : (
+          <select value={choice} onChange={(e) => setChoice(e.target.value)} className="field max-w-[12rem] py-1.5 text-sm">
+            {ROLE_ORDER.map((r) => (
+              <option key={r} value={r}>{ROLE_EMOJI[r]} {ROLE_LABEL[r]}</option>
+            ))}
+          </select>
+        )}
+        <button type="button" disabled={pending} onClick={() => onConfirm(classId, choice)} className="btn-primary py-1.5 text-sm disabled:opacity-50">
           Valider
         </button>
         <button type="button" onClick={onCancel} className="btn-secondary py-1.5 text-sm">Annuler</button>
