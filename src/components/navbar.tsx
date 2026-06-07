@@ -29,6 +29,7 @@ export function Navbar({ logoUrl }: { logoUrl?: string }) {
   const links = [...BASE_LINKS];
   if (canAccessCalendar(user)) links.push({ href: '/calendrier', label: 'Calendrier' });
   if (user) links.push({ href: '/mes-candidatures', label: 'Mes candidatures' });
+  if (user) links.push({ href: '/profil', label: 'Profil' });
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
