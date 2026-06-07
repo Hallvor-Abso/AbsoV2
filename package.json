@@ -17,7 +17,8 @@
     "bot": "tsx bot/index.ts",
     "bot:dev": "tsx --env-file=.env bot/index.ts",
     "bot:register": "tsx --env-file=.env bot/register-commands.ts",
-    "bot:check": "tsc --noEmit --project bot/tsconfig.json"
+    "bot:check": "tsc --noEmit --project bot/tsconfig.json",
+    "check:classes": "tsx scripts/check-classes-sync.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
