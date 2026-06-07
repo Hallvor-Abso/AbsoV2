@@ -4,6 +4,7 @@ import { commands, handleInteraction } from './commands';
 import { handleRsvp, handleRespec, handleClassSelect, handleSpecSelect, handleRoleSelect } from './features/calendar';
 import { reconcileMember } from './features/members';
 import { startHttpServer } from './server';
+import { startReminderLoop } from './features/reminders';
 import { prisma } from './prisma';
 
 /**
@@ -42,6 +43,9 @@ client.once(Events.ClientReady, async (c) => {
 
   // Serveur HTTP (site → bot) pour les notifications instantanées.
   startHttpServer(c);
+
+  // Boucle de rappels de raid (MP aux inscrits).
+  startReminderLoop(c);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {

@@ -289,6 +289,10 @@ model Event {
   discordChannelId String?
   discordMessageId String?
 
+  // Rappels envoyés en MP (horodatés pour ne pas les renvoyer).
+  reminder24hSentAt DateTime?
+  reminder1hSentAt  DateTime?
+
   signups          EventSignup[]
 
   createdAt        DateTime  @default(now())
