@@ -74,7 +74,9 @@ function buildEmbed(
   games: { name: string; coverImageUrl: string | null }[],
 ): EmbedBuilder {
   const logo = c['site.logoUrl'] || undefined;
-  const banner = games.find((g) => g.coverImageUrl)?.coverImageUrl || undefined;
+  // Bannière : variable dédiée en priorité, sinon art d'un jeu en repli.
+  const banner =
+    env.PRESENTATION_BANNER_URL || games.find((g) => g.coverImageUrl)?.coverImageUrl || undefined;
 
   const embed = new EmbedBuilder()
     .setColor(ACCENT)
@@ -86,16 +88,22 @@ function buildEmbed(
 
   if (env.SITE_URL) embed.setURL(env.SITE_URL);
 
+  // Sections côte à côte (inline) pour un rendu horizontal et compact.
   if (c['about.body']) {
-    embed.addFields({ name: `📜 ${c['about.title']}`, value: clamp(c['about.body']) });
+    embed.addFields({ name: `📜 ${c['about.title']}`, value: clamp(c['about.body']), inline: true });
   }
   if (c['philosophy.body']) {
-    embed.addFields({ name: `⚔️ ${c['philosophy.title']}`, value: clamp(c['philosophy.body']) });
+    embed.addFields({
+      name: `⚔️ ${c['philosophy.title']}`,
+      value: clamp(c['philosophy.body']),
+      inline: true,
+    });
   }
   if (games.length > 0) {
     embed.addFields({
       name: '🎮 Nos jeux',
-      value: games.map((g) => `🔹 ${g.name}`).join('\n'),
+      value: games.map((g) => `🔹 ${g.name}`).join('   '),
+      inline: false,
     });
   }
 

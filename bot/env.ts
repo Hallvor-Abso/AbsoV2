@@ -38,4 +38,6 @@ export const env = {
   DISCORD_CALENDAR_CHANNEL_ID: process.env.DISCORD_CALENDAR_CHANNEL_ID || '',
   /** URL publique du site (pour les liens dans les embeds, ex. /presentation). */
   SITE_URL: (process.env.SITE_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, ''),
+  /** Bannière de l'embed de présentation (image large). Vide = repli auto. */
+  PRESENTATION_BANNER_URL: process.env.PRESENTATION_BANNER_URL || '',
 };
