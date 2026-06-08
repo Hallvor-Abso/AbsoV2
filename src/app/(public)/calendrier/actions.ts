@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { getAppUser } from '@/lib/auth';
-import { canAccessCalendar } from '@/lib/permissions';
+import { calendarGameIds, type SessionUser } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { syncEventToBot } from '@/lib/bot';
 import { SignupStatus } from '@prisma/client';
@@ -12,18 +12,25 @@ type Result = { ok: true } | { error: string } | { needSpec: true };
 
 const VALID = new Set<string>(Object.values(SignupStatus));
 
-type Me = { ok: false; error: string } | { ok: true; discordId: string; displayName: string };
+type Me =
+  | { ok: false; error: string }
+  | { ok: true; discordId: string; displayName: string; user: SessionUser };
 
 /** Récupère le discordId + pseudo du membre connecté (ou un message d'erreur). */
 async function requireMe(): Promise<Me> {
   const user = await getAppUser();
-  if (!user || !canAccessCalendar(user)) return { ok: false, error: 'Accès refusé.' };
+  if (!user) return { ok: false, error: 'Accès refusé.' };
   const me = await prisma.user.findUnique({
     where: { id: user.id },
     select: { discordId: true, displayName: true, username: true },
   });
   if (!me?.discordId) return { ok: false, error: 'Lie ton compte Discord pour t’inscrire depuis le site.' };
-  return { ok: true, discordId: me.discordId, displayName: me.displayName || me.username || 'Membre' };
+  return { ok: true, discordId: me.discordId, displayName: me.displayName || me.username || 'Membre', user };
+}
+
+/** Accès au calendrier de CE jeu (Recrue+ sur ce jeu, ou GM/admin). */
+function canRsvpGame(user: SessionUser, gameId: string): boolean {
+  return calendarGameIds(user, [gameId]).length > 0;
 }
 
 /**
@@ -38,6 +45,7 @@ export async function rsvpEvent(eventId: string, status: string): Promise<Result
 
   const event = await prisma.event.findUnique({ where: { id: eventId }, include: { game: true } });
   if (!event) return { error: 'Événement introuvable.' };
+  if (!canRsvpGame(me.user, event.gameId)) return { error: 'Accès refusé pour ce jeu.' };
   const key = gameKey(event.game.slug) ?? gameKey(event.game.name);
 
   // Présent/Peut-être sur un jeu à classes : la spé est requise.
@@ -103,6 +111,7 @@ export async function rsvpWithSpec(
 
   const event = await prisma.event.findUnique({ where: { id: eventId }, include: { game: true } });
   if (!event) return { error: 'Événement introuvable.' };
+  if (!canRsvpGame(me.user, event.gameId)) return { error: 'Accès refusé pour ce jeu.' };
   const key = gameKey(event.game.slug) ?? gameKey(event.game.name);
   const r = resolveChoice(key, classId, choice);
   if (!r) return { error: 'Choix invalide.' };
@@ -136,6 +145,7 @@ export async function changeSpec(eventId: string, classId: string, choice: strin
 
   const event = await prisma.event.findUnique({ where: { id: eventId }, include: { game: true } });
   if (!event) return { error: 'Événement introuvable.' };
+  if (!canRsvpGame(me.user, event.gameId)) return { error: 'Accès refusé pour ce jeu.' };
   const key = gameKey(event.game.slug) ?? gameKey(event.game.name);
   const r = resolveChoice(key, classId, choice);
   if (!r) return { error: 'Choix invalide.' };

@@ -46,6 +46,7 @@ export const authOptions: NextAuthOptions = {
           include: { adminGames: { select: { id: true } } },
         });
         if (!user) return null;
+        const dbDiscordRoles = user.discordRoles;
 
         const valid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!valid) return null;
@@ -69,6 +70,7 @@ export const authOptions: NextAuthOptions = {
           name: user.displayName || user.username || user.email || 'Utilisateur',
           role,
           adminGameIds: user.adminGames.map((g) => g.id),
+          discordRoles: dbDiscordRoles,
         };
         return account;
       },
@@ -96,16 +98,19 @@ export const authOptions: NextAuthOptions = {
             displayName: true,
             username: true,
             email: true,
+            discordRoles: true,
             adminGames: { select: { id: true } },
           },
         });
         if (dbUser) {
           su.role = dbUser.role;
           su.adminGameIds = dbUser.adminGames.map((g) => g.id);
+          su.discordRoles = dbUser.discordRoles;
           su.name = dbUser.displayName || dbUser.username || dbUser.email || 'Utilisateur';
         } else {
           su.role = 'VISITEUR';
           su.adminGameIds = [];
+          su.discordRoles = [];
         }
       }
       return session;

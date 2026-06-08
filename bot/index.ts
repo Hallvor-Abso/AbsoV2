@@ -2,7 +2,7 @@ import { Client, Events, GatewayIntentBits, MessageFlags, Routes } from 'discord
 import { env } from './env';
 import { commands, handleInteraction } from './commands';
 import { handleRsvp, handleRespec, handleClassSelect, handleSpecSelect, handleRoleSelect } from './features/calendar';
-import { reconcileMember } from './features/members';
+import { reconcileMember, syncAllMemberRoles } from './features/members';
 import { startHttpServer } from './server';
 import { startReminderLoop } from './features/reminders';
 import { startTwitchBot } from './features/twitch/chat';
@@ -50,6 +50,9 @@ client.once(Events.ClientReady, async (c) => {
 
   // Bot de chat Twitch (no-op si non configuré).
   startTwitchBot().catch((e) => console.error('Bot Twitch :', e));
+
+  // Rattrapage : synchronise les grades Discord → comptes du site.
+  syncAllMemberRoles(c).catch((e) => console.error('syncAllMemberRoles :', e));
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
