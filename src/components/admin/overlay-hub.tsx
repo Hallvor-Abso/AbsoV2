@@ -140,6 +140,7 @@ const OVERLAYS: OverlayDef[] = [
       { param: 'messages', label: 'Messages (séparés par « | »)', kind: 'text', placeholder: 'Salut à tous|GG l’équipe' },
       { param: 'auto', label: 'Infos auto de la guilde', kind: 'toggle', defaultOn: true, off: '0' },
       { param: 'interval', label: 'Durée par message (s)', kind: 'number', placeholder: '6' },
+      { param: 'logo', label: 'Logo de la guilde devant le message', kind: 'toggle', defaultOn: false, on: '1' },
     ],
   },
   {
