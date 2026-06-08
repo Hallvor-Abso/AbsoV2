@@ -1,81 +1,22 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none" role="img" aria-label="H">
   <defs>
-    <linearGradient id="bg" x1="120" y1="60" x2="400" y2="470" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#1a2435"/>
-      <stop offset="0.55" stop-color="#0a1019"/>
-      <stop offset="1" stop-color="#04070d"/>
+    <linearGradient id="hGrad" x1="40" y1="20" x2="200" y2="222" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7CC0FF"/>
+      <stop offset="1" stop-color="#1A6EFF"/>
     </linearGradient>
-    <linearGradient id="faceL" x1="44" y1="72" x2="256" y2="256" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#23344b" stop-opacity="0.9"/>
-      <stop offset="1" stop-color="#23344b" stop-opacity="0"/>
-    </linearGradient>
-    <linearGradient id="faceD" x1="468" y1="440" x2="256" y2="256" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#000000" stop-opacity="0.45"/>
-      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
-    </linearGradient>
-    <linearGradient id="hMain" x1="150" y1="120" x2="368" y2="392" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#e3f1ff"/>
-      <stop offset="0.42" stop-color="#4A9EFF"/>
-      <stop offset="1" stop-color="#163f9c"/>
-    </linearGradient>
-    <radialGradient id="halo" cx="0.5" cy="0.4" r="0.6">
-      <stop offset="0" stop-color="#4A9EFF" stop-opacity="0.45"/>
-      <stop offset="1" stop-color="#4A9EFF" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="ring" x1="120" y1="60" x2="400" y2="460" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#9fd0ff"/>
-      <stop offset="0.5" stop-color="#4A9EFF"/>
-      <stop offset="1" stop-color="#1c5bc0"/>
-    </linearGradient>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="7" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <filter id="hGlow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#4A9EFF" flood-opacity="0.55"/>
     </filter>
-    <filter id="softglow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="11"/>
-    </filter>
-    <clipPath id="hex">
-      <path d="M150 72 L362 72 L468 256 L362 440 L150 440 L44 256 Z"/>
-    </clipPath>
-    <clipPath id="hclip">
-      <path d="M166 120 L196 120 L212 136 L212 230 L300 230 L300 136 L316 120 L346 120 L362 136 L362 376 L346 392 L316 392 L300 376 L300 282 L212 282 L212 376 L196 392 L166 392 L150 376 L150 136 Z"/>
-    </clipPath>
   </defs>
-
-  <!-- Badge hexagonal -->
-  <g clip-path="url(#hex)">
-    <rect x="0" y="0" width="512" height="512" fill="url(#bg)"/>
-    <!-- facettes -->
-    <path d="M44 256 L256 256 L150 72 Z M150 72 L256 256 L362 72 Z" fill="url(#faceL)"/>
-    <path d="M468 256 L256 256 L362 440 Z M362 440 L256 256 L150 440 Z" fill="url(#faceD)"/>
-    <rect x="0" y="0" width="512" height="512" fill="url(#halo)"/>
-    <!-- slash dynamique -->
-    <path d="M40 360 L300 30 L350 30 L90 360 Z" fill="#4A9EFF" fill-opacity="0.10"/>
-    <path d="M150 470 L470 130 L486 150 L166 490 Z" fill="#ffffff" fill-opacity="0.05"/>
+  <g filter="url(#hGlow)">
+    <!-- Écu / crest (identique à l'emblème de la guilde) -->
+    <path d="M120 20 L206 56 L206 120 C206 168 170 206 120 222 C70 206 34 168 34 120 L34 56 Z"
+      stroke="url(#hGrad)" stroke-width="8" stroke-linejoin="round"/>
+    <!-- Monogramme H, au trait arrondi -->
+    <path d="M94 80 L94 168" stroke="url(#hGrad)" stroke-width="14" stroke-linecap="round"/>
+    <path d="M146 80 L146 168" stroke="url(#hGrad)" stroke-width="14" stroke-linecap="round"/>
+    <path d="M94 124 L146 124" stroke="url(#hGrad)" stroke-width="13" stroke-linecap="round"/>
+    <!-- Gemme au sommet -->
+    <path d="M120 40 l12 14 l-12 14 l-12 -14 Z" fill="url(#hGrad)"/>
   </g>
-
-  <!-- Lueur derrière le H -->
-  <path d="M166 120 L196 120 L212 136 L212 230 L300 230 L300 136 L316 120 L346 120 L362 136 L362 376 L346 392 L316 392 L300 376 L300 282 L212 282 L212 376 L196 392 L166 392 L150 376 L150 136 Z"
-        fill="#4A9EFF" filter="url(#softglow)" opacity="0.55"/>
-
-  <!-- Monogramme H facetté -->
-  <g filter="url(#glow)">
-    <path d="M166 120 L196 120 L212 136 L212 230 L300 230 L300 136 L316 120 L346 120 L362 136 L362 376 L346 392 L316 392 L300 376 L300 282 L212 282 L212 376 L196 392 L166 392 L150 376 L150 136 Z" fill="url(#hMain)"/>
-    <g clip-path="url(#hclip)">
-      <!-- bevel : moitié haut-gauche éclairée, bas-droite assombrie -->
-      <path d="M120 110 L360 110 L130 400 L120 400 Z" fill="#ffffff" fill-opacity="0.22"/>
-      <path d="M392 130 L392 400 L150 400 Z" fill="#0a1f4d" fill-opacity="0.35"/>
-      <!-- arête centrale lumineuse -->
-      <path d="M150 250 L362 250 L362 262 L150 262 Z" fill="#bfe3ff" fill-opacity="0.25"/>
-    </g>
-    <path d="M166 120 L196 120 L212 136 L212 230 L300 230 L300 136 L316 120 L346 120 L362 136 L362 376 L346 392 L316 392 L300 376 L300 282 L212 282 L212 376 L196 392 L166 392 L150 376 L150 136 Z"
-          stroke="#dcefff" stroke-opacity="0.6" stroke-width="2" stroke-linejoin="round"/>
-  </g>
-
-  <!-- Double liseré hexagonal -->
-  <path d="M150 72 L362 72 L468 256 L362 440 L150 440 L44 256 Z" stroke="url(#ring)" stroke-width="6" stroke-linejoin="round"/>
-  <path d="M160.6 90.4 L351.4 90.4 L446.8 256 L351.4 421.6 L160.6 421.6 L65.2 256 Z" stroke="#9fd0ff" stroke-opacity="0.35" stroke-width="2" stroke-linejoin="round"/>
-  <!-- accents aux pointes gauche/droite -->
-  <circle cx="44" cy="256" r="5" fill="#bfe3ff"/>
-  <circle cx="468" cy="256" r="5" fill="#bfe3ff"/>
 </svg>
