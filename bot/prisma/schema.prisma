@@ -119,6 +119,9 @@ model News {
   game        Game?      @relation(fields: [gameId], references: [id], onDelete: SetNull)
   gameId      String?
 
+  discordChannelId String?
+  discordMessageId String?
+
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
