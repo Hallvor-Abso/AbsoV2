@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAppUser } from '@/lib/auth';
 import { exchangeCode, fetchDiscordUser, verifyState } from '@/lib/discord-oauth';
+import { getMemberDiscordRoles } from '@/lib/bot';
 import { prisma } from '@/lib/prisma';
 
 function baseUrl(req: NextRequest): string {
@@ -54,6 +55,17 @@ export async function GET(req: NextRequest) {
     }
     console.error('Discord link save:', err);
     return back('error');
+  }
+
+  // Récupère les grades Discord du membre pour piloter la visibilité par jeu.
+  try {
+    const res = await getMemberDiscordRoles(dUser.id);
+    if (res?.ok && res.found) {
+      const keys = res.roles.filter((r) => r.assigned).map((r) => r.key);
+      await prisma.user.update({ where: { id: user.id }, data: { discordRoles: keys } });
+    }
+  } catch (err) {
+    console.error('Discord roles sync on link:', err);
   }
 
   return back('ok');

@@ -14,6 +14,8 @@ export type SessionUser = {
   name?: string | null;
   role: Role;
   adminGameIds: string[];
+  /** Grades Discord synchronisés : « gm », « membre:<gameId> », « recrue:<gameId> »… */
+  discordRoles: string[];
 };
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -57,12 +59,59 @@ export function canAccessRoster(u?: SessionUser | null): boolean {
   return !!u && u.role === 'SUPER_ADMIN';
 }
 
+// --- Visibilité pilotée par les GRADES DISCORD (par jeu) ---------------------
+
+/** « Membre » et au-dessus d'un jeu (donc déjà dans la guilde). */
+const MEMBER_KINDS = new Set(['membre', 'roster', 'officier']);
+/** « Recrue » et au-dessus : donne accès au calendrier du jeu concerné. */
+const CALENDAR_KINDS = new Set(['recrue', 'membre', 'roster', 'officier']);
+
+function parseRoleKey(key: string): { kind: string; gameId: string | null } {
+  const [kind, gameId] = key.split(':');
+  return { kind, gameId: gameId ?? null };
+}
+
+/** A-t-il un grade « Membre+ » (ou GM) sur au moins un jeu ? (= membre de la guilde) */
+export function isGuildMemberDiscord(u?: SessionUser | null): boolean {
+  if (!u) return false;
+  return (u.discordRoles ?? []).some((k) => {
+    const { kind } = parseRoleKey(k);
+    return kind === 'gm' || MEMBER_KINDS.has(kind);
+  });
+}
+
+/** A-t-il accès au calendrier d'AU MOINS un jeu ? (pour afficher le lien de nav) */
+export function hasAnyCalendarAccess(u?: SessionUser | null): boolean {
+  if (!u) return false;
+  if (u.role === 'SUPER_ADMIN' || u.role === 'ADMIN' || u.adminGameIds.length > 0) return true;
+  return (u.discordRoles ?? []).some((k) => {
+    const { kind, gameId } = parseRoleKey(k);
+    return kind === 'gm' || (!!gameId && CALENDAR_KINDS.has(kind));
+  });
+}
+
+/** Liste des jeux dont l'utilisateur voit le calendrier (parmi `allGameIds`). */
+export function calendarGameIds(u: SessionUser | null | undefined, allGameIds: string[]): string[] {
+  if (!u) return [];
+  const roles = u.discordRoles ?? [];
+  // Admins (globaux ou de jeu) et GM voient tout.
+  if (u.role === 'SUPER_ADMIN' || u.role === 'ADMIN' || roles.includes('gm')) {
+    return [...allGameIds];
+  }
+  const out = new Set(u.adminGameIds.filter((id) => allGameIds.includes(id)));
+  for (const k of roles) {
+    const { kind, gameId } = parseRoleKey(k);
+    if (gameId && CALENDAR_KINDS.has(kind) && allGameIds.includes(gameId)) out.add(gameId);
+  }
+  return [...out];
+}
+
 /**
- * « Mes candidatures » : seuls les visiteurs (non-membres) candidatent.
- * Les membres de la guilde n'en ont pas besoin ; le Super Admin garde l'accès.
+ * « Mes candidatures » : réservé à ceux qui ne sont PAS encore membres de la
+ * guilde (d'après leurs grades Discord). Le Super Admin garde l'accès.
  */
 export function canAccessApplications(u?: SessionUser | null): boolean {
-  return !!u && (u.role === 'SUPER_ADMIN' || !isMemberOrAbove(u));
+  return !!u && (u.role === 'SUPER_ADMIN' || !isGuildMemberDiscord(u));
 }
 
 /** Gestion globale (liste des jeux, gestion des membres) : Admin & Super Admin. */

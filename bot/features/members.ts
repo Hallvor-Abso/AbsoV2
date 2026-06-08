@@ -109,14 +109,58 @@ export async function reconcileMember(member: GuildMember): Promise<void> {
     if (want && !has) toAdd.push(r.roleId);
     else if (!want && has) toRemove.push(r.roleId);
   }
-  if (toAdd.length === 0 && toRemove.length === 0) return; // déjà cohérent
 
+  if (toAdd.length || toRemove.length) {
+    try {
+      if (toAdd.length) await member.roles.add(toAdd, 'Hiérarchie des grades (auto)');
+      if (toRemove.length) await member.roles.remove(toRemove, 'Hiérarchie des grades (auto)');
+      console.log(`🔧 Grades normalisés pour ${member.user.tag} (+${toAdd.length} / -${toRemove.length}).`);
+    } catch (err) {
+      console.error('reconcileMember a échoué (permissions du bot ?) :', err);
+    }
+  }
+
+  // Reflète les grades sur le compte du site (visibilité des pages par jeu).
+  await persistMemberRoles(member.id, [...normalized]);
+}
+
+/** Écrit les grades Discord d'un membre sur son compte du site (s'il existe). */
+async function persistMemberRoles(discordId: string, keys: string[]): Promise<void> {
   try {
-    if (toAdd.length) await member.roles.add(toAdd, 'Hiérarchie des grades (auto)');
-    if (toRemove.length) await member.roles.remove(toRemove, 'Hiérarchie des grades (auto)');
-    console.log(`🔧 Grades normalisés pour ${member.user.tag} (+${toAdd.length} / -${toRemove.length}).`);
+    await prisma.user.updateMany({ where: { discordId }, data: { discordRoles: keys } });
   } catch (err) {
-    console.error('reconcileMember a échoué (permissions du bot ?) :', err);
+    console.error('persistMemberRoles :', err);
+  }
+}
+
+/**
+ * Synchronise les grades Discord de TOUS les membres liés à un compte du site.
+ * Appelé au démarrage du bot pour rattraper l'état courant.
+ */
+export async function syncAllMemberRoles(client: Client): Promise<void> {
+  try {
+    const guild = getGuild(client);
+    const structured = await buildStructuredRoles(guild);
+    const users = await prisma.user.findMany({
+      where: { discordId: { not: null } },
+      select: { discordId: true },
+    });
+    const linked = new Set(users.map((u) => u.discordId));
+    if (linked.size === 0) return;
+
+    const members = await guild.members.fetch();
+    let n = 0;
+    for (const member of members.values()) {
+      if (!linked.has(member.id)) continue;
+      const keys = structured
+        .filter((r) => r.roleId && member.roles.cache.has(r.roleId))
+        .map((r) => r.key);
+      await persistMemberRoles(member.id, [...normalizeKeys(keys, structured)]);
+      n += 1;
+    }
+    console.log(`🔁 Grades Discord synchronisés sur le site (${n} membre(s) lié(s)).`);
+  } catch (err) {
+    console.error('syncAllMemberRoles :', err);
   }
 }
 
@@ -171,5 +215,6 @@ export async function setMemberRoles(client: Client, discordId: string, assigned
   } catch {
     warnings.push('Impossible de modifier certains rôles — vérifie les permissions du bot.');
   }
+  await persistMemberRoles(discordId, applied); // reflète immédiatement sur le site
   return { ok: true, warnings, assignedKeys: applied };
 }

@@ -24,6 +24,7 @@ model User {
   discordId    String?  @unique
   passwordHash String
   role         Role     @default(VISITEUR)
+  discordRoles String[] @default([])
   adminGames   Game[]   @relation("GameAdmins")
   applications Application[]
   createdAt    DateTime @default(now())

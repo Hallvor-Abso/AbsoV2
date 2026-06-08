@@ -31,6 +31,9 @@ model User {
   discordId    String?  @unique // ID Discord réel (rempli via « Connexion Discord »)
   passwordHash String
   role         Role     @default(VISITEUR)
+  // Grades Discord du membre (« gm », « membre:<gameId> », « recrue:<gameId> »…),
+  // synchronisés par le bot. Pilotent la visibilité de certaines pages par jeu.
+  discordRoles String[] @default([])
   adminGames   Game[]   @relation("GameAdmins")
   applications Application[]
   createdAt    DateTime @default(now())

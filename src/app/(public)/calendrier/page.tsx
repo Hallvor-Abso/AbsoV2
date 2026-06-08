@@ -4,7 +4,7 @@ import { SectionHeading } from '@/components/section-heading';
 import { CalendarView, type CalendarEvent } from '@/components/calendar-view';
 import { getVisibleGames, getEvents } from '@/lib/data';
 import { getAppUser } from '@/lib/auth';
-import { canAccessCalendar } from '@/lib/permissions';
+import { calendarGameIds } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = {
@@ -30,15 +30,22 @@ export default async function CalendarPage({
 }: {
   searchParams: { discord?: string };
 }) {
-  // Le Calendrier est réservé aux membres (et plus).
+  // Le calendrier est filtré PAR JEU selon les grades Discord (Recrue minimum).
   const user = await getAppUser();
-  if (!canAccessCalendar(user)) {
+  const [allGames, events, me] = await Promise.all([
+    getVisibleGames(),
+    getEvents(),
+    user ? prisma.user.findUnique({ where: { id: user.id }, select: { discordId: true } }) : Promise.resolve(null),
+  ]);
+
+  const allowedIds = calendarGameIds(user, allGames.map((g) => g.id));
+  if (allowedIds.length === 0) {
     return (
       <div className="container-page flex min-h-[60vh] flex-col items-center justify-center py-16 text-center">
         <SectionHeading
           eyebrow="Accès réservé"
           title="Calendrier réservé aux membres"
-          subtitle="Le calendrier des raids et événements est accessible aux membres de la guilde."
+          subtitle="Le calendrier d'un jeu est accessible dès le grade Recrue sur ce jeu (rôle Discord)."
           align="center"
           className="mb-8"
         />
@@ -56,13 +63,12 @@ export default async function CalendarPage({
     );
   }
 
-  const [games, events, me] = await Promise.all([
-    getVisibleGames(),
-    getEvents(),
-    user ? prisma.user.findUnique({ where: { id: user.id }, select: { discordId: true } }) : Promise.resolve(null),
-  ]);
+  const allowedSet = new Set(allowedIds);
+  const games = allGames.filter((g) => allowedSet.has(g.id));
 
-  const calendarEvents: CalendarEvent[] = events.map((ev) => ({
+  const calendarEvents: CalendarEvent[] = events
+    .filter((ev) => allowedSet.has(ev.gameId))
+    .map((ev) => ({
     id: ev.id,
     title: ev.title,
     description: ev.description,

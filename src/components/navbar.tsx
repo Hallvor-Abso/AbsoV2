@@ -8,7 +8,7 @@ import { Logo } from './logo';
 import { cn } from '@/lib/utils';
 import {
   canAccessAdmin,
-  canAccessCalendar,
+  hasAnyCalendarAccess,
   canAccessApplications,
   canAccessRoster,
   type SessionUser,
@@ -34,7 +34,7 @@ export function Navbar({ logoUrl }: { logoUrl?: string }) {
   // candidatures » apparaît pour tout utilisateur connecté.
   const links = [...BASE_LINKS];
   if (canAccessRoster(user)) links.push({ href: '/roster', label: 'Effectif' });
-  if (canAccessCalendar(user)) links.push({ href: '/calendrier', label: 'Calendrier' });
+  if (hasAnyCalendarAccess(user)) links.push({ href: '/calendrier', label: 'Calendrier' });
   if (canAccessApplications(user)) links.push({ href: '/mes-candidatures', label: 'Mes candidatures' });
   if (user) links.push({ href: '/profil', label: 'Profil' });
 
