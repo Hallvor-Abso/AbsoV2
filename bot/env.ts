@@ -48,6 +48,8 @@ export const env = {
   TWITCH_BOT_USERNAME: process.env.TWITCH_BOT_USERNAME || '',
   /** Token OAuth chat du bot (format « oauth:xxxxx »). */
   TWITCH_BOT_TOKEN: process.env.TWITCH_BOT_TOKEN || '',
+  /** Refresh token du bot (optionnel) : renouvelle le token chat automatiquement. */
+  TWITCH_BOT_REFRESH_TOKEN: process.env.TWITCH_BOT_REFRESH_TOKEN || '',
   /** Chaîne Twitch à rejoindre (nom du broadcaster). */
   TWITCH_CHANNEL: process.env.TWITCH_CHANNEL || '',
   /** App Twitch (pour les appels Helix : uptime, jeu, titre…). */
