@@ -6,6 +6,7 @@ import { Reveal } from '@/components/reveal';
 import { SectionHeading } from '@/components/section-heading';
 import { GameCard } from '@/components/game-card';
 import { InlineEdit } from '@/components/inline-edit';
+import { TwitchLiveBadge } from '@/components/twitch-live-badge';
 import { formatDate } from '@/lib/utils';
 import { getSiteContent } from '@/lib/site-content';
 import {
@@ -44,6 +45,9 @@ export default async function HomePage() {
 
         <div className="container-page relative">
           <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-6 flex justify-center empty:hidden">
+              <TwitchLiveBadge />
+            </div>
             <div className="mb-8 flex justify-center">
               <Logo logoUrl={content['site.logoUrl'] || undefined} withGlow className="text-3xl" imageClassName="h-12 sm:h-14" />
             </div>

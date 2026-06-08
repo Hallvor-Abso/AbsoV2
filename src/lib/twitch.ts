@@ -113,6 +113,41 @@ export async function getBroadcaster() {
   return { id: map['twitch.broadcasterId'] || '', login: map['twitch.broadcasterLogin'] || '' };
 }
 
+export type StreamStatus = {
+  live: boolean;
+  login: string;
+  title?: string;
+  game?: string;
+  viewers?: number;
+  startedAt?: string;
+};
+
+/** Statut en direct de la chaîne diffuseur (live + titre + jeu + viewers). */
+export async function getStreamStatus(): Promise<StreamStatus> {
+  if (!twitchConfigured()) return { live: false, login: '' };
+  const { id, login } = await getBroadcaster();
+  if (!id) return { live: false, login };
+  try {
+    const res = await helix(`/streams?user_id=${id}`);
+    if (!res.ok) return { live: false, login };
+    const json = (await res.json()) as {
+      data?: { title: string; game_name: string; viewer_count: number; started_at: string }[];
+    };
+    const s = json.data?.[0];
+    if (!s) return { live: false, login };
+    return {
+      live: true,
+      login,
+      title: s.title,
+      game: s.game_name,
+      viewers: s.viewer_count,
+      startedAt: s.started_at,
+    };
+  } catch {
+    return { live: false, login };
+  }
+}
+
 export async function setBroadcaster(id: string, login: string) {
   for (const [key, value] of [
     ['twitch.broadcasterId', id],
