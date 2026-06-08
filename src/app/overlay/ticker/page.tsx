@@ -104,10 +104,6 @@ export default function TickerOverlay() {
     <div className="tk-root">
       <div className="tk-panel">
         <span className="tk-sheen" />
-        <span className="tk-c tk-tl" />
-        <span className="tk-c tk-tr" />
-        <span className="tk-c tk-bl" />
-        <span className="tk-c tk-br" />
         <div className="tk-scene" ref={sceneRef}>
           <div className="tk-cube" style={{ transform: `translateZ(-${depth}px) rotateX(${rot}deg)` }}>
             {faces.map((text, i) => (
@@ -153,16 +149,6 @@ export default function TickerOverlay() {
           background-size: 50% 100%; background-repeat: no-repeat;
           animation: tkSheen 4.5s ease-in-out infinite; }
         @keyframes tkSheen { 0% { background-position: -60% 0; } 100% { background-position: 160% 0; } }
-
-        /* Coins en équerre, comme le cadre caméra. */
-        .tk-c { position: absolute; width: 20px; height: 20px; z-index: 3; pointer-events: none; }
-        .tk-c::before, .tk-c::after { content: ''; position: absolute; background: ${ACCENT};
-          box-shadow: 0 0 8px rgba(74,158,255,.7); }
-        .tk-c::before { width: 100%; height: 3px; } .tk-c::after { width: 3px; height: 100%; }
-        .tk-tl { top: 4px; left: 4px; } .tk-tl::before, .tk-tl::after { top: 0; left: 0; }
-        .tk-tr { top: 4px; right: 4px; } .tk-tr::before { top: 0; right: 0; } .tk-tr::after { top: 0; right: 0; }
-        .tk-bl { bottom: 4px; left: 4px; } .tk-bl::before { bottom: 0; left: 0; } .tk-bl::after { bottom: 0; left: 0; }
-        .tk-br { bottom: 4px; right: 4px; } .tk-br::before { bottom: 0; right: 0; } .tk-br::after { bottom: 0; right: 0; }
 
         .tk-scene { width: 100%; height: 100%; perspective: 1100px; }
         .tk-cube { position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
