@@ -4,10 +4,13 @@ import { prisma } from '../../prisma';
 import { getStreamStart, getUserByLogin } from './helix';
 import { resolveCommand } from './commands';
 import { checkMessage, getModConfig, grantPermit, modActive } from './moderation';
+import { getChatToken, refreshConfigured } from './token';
 
-/** Le bot Twitch est-il configuré ? (pseudo + token + chaîne) */
+/** Le bot Twitch est-il configuré ? (pseudo + chaîne + un moyen d'auth) */
 export function twitchConfigured(): boolean {
-  return Boolean(env.TWITCH_BOT_USERNAME && env.TWITCH_BOT_TOKEN && env.TWITCH_CHANNEL);
+  return Boolean(
+    env.TWITCH_BOT_USERNAME && env.TWITCH_CHANNEL && (env.TWITCH_BOT_TOKEN || refreshConfigured()),
+  );
 }
 
 const cooldowns = new Map<string, number>(); // anti-spam global par commande
@@ -22,14 +25,28 @@ export async function startTwitchBot(): Promise<void> {
   const broadcaster = await getUserByLogin(channel).catch(() => null);
   const broadcasterId = broadcaster?.id ?? null;
 
+  const token = await getChatToken();
+  if (!token) {
+    console.error('🟣 Bot Twitch : aucun token chat valide (TWITCH_BOT_TOKEN / refresh) — abandon.');
+    return;
+  }
+
   const client = new tmi.Client({
     options: { skipUpdatingEmotesets: true },
     connection: { reconnect: true, secure: true },
-    identity: { username: env.TWITCH_BOT_USERNAME, password: env.TWITCH_BOT_TOKEN },
+    identity: { username: env.TWITCH_BOT_USERNAME, password: token },
     channels: [channel],
   });
 
   client.on('connected', () => console.log(`🟣 Bot Twitch connecté au chat de #${channel}`));
+  client.on('disconnected', (reason) => {
+    if (/login|auth/i.test(reason || '')) {
+      console.error(
+        `🟣 Bot Twitch : échec d'authentification (« ${reason} »). ` +
+          'Vérifie TWITCH_BOT_TOKEN (format oauth:…) ou le refresh token, et que le compte bot est bien le bon.',
+      );
+    }
+  });
 
   client.on('message', async (ch, tags, message, self) => {
     if (self) return;
@@ -88,6 +105,26 @@ export async function startTwitchBot(): Promise<void> {
   client.connect().catch((e) => console.error('Connexion Twitch :', e));
 
   startTimers(client, channel, broadcasterId);
+
+  // Renouvellement périodique du token (toutes les 3 h) si un refresh est configuré.
+  if (refreshConfigured()) {
+    setInterval(
+      async () => {
+        const fresh = await getChatToken();
+        if (!fresh) return;
+        try {
+          // Met à jour le mot de passe puis force une reconnexion propre.
+          (client as unknown as { opts: { identity: { password: string } } }).opts.identity.password = fresh;
+          await client.disconnect().catch(() => {});
+          await client.connect().catch(() => {});
+          console.log('🟣 Bot Twitch : token chat renouvelé.');
+        } catch (e) {
+          console.error('Renouvellement token Twitch :', e);
+        }
+      },
+      3 * 60 * 60 * 1000,
+    );
+  }
 }
 
 /** Timers : messages périodiques (uniquement quand le live est en cours). */
