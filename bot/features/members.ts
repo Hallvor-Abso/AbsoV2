@@ -61,7 +61,7 @@ async function buildStructuredRoles(guild: Guild): Promise<StructuredRole[]> {
  *  - Visiteur (global, unique) : retiré dès qu'un grade de jeu (Recrue ou plus)
  *    ou GM est présent
  */
-function normalizeKeys(keys: Iterable<string>, structured: StructuredRole[]): Set<string> {
+export function normalizeKeys(keys: Iterable<string>, structured: StructuredRole[]): Set<string> {
   const out = new Set(keys);
   const gameIds = [...new Set(structured.filter((r) => r.gameId).map((r) => r.gameId!))];
   let hasAnyGameRank = false;

@@ -18,7 +18,9 @@
     "bot:dev": "tsx --env-file=.env bot/index.ts",
     "bot:register": "tsx --env-file=.env bot/register-commands.ts",
     "bot:check": "tsc --noEmit --project bot/tsconfig.json",
-    "check:classes": "tsx scripts/check-classes-sync.ts"
+    "check:classes": "tsx scripts/check-classes-sync.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -62,6 +64,7 @@
     "postcss": "^8.4.49",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.15",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.8"
   }
 }
