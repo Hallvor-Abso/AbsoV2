@@ -80,12 +80,18 @@ function interpolate(tpl: string, ctx: ChatCtx, args: string[]): string {
     .replace(/\$\(channel\)/g, ctx.channel);
 }
 
-async function customCommand(name: string, args: string[], ctx: ChatCtx): Promise<string | null> {
+/** Renvoie le texte d'une commande personnalisée si elle existe, sinon undefined. */
+async function customCommand(
+  name: string,
+  args: string[],
+  ctx: ChatCtx,
+): Promise<{ found: true; reply: string | null } | { found: false }> {
   const cmd = await prisma.twitchCommand.findUnique({ where: { name } });
-  if (!cmd || !cmd.enabled) return null;
-  if (cmd.userLevel === 'MOD' && !ctx.isMod) return null;
-  if (cmd.userLevel === 'SUB' && !ctx.isSub && !ctx.isMod) return null;
-  return interpolate(cmd.response, ctx, args);
+  if (!cmd) return { found: false };
+  if (!cmd.enabled) return { found: true, reply: null };
+  if (cmd.userLevel === 'MOD' && !ctx.isMod) return { found: true, reply: null };
+  if (cmd.userLevel === 'SUB' && !ctx.isSub && !ctx.isMod) return { found: true, reply: null };
+  return { found: true, reply: interpolate(cmd.response, ctx, args) };
 }
 
 async function listCommands(): Promise<string> {
@@ -97,6 +103,10 @@ async function listCommands(): Promise<string> {
 
 /** Résout une commande (intégrée, guilde, ou custom). Renvoie le texte à poster, ou null. */
 export async function resolveCommand(name: string, args: string[], ctx: ChatCtx): Promise<string | null> {
+  // Une commande personnalisée du même nom REMPLACE l'intégrée (texte modifiable depuis l'admin).
+  const custom = await customCommand(name, args, ctx);
+  if (custom.found) return custom.reply;
+
   switch (name) {
     case 'uptime':
       return uptime(ctx);
@@ -126,6 +136,6 @@ export async function resolveCommand(name: string, args: string[], ctx: ChatCtx)
     case 'commands':
       return listCommands();
     default:
-      return customCommand(name, args, ctx);
+      return null;
   }
 }

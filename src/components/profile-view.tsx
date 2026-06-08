@@ -27,10 +27,12 @@ export function ProfileView({
   account,
   games,
   myMains,
+  showApplications = true,
 }: {
   account: { name: string; email: string | null; discord: string | null; discordLinked: boolean };
   games: ProfileGame[];
   myMains: Record<string, ProfileMain>;
+  showApplications?: boolean;
 }) {
   // Seuls les jeux à classes (WoW/SWTOR) ont un éditeur de main.
   const classGames = games.filter((g) => gameKey(g.slug) || gameKey(g.name));
@@ -77,7 +79,9 @@ export function ProfileView({
 
       {/* Liens rapides */}
       <div className="flex flex-wrap gap-3">
-        <Link href="/mes-candidatures" className="btn-secondary text-sm">Mes candidatures</Link>
+        {showApplications && (
+          <Link href="/mes-candidatures" className="btn-secondary text-sm">Mes candidatures</Link>
+        )}
         <Link href="/calendrier" className="btn-secondary text-sm">Calendrier</Link>
       </div>
     </div>

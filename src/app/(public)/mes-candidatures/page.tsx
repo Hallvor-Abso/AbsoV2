@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { SectionHeading } from '@/components/section-heading';
 import { getAppUser } from '@/lib/auth';
+import { canAccessApplications } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { APPLICATION_STATUS } from '@/lib/labels';
 
@@ -18,6 +20,8 @@ function formatDate(d: Date): string {
 
 export default async function MyApplicationsPage() {
   const user = await getAppUser();
+  // Les membres de la guilde n'ont pas besoin de candidater.
+  if (user && !canAccessApplications(user)) notFound();
   if (!user) {
     return (
       <div className="container-page flex min-h-[60vh] flex-col items-center justify-center py-16 text-center">

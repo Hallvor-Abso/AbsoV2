@@ -35,8 +35,13 @@ export function AdminTwitchCommands({ commands }: { commands: TwitchCmd[] }) {
   return (
     <div className="space-y-6">
       <div className="card p-4 text-sm text-muted">
-        <p className="mb-1 font-medium text-foreground">Commandes intégrées (toujours actives) :</p>
+        <p className="mb-1 font-medium text-foreground">Commandes intégrées :</p>
         <p className="text-xs">{BUILTIN.join(' · ')}</p>
+        <p className="mt-2 text-xs">
+          Pour <strong>modifier le texte</strong> d'une commande intégrée (ex. <code className="text-foreground">!recrutement</code>),
+          crée une commande du <strong>même nom</strong> : ta version remplacera celle par défaut.
+          La désactiver coupe aussi l'intégrée.
+        </p>
         <p className="mt-2 text-xs">
           Variables dans tes réponses : <code className="text-foreground">$(user)</code>,{' '}
           <code className="text-foreground">$(touser)</code>, <code className="text-foreground">$(channel)</code>.

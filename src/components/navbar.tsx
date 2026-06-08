@@ -6,12 +6,17 @@ import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
 import { Logo } from './logo';
 import { cn } from '@/lib/utils';
-import { canAccessAdmin, canAccessCalendar, type SessionUser } from '@/lib/permissions';
+import {
+  canAccessAdmin,
+  canAccessCalendar,
+  canAccessApplications,
+  canAccessRoster,
+  type SessionUser,
+} from '@/lib/permissions';
 
 const BASE_LINKS = [
   { href: '/', label: 'Accueil' },
   { href: '/progression', label: 'Progression' },
-  { href: '/roster', label: 'Effectif' },
   { href: '/news', label: 'News' },
   { href: '/recrutement', label: 'Recrutement' },
 ];
@@ -28,8 +33,9 @@ export function Navbar({ logoUrl }: { logoUrl?: string }) {
   // Le Calendrier n'est visible que par les membres (et plus) ; « Mes
   // candidatures » apparaît pour tout utilisateur connecté.
   const links = [...BASE_LINKS];
+  if (canAccessRoster(user)) links.push({ href: '/roster', label: 'Effectif' });
   if (canAccessCalendar(user)) links.push({ href: '/calendrier', label: 'Calendrier' });
-  if (user) links.push({ href: '/mes-candidatures', label: 'Mes candidatures' });
+  if (canAccessApplications(user)) links.push({ href: '/mes-candidatures', label: 'Mes candidatures' });
   if (user) links.push({ href: '/profil', label: 'Profil' });
 
   const isActive = (href: string) =>

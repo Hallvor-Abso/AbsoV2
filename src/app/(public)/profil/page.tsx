@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { SectionHeading } from '@/components/section-heading';
 import { ProfileView, type ProfileMain } from '@/components/profile-view';
 import { getAppUser } from '@/lib/auth';
+import { canAccessApplications } from '@/lib/permissions';
 import { getVisibleGames } from '@/lib/data';
 import { prisma } from '@/lib/prisma';
 
@@ -52,6 +53,7 @@ export default async function ProfilePage() {
         }}
         games={games.map((g) => ({ id: g.id, name: g.name, slug: g.slug, color: g.color, status: g.status }))}
         myMains={myMains}
+        showApplications={canAccessApplications(user)}
       />
     </div>
   );

@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { SectionHeading } from '@/components/section-heading';
 import { RosterView, type RosterMember } from '@/components/roster-view';
 import { getVisibleGames } from '@/lib/data';
+import { getAppUser } from '@/lib/auth';
+import { canAccessRoster } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 
-export const revalidate = 60;
+// Page réservée (Super Admin) : pas de cache statique.
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Effectif',
@@ -12,6 +16,8 @@ export const metadata: Metadata = {
 };
 
 export default async function RosterPage() {
+  if (!canAccessRoster(await getAppUser())) notFound();
+
   const games = await getVisibleGames();
 
   const mains = await prisma.memberMain.findMany({ where: { game: { isActive: true } } });
