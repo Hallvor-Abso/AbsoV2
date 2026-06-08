@@ -100,6 +100,11 @@ export default function TickerOverlay() {
   return (
     <div className="tk-root">
       <div className="tk-panel">
+        <span className="tk-sheen" />
+        <span className="tk-c tk-tl" />
+        <span className="tk-c tk-tr" />
+        <span className="tk-c tk-bl" />
+        <span className="tk-c tk-br" />
         <div className="tk-scene" ref={sceneRef}>
           <div className="tk-cube" style={{ transform: `translateZ(-${depth}px) rotateX(${rot}deg)` }}>
             {faces.map((text, i) => (
@@ -119,17 +124,46 @@ export default function TickerOverlay() {
       <style>{`
         .tk-root { position: fixed; inset: 0; background: transparent;
           font-family: var(--font-space-grotesk), system-ui, sans-serif; color: #fff; }
-        .tk-panel { position: absolute; inset: 0; border-radius: 12px; overflow: hidden;
-          background: linear-gradient(180deg, rgba(16,21,31,.96), rgba(8,10,15,.96));
-          border: 1px solid rgba(74,158,255,.45); box-shadow: 0 10px 30px rgba(0,0,0,.55); }
+        .tk-panel { position: absolute; inset: 0; border-radius: 16px; overflow: hidden;
+          background:
+            radial-gradient(120% 140% at 50% -20%, rgba(74,158,255,.16), transparent 60%),
+            linear-gradient(180deg, rgba(18,24,35,.97), rgba(8,10,15,.97));
+          border: 2px solid rgba(74,158,255,.85);
+          box-shadow: 0 0 18px rgba(74,158,255,.38), 0 10px 28px rgba(0,0,0,.5),
+            inset 0 0 0 1px rgba(255,255,255,.05), inset 0 0 34px rgba(0,0,0,.32);
+          animation: tkGlow 3.6s ease-in-out infinite; }
+        @keyframes tkGlow {
+          0%,100% { box-shadow: 0 0 16px rgba(74,158,255,.30), 0 10px 28px rgba(0,0,0,.5),
+            inset 0 0 0 1px rgba(255,255,255,.05), inset 0 0 34px rgba(0,0,0,.32); }
+          50% { box-shadow: 0 0 26px rgba(74,158,255,.55), 0 10px 28px rgba(0,0,0,.5),
+            inset 0 0 0 1px rgba(255,255,255,.07), inset 0 0 34px rgba(0,0,0,.32); }
+        }
+
+        /* Ligne lumineuse qui balaie le haut du panneau. */
+        .tk-sheen { position: absolute; top: 0; left: 0; right: 0; height: 2px; z-index: 3; pointer-events: none;
+          background: linear-gradient(90deg, transparent, ${ACCENT}, transparent);
+          background-size: 50% 100%; background-repeat: no-repeat;
+          animation: tkSheen 4.5s ease-in-out infinite; }
+        @keyframes tkSheen { 0% { background-position: -60% 0; } 100% { background-position: 160% 0; } }
+
+        /* Coins en équerre, comme le cadre caméra. */
+        .tk-c { position: absolute; width: 20px; height: 20px; z-index: 3; pointer-events: none; }
+        .tk-c::before, .tk-c::after { content: ''; position: absolute; background: ${ACCENT};
+          box-shadow: 0 0 8px rgba(74,158,255,.7); }
+        .tk-c::before { width: 100%; height: 3px; } .tk-c::after { width: 3px; height: 100%; }
+        .tk-tl { top: 4px; left: 4px; } .tk-tl::before, .tk-tl::after { top: 0; left: 0; }
+        .tk-tr { top: 4px; right: 4px; } .tk-tr::before { top: 0; right: 0; } .tk-tr::after { top: 0; right: 0; }
+        .tk-bl { bottom: 4px; left: 4px; } .tk-bl::before { bottom: 0; left: 0; } .tk-bl::after { bottom: 0; left: 0; }
+        .tk-br { bottom: 4px; right: 4px; } .tk-br::before { bottom: 0; right: 0; } .tk-br::after { bottom: 0; right: 0; }
+
         .tk-scene { width: 100%; height: 100%; perspective: 1100px; }
         .tk-cube { position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
           transition: transform .8s cubic-bezier(.62,.04,.2,1); }
         .tk-face { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-          gap: 12px; padding: 6px 18px; backface-visibility: hidden; }
-        .tk-bullet { color: ${ACCENT}; font-size: 12px; flex: none; }
-        .tk-text { font-size: 19px; font-weight: 500; line-height: 1.2; text-align: center;
-          color: rgba(255,255,255,.94);
+          gap: 11px; padding: 6px 24px; backface-visibility: hidden; }
+        .tk-bullet { color: ${ACCENT}; font-size: 11px; flex: none; filter: drop-shadow(0 0 5px rgba(74,158,255,.8)); }
+        .tk-text { font-size: 19px; font-weight: 500; line-height: 1.2; text-align: center; letter-spacing: .01em;
+          color: rgba(255,255,255,.95); text-shadow: 0 1px 8px rgba(0,0,0,.5);
           display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
       `}</style>
     </div>
