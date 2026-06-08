@@ -99,6 +99,17 @@ export function removeEventFromBot(channelId: string | null, messageId: string |
   return callBot('/sync/event-deleted', { channelId, messageId });
 }
 
+/** Demande au bot de poster / mettre à jour une news publiée dans le salon News. */
+export function syncNewsToBot(newsId: string) {
+  return callBot('/sync/news', { newsId });
+}
+
+/** Demande au bot de supprimer le message Discord d'une news. */
+export function removeNewsFromBot(channelId: string | null, messageId: string | null) {
+  if (!channelId || !messageId) return Promise.resolve();
+  return callBot('/sync/news-deleted', { channelId, messageId });
+}
+
 /** Demande au bot de publier / mettre à jour l'embed de progression d'un jeu. */
 export function syncProgressionToBot(gameId: string | null) {
   if (!gameId) return Promise.resolve();

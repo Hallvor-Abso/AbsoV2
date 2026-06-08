@@ -34,6 +34,8 @@ import {
   syncEventToBot,
   syncProgressionToBot,
   removeEventFromBot,
+  syncNewsToBot,
+  removeNewsFromBot,
   syncApplicationStatusToBot,
   deleteApplicationChannelFromBot,
   getMemberDiscordRoles,
@@ -264,11 +266,19 @@ export async function saveNews(formData: FormData) {
     publishedAt,
   };
 
+  let savedId = id;
   if (id) {
     await prisma.news.update({ where: { id }, data });
   } else {
-    await prisma.news.create({ data: { ...data, slug } });
+    const created = await prisma.news.create({ data: { ...data, slug } });
+    savedId = created.id;
   }
+
+  // Publie sur le salon News de Discord (uniquement si publié et déjà visible).
+  if (savedId && status === 'PUBLISHED' && publishedAt && publishedAt <= now) {
+    await syncNewsToBot(savedId);
+  }
+
   revalidatePublic();
   revalidatePath(`/news/${slug}`);
   revalidatePath('/admin/news');
@@ -291,9 +301,13 @@ export async function toggleFeatured(id: string) {
 }
 
 export async function deleteNews(id: string) {
-  const n = await prisma.news.findUnique({ where: { id }, select: { gameId: true } });
+  const n = await prisma.news.findUnique({
+    where: { id },
+    select: { gameId: true, discordChannelId: true, discordMessageId: true },
+  });
   await requireGameAccess(n?.gameId);
   await prisma.news.delete({ where: { id } });
+  await removeNewsFromBot(n?.discordChannelId ?? null, n?.discordMessageId ?? null);
   revalidatePublic();
 }
 

@@ -4,6 +4,7 @@ import { env } from './env';
 import { syncEvent, removeEventMessage } from './features/calendar';
 import { postApplication, postApplicationStatus, deleteApplicationChannel } from './features/recruitment';
 import { getMemberRoles, setMemberRoles } from './features/members';
+import { syncNews, removeNews } from './features/news';
 import { syncProgression } from './features/progression';
 
 /**
@@ -75,6 +76,14 @@ export function startHttpServer(client: Client): void {
         case '/sync/application-deleted':
           void deleteApplicationChannel(client, body.channelId ?? null).catch((e) =>
             console.error('deleteApplicationChannel (bg) :', e),
+          );
+          return json(200, { ok: true });
+        case '/sync/news':
+          void syncNews(client, body.newsId).catch((e) => console.error('syncNews (bg) :', e));
+          return json(200, { ok: true });
+        case '/sync/news-deleted':
+          void removeNews(client, body.channelId ?? null, body.messageId ?? null).catch((e) =>
+            console.error('removeNews (bg) :', e),
           );
           return json(200, { ok: true });
         // Rôles Discord d'un membre (lecture/écriture synchrones : on attend
