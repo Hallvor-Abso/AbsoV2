@@ -131,15 +131,15 @@ const OVERLAYS: OverlayDef[] = [
   },
   {
     id: 'ticker',
-    name: 'Bandeau d’infos',
+    name: 'Panneau d’infos',
     path: '/overlay/ticker',
     size: '1920×… · transparent',
-    desc: 'Bandeau défilant en bas : messages perso + infos auto de la guilde (raid, news, boss).',
+    desc: 'Panneau en bas qui pivote en 3D (cube) : messages perso + infos auto de la guilde (raid, news, boss).',
     shared: ['guild'],
     fields: [
       { param: 'messages', label: 'Messages (séparés par « | »)', kind: 'text', placeholder: 'Salut à tous|GG l’équipe' },
       { param: 'auto', label: 'Infos auto de la guilde', kind: 'toggle', defaultOn: true, off: '0' },
-      { param: 'speed', label: 'Vitesse (s/boucle)', kind: 'number', placeholder: '40' },
+      { param: 'interval', label: 'Durée par message (s)', kind: 'number', placeholder: '6' },
     ],
   },
   {
