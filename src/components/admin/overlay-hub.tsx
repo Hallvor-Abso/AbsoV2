@@ -133,9 +133,9 @@ const OVERLAYS: OverlayDef[] = [
     id: 'ticker',
     name: 'Panneau d’infos',
     path: '/overlay/ticker',
-    size: '1920×… · transparent',
-    desc: 'Panneau en bas qui pivote en 3D (cube) : messages perso + infos auto de la guilde (raid, news, boss).',
-    shared: ['guild'],
+    size: 'taille = source · transparent',
+    desc: 'Panneau qui pivote en 3D (cube) ; remplit sa source (à dimensionner sur la caméra). Messages perso + infos auto.',
+    shared: [],
     fields: [
       { param: 'messages', label: 'Messages (séparés par « | »)', kind: 'text', placeholder: 'Salut à tous|GG l’équipe' },
       { param: 'auto', label: 'Infos auto de la guilde', kind: 'toggle', defaultOn: true, off: '0' },
