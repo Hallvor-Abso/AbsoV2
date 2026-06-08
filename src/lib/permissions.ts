@@ -52,6 +52,19 @@ export function canAccessOverlays(u?: SessionUser | null): boolean {
   return !!u && u.role === 'SUPER_ADMIN';
 }
 
+/** Page « Effectif » : réservée au Super Admin pour l'instant. */
+export function canAccessRoster(u?: SessionUser | null): boolean {
+  return !!u && u.role === 'SUPER_ADMIN';
+}
+
+/**
+ * « Mes candidatures » : seuls les visiteurs (non-membres) candidatent.
+ * Les membres de la guilde n'en ont pas besoin ; le Super Admin garde l'accès.
+ */
+export function canAccessApplications(u?: SessionUser | null): boolean {
+  return !!u && (u.role === 'SUPER_ADMIN' || !isMemberOrAbove(u));
+}
+
 /** Gestion globale (liste des jeux, gestion des membres) : Admin & Super Admin. */
 export function canManageGlobally(u?: SessionUser | null): boolean {
   return !!u && (u.role === 'ADMIN' || u.role === 'SUPER_ADMIN');
