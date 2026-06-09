@@ -301,6 +301,11 @@ model Event {
   reminder24hSentAt DateTime?
   reminder1hSentAt  DateTime?
 
+  // Message Discord du « groupe validé » (ping des joueurs retenus), supprimé
+  // automatiquement 30 min après le début de l'événement.
+  rosterChannelId  String?
+  rosterMessageId  String?
+
   signups          EventSignup[]
 
   createdAt        DateTime  @default(now())
@@ -320,6 +325,7 @@ model EventSignup {
   displayName String // pseudo affiché (dénormalisé)
   status      SignupStatus @default(GOING)
   source      String       @default("discord") // "site" ou "discord" (informatif)
+  selected    Boolean      @default(false) // retenu dans le groupe de raid par le GM
 
   // Classe/spé/rôle au moment de l'inscription (figés pour l'affichage).
   role        String? // TANK / HEAL / DPS

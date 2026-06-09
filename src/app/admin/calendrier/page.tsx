@@ -12,7 +12,17 @@ export default async function AdminCalendarPage() {
   const eventWhere = scope !== 'all' ? { gameId: { in: scope } } : {};
 
   const [events, games] = await Promise.all([
-    prisma.event.findMany({ where: eventWhere, orderBy: { startDate: 'desc' } }),
+    prisma.event.findMany({
+      where: eventWhere,
+      orderBy: { startDate: 'desc' },
+      include: {
+        signups: {
+          where: { status: 'GOING' },
+          orderBy: { createdAt: 'asc' },
+          select: { discordId: true, displayName: true, role: true, spec: true, selected: true },
+        },
+      },
+    }),
     // Tous les jeux (un nouveau jeu crée automatiquement son onglet calendrier).
     prisma.game.findMany({ where: gameWhere, orderBy: [{ status: 'asc' }, { order: 'asc' }] }),
   ]);
@@ -25,6 +35,13 @@ export default async function AdminCalendarPage() {
     gameId: ev.gameId,
     startDate: ev.startDate.toISOString(),
     endDate: ev.endDate ? ev.endDate.toISOString() : '',
+    signups: ev.signups.map((s) => ({
+      discordId: s.discordId,
+      displayName: s.displayName,
+      role: s.role,
+      spec: s.spec,
+      selected: s.selected,
+    })),
   }));
 
   return (

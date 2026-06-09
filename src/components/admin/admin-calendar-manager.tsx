@@ -6,6 +6,7 @@ import { ConfirmButton } from './confirm-button';
 import { ActionForm } from './action-form';
 import { DateTimeInput } from './datetime-input';
 import { saveEvent, deleteEvent } from '@/app/admin/actions';
+import { RaidRosterPanel, type RosterSignup } from './raid-roster-panel';
 import { cn } from '@/lib/utils';
 
 export type AdminEvent = {
@@ -16,6 +17,7 @@ export type AdminEvent = {
   gameId: string;
   startDate: string; // instant UTC au format ISO ('' si vide)
   endDate: string;
+  signups: RosterSignup[];
 };
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -209,6 +211,12 @@ function EventForm({
 
         <button type="submit" className="btn-primary">{event ? 'Enregistrer' : "Ajouter l'événement"}</button>
       </ActionForm>
+
+      {event && event.type === 'RAID' && (
+        <div className="border-t border-border pt-4">
+          <RaidRosterPanel eventId={event.id} signups={event.signups} />
+        </div>
+      )}
 
       {event && (
         <ActionForm action={deleteEvent.bind(null, event.id)} success="Événement supprimé" onDone={onDone} className="border-t border-border pt-3">

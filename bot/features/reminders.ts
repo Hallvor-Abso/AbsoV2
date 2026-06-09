@@ -1,6 +1,7 @@
 import type { Client } from 'discord.js';
 import { SignupStatus } from '@prisma/client';
 import { prisma } from '../prisma';
+import { sweepRaidRosters } from './raid-roster';
 
 /**
  * Rappels de raid en message privé :
@@ -71,7 +72,10 @@ async function sendReminders(client: Client): Promise<void> {
 
 /** Démarre la boucle de rappels (vérification périodique). */
 export function startReminderLoop(client: Client): void {
-  const run = () => sendReminders(client).catch((e) => console.error('Rappels raid :', e));
+  const run = () => {
+    sendReminders(client).catch((e) => console.error('Rappels raid :', e));
+    sweepRaidRosters(client).catch((e) => console.error('Nettoyage groupes raid :', e));
+  };
   run();
   setInterval(run, CHECK_INTERVAL_MS);
 }

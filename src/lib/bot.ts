@@ -104,6 +104,11 @@ export function syncNewsToBot(newsId: string) {
   return callBot('/sync/news', { newsId });
 }
 
+/** Demande au bot de poster le message « groupe validé » (ping des retenus). */
+export function syncRosterToBot(eventId: string) {
+  return callBot('/sync/roster', { eventId });
+}
+
 /** Demande au bot de supprimer le message Discord d'une news. */
 export function removeNewsFromBot(channelId: string | null, messageId: string | null) {
   if (!channelId || !messageId) return Promise.resolve();

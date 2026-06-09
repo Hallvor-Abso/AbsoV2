@@ -214,6 +214,8 @@ model Event {
   discordMessageId String?
   reminder24hSentAt DateTime?
   reminder1hSentAt  DateTime?
+  rosterChannelId  String?
+  rosterMessageId  String?
   signups          EventSignup[]
 
   createdAt        DateTime  @default(now())
@@ -228,6 +230,7 @@ model EventSignup {
   displayName String
   status      SignupStatus @default(GOING)
   source      String       @default("discord")
+  selected    Boolean      @default(false)
 
   role        String?
   classId     String?
