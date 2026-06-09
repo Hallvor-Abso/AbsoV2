@@ -1,0 +1,47 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="badge" x1="80" y1="60" x2="430" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1c2533"/>
+      <stop offset="0.55" stop-color="#0c1119"/>
+      <stop offset="1" stop-color="#05080e"/>
+    </linearGradient>
+    <linearGradient id="white" x1="150" y1="135" x2="256" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#aab6c8"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="306" y1="135" x2="362" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#86c4ff"/>
+      <stop offset="0.5" stop-color="#4A9EFF"/>
+      <stop offset="1" stop-color="#1657c4"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="256" y1="40" x2="256" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="blueglow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+  </defs>
+
+  <!-- Badge arrondi -->
+  <rect x="40" y="40" width="432" height="432" rx="124" fill="url(#badge)"/>
+  <rect x="40" y="40" width="432" height="432" rx="124" fill="url(#sheen)"/>
+  <rect x="42.5" y="42.5" width="427" height="427" rx="121.5" stroke="#4A9EFF" stroke-opacity="0.45" stroke-width="3"/>
+
+  <!-- Lueur bleue derrière la moitié droite -->
+  <g transform="translate(256,257) skewX(-7) translate(-256,-257)">
+    <path d="M306 135 H362 V380 H306 Z M256 232 H306 V286 H256 Z" fill="#4A9EFF" opacity="0.5" filter="url(#blueglow)"/>
+  </g>
+
+  <!-- Monogramme H bi-ton, légèrement en italique -->
+  <g transform="translate(256,257) skewX(-7) translate(-256,-257)">
+    <!-- Moitié blanche : montant gauche + demi-barre -->
+    <path d="M150 135 H206 V380 H150 Z M206 232 H256 V286 H206 Z" fill="url(#white)"/>
+    <!-- Moitié bleue : montant droit + demi-barre -->
+    <path d="M306 135 H362 V380 H306 Z M256 232 H306 V286 H256 Z" fill="url(#blue)"/>
+    <!-- Arêtes lumineuses -->
+    <path d="M150 135 H206 M306 135 H362" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3"/>
+    <!-- Petit éclat blanc -->
+    <path d="M256 92 l10 14 l-10 14 l-10 -14 Z" fill="#ffffff"/>
+  </g>
+</svg>
