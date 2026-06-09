@@ -5,6 +5,7 @@ import { syncEvent, removeEventMessage } from './features/calendar';
 import { postApplication, postApplicationStatus, deleteApplicationChannel } from './features/recruitment';
 import { getMemberRoles, setMemberRoles } from './features/members';
 import { syncNews, removeNews } from './features/news';
+import { postRaidRoster } from './features/raid-roster';
 import { syncProgression } from './features/progression';
 
 /**
@@ -85,6 +86,9 @@ export function startHttpServer(client: Client): void {
           void removeNews(client, body.channelId ?? null, body.messageId ?? null).catch((e) =>
             console.error('removeNews (bg) :', e),
           );
+          return json(200, { ok: true });
+        case '/sync/roster':
+          void postRaidRoster(client, body.eventId).catch((e) => console.error('postRaidRoster (bg) :', e));
           return json(200, { ok: true });
         // Rôles Discord d'un membre (lecture/écriture synchrones : on attend
         // la réponse pour la renvoyer au site).

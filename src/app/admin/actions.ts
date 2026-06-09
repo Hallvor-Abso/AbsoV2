@@ -36,6 +36,7 @@ import {
   removeEventFromBot,
   syncNewsToBot,
   removeNewsFromBot,
+  syncRosterToBot,
   syncApplicationStatusToBot,
   deleteApplicationChannelFromBot,
   getMemberDiscordRoles,
@@ -730,6 +731,27 @@ export async function deleteEvent(id: string) {
   await removeEventFromBot(ev?.discordChannelId ?? null, ev?.discordMessageId ?? null);
   await logAudit('Événement supprimé', ev?.title ?? id);
   revalidatePublic();
+  revalidatePath('/admin/calendrier');
+}
+
+/** Valide le groupe de raid (joueurs retenus) → ping Discord des sélectionnés. */
+export async function validateRaidRoster(eventId: string, selectedDiscordIds: string[]) {
+  const ev = await prisma.event.findUnique({ where: { id: eventId }, select: { gameId: true, title: true } });
+  await requireGameAccess(ev?.gameId);
+
+  const ids = new Set(selectedDiscordIds);
+  const signups = await prisma.eventSignup.findMany({
+    where: { eventId, status: 'GOING' },
+    select: { id: true, discordId: true },
+  });
+  await prisma.$transaction(
+    signups.map((s) =>
+      prisma.eventSignup.update({ where: { id: s.id }, data: { selected: ids.has(s.discordId) } }),
+    ),
+  );
+
+  await syncRosterToBot(eventId);
+  await logAudit('Groupe de raid validé', `${ev?.title ?? eventId} · ${ids.size} retenu(s)`);
   revalidatePath('/admin/calendrier');
 }
 
