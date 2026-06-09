@@ -142,9 +142,37 @@ async function buildEventMessage(eventId: string, guild: Guild | null) {
     .setColor(toColor(event.game.color))
     .setTitle(`📅 ${event.title}`)
     .setDescription(event.description || null)
+    .addFields({ name: 'Quand', value: when });
+
+  // Jeu à classes : colonnes Tank | DPS, puis Heal sous le Tank.
+  if (key && going.length > 0) {
+    const lines = (role: string) =>
+      going
+        .filter((s) => s.role === role)
+        .map((m) => `${specEmoji(guild, key, m.classId, m.spec, m.role)} ${m.displayName}${m.spec ? ` · ${m.spec}` : ''}`)
+        .join('\n') || '—';
+    const cnt = (role: string) => going.filter((s) => s.role === role).length;
+    const without = going.filter((s) => !s.role);
+    const blank = () => ({ name: '\u200b', value: '\u200b', inline: true });
+
+    embed.addFields(
+      {
+        name: `✅ Présents (${going.length})`,
+        value: without.length ? without.map((m) => `• ${m.displayName}`).join('\n') : '\u200b',
+      },
+      { name: `${ROLE_EMOJI.TANK} ${ROLE_LABEL.TANK} (${cnt('TANK')})`, value: lines('TANK'), inline: true },
+      { name: `${ROLE_EMOJI.DPS} ${ROLE_LABEL.DPS} (${cnt('DPS')})`, value: lines('DPS'), inline: true },
+      blank(),
+      { name: `${ROLE_EMOJI.HEAL} ${ROLE_LABEL.HEAL} (${cnt('HEAL')})`, value: lines('HEAL'), inline: true },
+      blank(),
+      blank(),
+    );
+  } else {
+    embed.addFields({ name: `✅ Présents (${going.length})`, value: renderGoing(going, guild, key) });
+  }
+
+  embed
     .addFields(
-      { name: 'Quand', value: when },
-      { name: `✅ Présents (${going.length})`, value: renderGoing(going, guild, key) },
       { name: `❓ Peut-être (${maybe.length})`, value: maybe.map((s) => s.displayName).join('\n') || '—', inline: true },
       { name: `❌ Absents (${declined.length})`, value: declined.map((s) => s.displayName).join('\n') || '—', inline: true },
     )
