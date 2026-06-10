@@ -25,7 +25,7 @@ const MARKER = 'Présentation officielle · Absolution';
 const DEFAULTS: Record<string, string> = {
   'hero.tagline': 'Progression. Cohésion. Excellence.',
   'hero.subtitle':
-    'Absolution est une guilde semi-hardcore dédiée au contenu haut-niveau.',
+    'Absolution est une guilde semi-hardcore dédiée au contenu haut niveau.',
   'about.title': 'Qui sommes-nous',
   'about.body': '',
   'philosophy.title': 'Notre philosophie',
