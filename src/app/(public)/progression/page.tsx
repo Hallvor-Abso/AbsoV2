@@ -9,7 +9,7 @@ export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Progression',
-  description: 'Suivez la progression de la guilde Absolution dans le contenu raid haut-niveau.',
+  description: 'Suivez la progression de la guilde Absolution dans le contenu raid haut niveau.',
 };
 
 export default async function ProgressionPage({

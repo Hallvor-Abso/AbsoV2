@@ -94,7 +94,7 @@ const news = [
     slug: 'bienvenue-sur-le-nouveau-site',
     excerpt: 'Un nouvel espace pour suivre notre progression, nos recrutements et l’actualité de la guilde.',
     content:
-      '<p>Nous sommes fiers de vous présenter le nouveau site officiel d’<strong>Absolution</strong>. Vous y retrouverez notre progression en temps réel, nos postes de recrutement ouverts et toute l’actualité de la guilde.</p><p>Notre objectif reste inchangé : viser l’excellence dans le contenu haut-niveau, tout en cultivant une communauté mature et soudée.</p>',
+      '<p>Nous sommes fiers de vous présenter le nouveau site officiel d’<strong>Absolution</strong>. Vous y retrouverez notre progression en temps réel, nos postes de recrutement ouverts et toute l’actualité de la guilde.</p><p>Notre objectif reste inchangé : viser l’excellence dans le contenu haut niveau, tout en cultivant une communauté mature et soudée.</p>',
     imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop',
     imageFit: 'cover',
     featured: true,
@@ -109,7 +109,7 @@ const news = [
     id: 'n2',
     title: 'Absolution prépare son arrivée sur SWTOR',
     slug: 'absolution-arrive-sur-swtor',
-    excerpt: 'La guilde étend ses horizons : un roster SWTOR est en préparation pour le contenu opérationnel haut-niveau.',
+    excerpt: 'La guilde étend ses horizons : un roster SWTOR est en préparation pour le contenu opérationnel haut niveau.',
     content:
       '<p>Forte de son expérience sur World of Warcraft, la guilde <strong>Absolution</strong> annonce le lancement d’un projet sur <em>Star Wars: The Old Republic</em>.</p><p>Nous recherchons des joueurs motivés pour bâtir un roster compétitif dès l’ouverture.</p>',
     imageUrl: 'https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?q=80&w=1600&auto=format&fit=crop',
@@ -127,7 +127,7 @@ const news = [
 const events = [
   { id: 'e1', title: 'Raid Mythique', description: 'Progression sur Sprocketmonger Lockenstock.', startDate: d(1), endDate: d(1), type: 'RAID', gameId: wow.id, game: wow, createdAt: now, updatedAt: now },
   { id: 'e2', title: 'Raid Mythique', description: 'Suite de la progression.', startDate: d(3), endDate: d(3), type: 'RAID', gameId: wow.id, game: wow, createdAt: now, updatedAt: now },
-  { id: 'e3', title: 'Soirée Mythique+', description: 'Clés haut-niveau en groupes.', startDate: d(5), endDate: null, type: 'EVENT', gameId: wow.id, game: wow, createdAt: now, updatedAt: now },
+  { id: 'e3', title: 'Soirée Mythique+', description: 'Clés haut niveau en groupes.', startDate: d(5), endDate: null, type: 'EVENT', gameId: wow.id, game: wow, createdAt: now, updatedAt: now },
 ];
 
 // --- "API" du mode démo : mêmes signatures que src/lib/data.ts -------------

@@ -35,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: '%s · Absolution',
     },
     description:
-      'Absolution est une guilde semi-hardcore dédiée au contenu haut-niveau de MMORPG. Progression. Cohésion. Excellence.',
+      'Absolution est une guilde semi-hardcore dédiée au contenu haut niveau de MMORPG. Progression. Cohésion. Excellence.',
     keywords: ['guilde', 'MMORPG', 'World of Warcraft', 'SWTOR', 'raid', 'semi-hardcore', 'PvE'],
     icons: { icon, shortcut: icon, apple: icon },
     openGraph: {

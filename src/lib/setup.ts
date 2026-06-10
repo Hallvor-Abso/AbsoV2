@@ -111,7 +111,7 @@ export async function seedDatabase(prisma: PrismaClient) {
       slug: 'bienvenue-sur-le-nouveau-site',
       excerpt: 'Un nouvel espace pour suivre notre progression, nos recrutements et l’actualité de la guilde.',
       content:
-        '<p>Nous sommes fiers de vous présenter le nouveau site officiel d’<strong>Absolution</strong>. Vous y retrouverez notre progression en temps réel, nos postes de recrutement ouverts et toute l’actualité de la guilde.</p><p>Notre objectif reste inchangé : viser l’excellence dans le contenu haut-niveau, tout en cultivant une communauté mature et soudée.</p>',
+        '<p>Nous sommes fiers de vous présenter le nouveau site officiel d’<strong>Absolution</strong>. Vous y retrouverez notre progression en temps réel, nos postes de recrutement ouverts et toute l’actualité de la guilde.</p><p>Notre objectif reste inchangé : viser l’excellence dans le contenu haut niveau, tout en cultivant une communauté mature et soudée.</p>',
       imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop',
       featured: true,
       status: 'PUBLISHED',
@@ -125,7 +125,7 @@ export async function seedDatabase(prisma: PrismaClient) {
     create: {
       title: 'Absolution prépare son arrivée sur SWTOR',
       slug: 'absolution-arrive-sur-swtor',
-      excerpt: 'La guilde étend ses horizons : un roster SWTOR est en préparation pour le contenu opérationnel haut-niveau.',
+      excerpt: 'La guilde étend ses horizons : un roster SWTOR est en préparation pour le contenu opérationnel haut niveau.',
       content:
         '<p>Forte de son expérience sur World of Warcraft, la guilde <strong>Absolution</strong> annonce le lancement d’un projet sur <em>Star Wars: The Old Republic</em>.</p><p>Nous recherchons des joueurs motivés pour bâtir un roster compétitif dès l’ouverture. Les candidatures ouvriront prochainement.</p>',
       imageUrl: 'https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?q=80&w=1600&auto=format&fit=crop',
@@ -144,7 +144,7 @@ export async function seedDatabase(prisma: PrismaClient) {
     data: [
       { gameId: wow.id, title: 'Raid Mythique', description: 'Progression sur Sprocketmonger Lockenstock.', startDate: at(now.getDate() + 1, 20), endDate: at(now.getDate() + 1, 23), type: 'RAID' },
       { gameId: wow.id, title: 'Raid Mythique', description: 'Suite de la progression.', startDate: at(now.getDate() + 3, 20), endDate: at(now.getDate() + 3, 23), type: 'RAID' },
-      { gameId: wow.id, title: 'Soirée Mythique+', description: 'Clés haut-niveau en groupes.', startDate: at(now.getDate() + 5, 21), type: 'EVENT' },
+      { gameId: wow.id, title: 'Soirée Mythique+', description: 'Clés haut niveau en groupes.', startDate: at(now.getDate() + 5, 21), type: 'EVENT' },
     ],
   });
 

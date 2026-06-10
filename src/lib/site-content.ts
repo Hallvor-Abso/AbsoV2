@@ -13,7 +13,7 @@ export const SITE_CONTENT_DEFAULTS = {
   'site.discordUrl': 'https://discord.gg/', // lien d'invitation Discord
   'hero.tagline': 'Progression. Cohésion. Excellence.',
   'hero.subtitle':
-    'Absolution est une guilde semi-hardcore dédiée au contenu haut-niveau. Nous visons l’excellence sans sacrifier le plaisir de jouer ensemble.',
+    'Absolution est une guilde semi-hardcore dédiée au contenu haut niveau. Nous visons l’excellence sans sacrifier le plaisir de jouer ensemble.',
   'about.title': 'Qui sommes-nous',
   'about.body':
     'Fondée par des joueurs vétérans, Absolution rassemble des passionnés du contenu PvE de haut niveau. Notre approche semi-hardcore conjugue exigence de performance et respect du temps de chacun : des raids structurés, une préparation sérieuse, une ambiance mature.',

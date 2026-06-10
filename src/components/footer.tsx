@@ -19,7 +19,7 @@ export function Footer({
         <div className="space-y-3">
           <Logo logoUrl={logoUrl} />
           <p className="max-w-sm text-sm text-muted">
-            Guilde semi-hardcore dédiée au contenu haut-niveau de MMORPG.
+            Guilde semi-hardcore dédiée au contenu haut niveau de MMORPG.
           </p>
         </div>
 
