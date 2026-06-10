@@ -15,7 +15,7 @@ import { ACCENT, useOverlayConfig, useOverlayData, useSiteLogo } from '@/compone
  *   ?messages=A|B|C   (messages personnalisés, séparés par « | »)
  *   ?auto=0           (désactive les infos automatiques de la guilde)
  *   ?interval=6       (durée d'affichage de chaque message, en secondes)
- *   ?logo=1           (affiche le logo de la guilde devant le message)
+ *   ?logo=1           (carré fixe à gauche avec le logo de la guilde)
  */
 
 type Cfg = { messages: string[]; auto: boolean; interval: number; logo: boolean };
@@ -104,6 +104,12 @@ export default function TickerOverlay() {
     <div className="tk-root">
       <div className="tk-panel">
         <span className="tk-sheen" />
+        {cfg.logo && (
+          <div className="tk-side">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="tk-side-logo" src={logo} alt="" />
+          </div>
+        )}
         <div className="tk-scene" ref={sceneRef}>
           <div className="tk-cube" style={{ transform: `translateZ(-${depth}px) rotateX(${rot}deg)` }}>
             {faces.map((text, i) => (
@@ -112,12 +118,7 @@ export default function TickerOverlay() {
                 className="tk-face"
                 style={{ transform: `rotateX(${FACE_ROT[i]}deg) translateZ(${depth}px)` }}
               >
-                {cfg.logo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className="tk-logo" src={logo} alt="" />
-                ) : (
-                  <span className="tk-bullet">◆</span>
-                )}
+                <span className="tk-bullet">◆</span>
                 <span className="tk-text">{text}</span>
               </div>
             ))}
@@ -128,7 +129,8 @@ export default function TickerOverlay() {
       <style>{`
         .tk-root { position: fixed; inset: 0; background: transparent;
           font-family: var(--font-space-grotesk), system-ui, sans-serif; color: #fff; }
-        .tk-panel { position: absolute; inset: 0; border-radius: 16px; overflow: hidden;
+        .tk-panel { position: absolute; inset: 0; display: flex; align-items: stretch;
+          border-radius: 16px; overflow: hidden;
           background:
             radial-gradient(120% 140% at 50% -20%, rgba(74,158,255,.16), transparent 60%),
             linear-gradient(180deg, rgba(18,24,35,.97), rgba(8,10,15,.97));
@@ -150,14 +152,21 @@ export default function TickerOverlay() {
           animation: tkSheen 4.5s ease-in-out infinite; }
         @keyframes tkSheen { 0% { background-position: -60% 0; } 100% { background-position: 160% 0; } }
 
-        .tk-scene { width: 100%; height: 100%; perspective: 1100px; }
+        /* Carré du logo : fixe (hors de la scène 3D), fond plus clair, accolé au panneau. */
+        .tk-side { flex: none; aspect-ratio: 1 / 1; height: 100%; z-index: 2;
+          display: flex; align-items: center; justify-content: center;
+          background: linear-gradient(180deg, rgba(58,78,108,.85), rgba(30,42,60,.9));
+          border-right: 1px solid rgba(74,158,255,.45);
+          box-shadow: inset 0 0 18px rgba(74,158,255,.12); }
+        .tk-side-logo { width: 62%; height: 62%; object-fit: contain;
+          filter: drop-shadow(0 0 6px rgba(74,158,255,.6)); }
+
+        .tk-scene { flex: 1; min-width: 0; height: 100%; perspective: 1100px; }
         .tk-cube { position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
           transition: transform .8s cubic-bezier(.62,.04,.2,1); }
         .tk-face { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
           gap: 11px; padding: 6px 24px; backface-visibility: hidden; }
         .tk-bullet { color: ${ACCENT}; font-size: 11px; flex: none; filter: drop-shadow(0 0 5px rgba(74,158,255,.8)); }
-        .tk-logo { height: 64%; max-height: 32px; width: auto; flex: none;
-          filter: drop-shadow(0 0 6px rgba(74,158,255,.65)); }
         .tk-text { font-size: 19px; font-weight: 500; line-height: 1.2; text-align: center; letter-spacing: .01em;
           color: rgba(255,255,255,.95); text-shadow: 0 1px 8px rgba(0,0,0,.5);
           display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
