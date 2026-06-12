@@ -24,6 +24,7 @@ import { enqueueAlert } from '@/lib/alerts';
 import { setupSubscriptions, deleteSubscription, clearBroadcaster } from '@/lib/twitch';
 import type { AlertType } from '@prisma/client';
 import { slugify } from '@/lib/utils';
+import { stepZonedDate } from '@/lib/timezone';
 import {
   DEFAULT_RECRUIT_FIELDS,
   FIELD_TYPES,
@@ -727,7 +728,7 @@ export async function saveEvent(formData: FormData) {
 
   const createdIds: string[] = [];
   for (let i = 0; i < occurrences; i++) {
-    const occStart = stepDate(startDate, recurrence, i);
+    const occStart = stepZonedDate(startDate, recurrence, i);
     const created = await prisma.event.create({
       data: {
         ...data,
@@ -751,31 +752,6 @@ function clampOccurrences(raw: FormDataEntryValue | null, recurrence: string): n
   const n = Math.floor(Number(raw));
   if (!Number.isFinite(n) || n < 1) return 1;
   return Math.min(n, 52);
-}
-
-/**
- * Décale une date d'`i` pas selon la cadence. Le calcul se fait sur l'instant
- * UTC ; un changement d'heure d'été Paris peut décaler l'heure affichée d'1 h
- * sur une occurrence — l'admin peut alors ajuster cette occurrence à la main.
- */
-function stepDate(base: Date, recurrence: string, i: number): Date {
-  if (i === 0) return base;
-  const d = new Date(base);
-  switch (recurrence) {
-    case 'daily':
-      d.setUTCDate(d.getUTCDate() + i);
-      break;
-    case 'weekly':
-      d.setUTCDate(d.getUTCDate() + 7 * i);
-      break;
-    case 'biweekly':
-      d.setUTCDate(d.getUTCDate() + 14 * i);
-      break;
-    case 'monthly':
-      d.setUTCMonth(d.getUTCMonth() + i);
-      break;
-  }
-  return d;
 }
 
 export async function deleteEvent(id: string) {
