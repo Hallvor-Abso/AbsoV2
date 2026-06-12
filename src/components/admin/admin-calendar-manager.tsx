@@ -17,6 +17,7 @@ export type AdminEvent = {
   gameId: string;
   startDate: string; // instant UTC au format ISO ('' si vide)
   endDate: string;
+  rosterMessage: string | null;
   signups: RosterSignup[];
 };
 
@@ -209,12 +210,14 @@ function EventForm({
           <textarea name="description" rows={2} defaultValue={event?.description ?? ''} className="field" placeholder="Détails de l'événement..." />
         </div>
 
+        {!event && <RecurrenceFields />}
+
         <button type="submit" className="btn-primary">{event ? 'Enregistrer' : "Ajouter l'événement"}</button>
       </ActionForm>
 
       {event && event.type === 'RAID' && (
         <div className="border-t border-border pt-4">
-          <RaidRosterPanel eventId={event.id} signups={event.signups} />
+          <RaidRosterPanel eventId={event.id} signups={event.signups} defaultMessage={event.rosterMessage ?? ''} />
         </div>
       )}
 
@@ -222,6 +225,51 @@ function EventForm({
         <ActionForm action={deleteEvent.bind(null, event.id)} success="Événement supprimé" onDone={onDone} className="border-t border-border pt-3">
           <ConfirmButton message="Supprimer cet événement ?">Supprimer l'événement</ConfirmButton>
         </ActionForm>
+      )}
+    </div>
+  );
+}
+
+/** Options de récurrence (création uniquement) : cadence + nombre d'occurrences. */
+function RecurrenceFields() {
+  const [recurrence, setRecurrence] = useState('none');
+  return (
+    <div className="rounded-lg border border-border/60 bg-ink-soft/30 p-3">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="label">Récurrence</label>
+          <select
+            name="recurrence"
+            value={recurrence}
+            onChange={(e) => setRecurrence(e.target.value)}
+            className="field"
+          >
+            <option value="none">Aucune (événement unique)</option>
+            <option value="weekly">Toutes les semaines</option>
+            <option value="biweekly">Toutes les 2 semaines</option>
+            <option value="daily">Tous les jours</option>
+            <option value="monthly">Tous les mois</option>
+          </select>
+        </div>
+        {recurrence !== 'none' && (
+          <div>
+            <label className="label">Nombre d'occurrences</label>
+            <input
+              name="occurrences"
+              type="number"
+              min={1}
+              max={52}
+              defaultValue={4}
+              className="field"
+            />
+          </div>
+        )}
+      </div>
+      {recurrence !== 'none' && (
+        <p className="mt-2 text-xs text-muted">
+          Crée autant d'événements identiques, espacés selon la cadence, à partir de la date de début. Chaque
+          occurrence reste modifiable individuellement.
+        </p>
       )}
     </div>
   );

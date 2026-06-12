@@ -64,9 +64,11 @@ export async function postRaidRoster(client: Client, eventId: string): Promise<v
     }
   }
 
+  const note = event.rosterMessage?.trim();
   const content =
     `🛡️ **Groupe validé — ${event.title}**\n` +
     `🗓️ ${fmt(event.startDate)}\n\n` +
+    (note ? `📌 ${note}\n\n` : '') +
     `${parts.join(' · ')}\n\n` +
     `Soyez prêts et à l'heure ! ✅`;
 

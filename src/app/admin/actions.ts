@@ -699,25 +699,83 @@ export async function saveEvent(formData: FormData) {
   const startDate = start ? new Date(start) : null;
   if (!startDate || Number.isNaN(startDate.getTime())) return; // date de début requise
 
+  const endDate = end ? new Date(end) : null;
   const data = {
     gameId,
     title: sanitizeText(formData.get('title'), 180),
     description: sanitizeText(formData.get('description'), 2000) || null,
     type: (formData.get('type') as string) || 'RAID',
     startDate,
-    endDate: end ? new Date(end) : null,
+    endDate,
   };
-  let eventId = id;
+
+  // Édition : on met simplement à jour l'occurrence ciblée.
   if (id) {
     await prisma.event.update({ where: { id }, data });
-  } else {
-    const created = await prisma.event.create({ data });
-    eventId = created.id;
+    await syncEventToBot(id);
+    revalidatePublic();
+    revalidatePath('/admin/calendrier');
+    return;
   }
-  // Publie / met à jour le message Discord de l'événement (no-op si bot non configuré).
-  if (eventId) await syncEventToBot(eventId);
+
+  // Création : génère une série si une récurrence est demandée.
+  const recurrence = (formData.get('recurrence') as string) || 'none';
+  const occurrences = clampOccurrences(formData.get('occurrences'), recurrence);
+  const duration = endDate ? endDate.getTime() - startDate.getTime() : null;
+  // Série partagée seulement si > 1 occurrence (sinon événement unique).
+  const seriesId = occurrences > 1 ? crypto.randomUUID() : null;
+
+  const createdIds: string[] = [];
+  for (let i = 0; i < occurrences; i++) {
+    const occStart = stepDate(startDate, recurrence, i);
+    const created = await prisma.event.create({
+      data: {
+        ...data,
+        startDate: occStart,
+        endDate: duration != null ? new Date(occStart.getTime() + duration) : null,
+        seriesId,
+      },
+    });
+    createdIds.push(created.id);
+  }
+
+  // Publie / met à jour le message Discord de chaque occurrence (no-op si bot non configuré).
+  for (const eventId of createdIds) await syncEventToBot(eventId);
   revalidatePublic();
   revalidatePath('/admin/calendrier');
+}
+
+/** Nombre d'occurrences à générer (1 si pas de récurrence ; borné à 52). */
+function clampOccurrences(raw: FormDataEntryValue | null, recurrence: string): number {
+  if (recurrence === 'none') return 1;
+  const n = Math.floor(Number(raw));
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.min(n, 52);
+}
+
+/**
+ * Décale une date d'`i` pas selon la cadence. Le calcul se fait sur l'instant
+ * UTC ; un changement d'heure d'été Paris peut décaler l'heure affichée d'1 h
+ * sur une occurrence — l'admin peut alors ajuster cette occurrence à la main.
+ */
+function stepDate(base: Date, recurrence: string, i: number): Date {
+  if (i === 0) return base;
+  const d = new Date(base);
+  switch (recurrence) {
+    case 'daily':
+      d.setUTCDate(d.getUTCDate() + i);
+      break;
+    case 'weekly':
+      d.setUTCDate(d.getUTCDate() + 7 * i);
+      break;
+    case 'biweekly':
+      d.setUTCDate(d.getUTCDate() + 14 * i);
+      break;
+    case 'monthly':
+      d.setUTCMonth(d.getUTCMonth() + i);
+      break;
+  }
+  return d;
 }
 
 export async function deleteEvent(id: string) {
@@ -735,7 +793,7 @@ export async function deleteEvent(id: string) {
 }
 
 /** Valide le groupe de raid (joueurs retenus) → ping Discord des sélectionnés. */
-export async function validateRaidRoster(eventId: string, selectedDiscordIds: string[]) {
+export async function validateRaidRoster(eventId: string, selectedDiscordIds: string[], message?: string) {
   const ev = await prisma.event.findUnique({ where: { id: eventId }, select: { gameId: true, title: true } });
   await requireGameAccess(ev?.gameId);
 
@@ -744,11 +802,15 @@ export async function validateRaidRoster(eventId: string, selectedDiscordIds: st
     where: { eventId, status: 'GOING' },
     select: { id: true, discordId: true },
   });
-  await prisma.$transaction(
-    signups.map((s) =>
+  await prisma.$transaction([
+    prisma.event.update({
+      where: { id: eventId },
+      data: { rosterMessage: sanitizeText(message, 1000) || null },
+    }),
+    ...signups.map((s) =>
       prisma.eventSignup.update({ where: { id: s.id }, data: { selected: ids.has(s.discordId) } }),
     ),
-  );
+  ]);
 
   await syncRosterToBot(eventId);
   await logAudit('Groupe de raid validé', `${ev?.title ?? eventId} · ${ids.size} retenu(s)`);
