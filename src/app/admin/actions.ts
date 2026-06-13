@@ -726,22 +726,26 @@ export async function saveEvent(formData: FormData) {
   // Série partagée seulement si > 1 occurrence (sinon événement unique).
   const seriesId = occurrences > 1 ? crypto.randomUUID() : null;
 
-  const createdIds: string[] = [];
-  for (let i = 0; i < occurrences; i++) {
-    const occStart = stepZonedDate(startDate, recurrence, i);
-    const created = await prisma.event.create({
-      data: {
-        ...data,
-        startDate: occStart,
-        endDate: duration != null ? new Date(occStart.getTime() + duration) : null,
-        seriesId,
-      },
-    });
-    createdIds.push(created.id);
-  }
+  // Génère toutes les occurrences en une seule transaction (un aller-retour DB
+  // groupé au lieu de N séquentiels).
+  const created = await prisma.$transaction(
+    Array.from({ length: occurrences }, (_, i) => {
+      const occStart = stepZonedDate(startDate, recurrence, i);
+      return prisma.event.create({
+        data: {
+          ...data,
+          startDate: occStart,
+          endDate: duration != null ? new Date(occStart.getTime() + duration) : null,
+          seriesId,
+        },
+      });
+    }),
+  );
 
-  // Publie / met à jour le message Discord de chaque occurrence (no-op si bot non configuré).
-  for (const eventId of createdIds) await syncEventToBot(eventId);
+  // Publie / met à jour le message Discord de chaque occurrence (no-op si bot
+  // non configuré). En parallèle : le temps total ≈ un seul appel, pas N — sinon
+  // une série de 52 bloque le formulaire de longues secondes.
+  await Promise.allSettled(created.map((e) => syncEventToBot(e.id)));
   revalidatePublic();
   revalidatePath('/admin/calendrier');
 }
