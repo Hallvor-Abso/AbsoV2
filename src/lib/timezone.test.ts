@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { stepZonedDate, PARIS_TZ } from './timezone';
+import { stepZonedDate, previousZonedSlot, PARIS_TZ } from './timezone';
 
 /** Heure-mur de Paris (« HH:mm ») d'un instant, pour les assertions. */
 function parisTime(d: Date): string {
@@ -52,5 +52,32 @@ describe('stepZonedDate', () => {
     const occ = stepZonedDate(base, 'daily', 3); // → 2 février
     expect(parisDate(occ)).toBe('02/02/2026');
     expect(parisTime(occ)).toBe('21:00');
+  });
+});
+
+describe('previousZonedSlot', () => {
+  // weekday : 0 = dimanche … 1 = lundi … 4 = jeudi.
+  it('renvoie le lundi 18h00 précédant un raid du jeudi', () => {
+    const raid = new Date('2026-06-18T19:00:00.000Z'); // jeudi 18 juin, 21h00 Paris (été)
+    const slot = previousZonedSlot(raid, 1, 18, 0); // lundi 18h00
+    expect(parisDate(slot)).toBe('15/06/2026'); // lundi 15 juin
+    expect(parisTime(slot)).toBe('18:00');
+  });
+
+  it('recule d’une semaine si le créneau du même jour est plus tard que le raid', () => {
+    // Raid lundi 15 juin 10h00 Paris ; créneau visé lundi 18h00 → même jour mais
+    // plus tard → on prend le lundi précédent (8 juin).
+    const raid = new Date('2026-06-15T08:00:00.000Z'); // lundi 15 juin 10h00 Paris
+    const slot = previousZonedSlot(raid, 1, 18, 0);
+    expect(parisDate(slot)).toBe('08/06/2026');
+    expect(parisTime(slot)).toBe('18:00');
+  });
+
+  it('garde l’heure-mur de Paris à travers un changement d’heure', () => {
+    // Raid jeudi 2 avril 2026 21h00 Paris (après passage heure d'été du 29 mars).
+    const raid = new Date('2026-04-02T19:00:00.000Z');
+    const slot = previousZonedSlot(raid, 1, 18, 0); // lundi 30 mars 18h00 (déjà heure d'été)
+    expect(parisDate(slot)).toBe('30/03/2026');
+    expect(parisTime(slot)).toBe('18:00');
   });
 });

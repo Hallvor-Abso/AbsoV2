@@ -194,6 +194,12 @@ export async function syncEvent(client: Client, eventId: string): Promise<void> 
   const base = await prisma.event.findUnique({ where: { id: eventId }, include: { game: true } });
   if (!base) return;
 
+  // Publication différée : tant que l'heure d'annonce n'est pas atteinte et
+  // qu'aucun message n'existe encore, on ne publie pas (ex. une occurrence de
+  // série pas encore « drippée », même si quelqu'un s'inscrit côté site). La
+  // boucle planifiée du bot la publiera le moment venu.
+  if (!base.discordMessageId && base.announceAt && base.announceAt.getTime() > Date.now()) return;
+
   const channelId =
     base.discordChannelId || base.game.discordCalendarChannelId || env.DISCORD_CALENDAR_CHANNEL_ID;
   if (!channelId) {
@@ -501,5 +507,31 @@ export async function removeEventMessage(
     await msg.delete();
   } catch {
     // déjà supprimé / introuvable → rien à faire.
+  }
+}
+
+/**
+ * Publie les occurrences de série dont l'heure d'annonce est arrivée et qui
+ * n'ont pas encore de message Discord (et dont le raid n'est pas déjà passé).
+ * Appelée périodiquement par la boucle du bot.
+ */
+export async function publishScheduledEvents(client: Client): Promise<void> {
+  const now = new Date();
+  const due = await prisma.event.findMany({
+    where: {
+      announceAt: { not: null, lte: now },
+      discordMessageId: null,
+      startDate: { gt: now },
+    },
+    select: { id: true, title: true },
+    orderBy: { startDate: 'asc' },
+  });
+  for (const e of due) {
+    try {
+      await syncEvent(client, e.id);
+      console.log(`📣 Annonce planifiée publiée : « ${e.title} ».`);
+    } catch (err) {
+      console.error(`Publication planifiée « ${e.title} » :`, err);
+    }
   }
 }

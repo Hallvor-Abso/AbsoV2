@@ -218,6 +218,7 @@ model Event {
   rosterMessageId  String?
   rosterMessage    String?
   seriesId         String?
+  announceAt       DateTime?
   signups          EventSignup[]
 
   createdAt        DateTime  @default(now())

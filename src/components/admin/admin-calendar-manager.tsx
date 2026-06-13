@@ -266,10 +266,31 @@ function RecurrenceFields() {
         )}
       </div>
       {recurrence !== 'none' && (
-        <p className="mt-2 text-xs text-muted">
-          Crée autant d'événements identiques, espacés selon la cadence, à partir de la date de début. Chaque
-          occurrence reste modifiable individuellement.
-        </p>
+        <>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="label">Publier l'annonce le</label>
+              <select name="publishWeekday" defaultValue="1" className="field">
+                <option value="1">Lundi</option>
+                <option value="2">Mardi</option>
+                <option value="3">Mercredi</option>
+                <option value="4">Jeudi</option>
+                <option value="5">Vendredi</option>
+                <option value="6">Samedi</option>
+                <option value="0">Dimanche</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">à</label>
+              <input name="publishTime" type="time" defaultValue="18:00" className="field" />
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-muted">
+            La 1ʳᵉ occurrence est publiée sur Discord immédiatement. Chaque occurrence suivante est annoncée
+            automatiquement à ce créneau (heure de Paris), juste avant sa date. Chaque occurrence reste
+            modifiable individuellement.
+          </p>
+        </>
       )}
     </div>
   );

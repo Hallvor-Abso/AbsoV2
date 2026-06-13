@@ -313,6 +313,11 @@ model Event {
   // identifiant de série (null = événement unique). Permet de gérer la série.
   seriesId         String?
 
+  // Publication différée : moment où le bot doit publier le message Discord de
+  // l'événement (null = publier immédiatement). Utilisé pour « dripper » les
+  // occurrences d'une série récurrente au lieu de toutes les poster d'un coup.
+  announceAt       DateTime?
+
   signups          EventSignup[]
 
   createdAt        DateTime  @default(now())

@@ -24,7 +24,7 @@ import { enqueueAlert } from '@/lib/alerts';
 import { setupSubscriptions, deleteSubscription, clearBroadcaster } from '@/lib/twitch';
 import type { AlertType } from '@prisma/client';
 import { slugify } from '@/lib/utils';
-import { stepZonedDate } from '@/lib/timezone';
+import { stepZonedDate, previousZonedSlot } from '@/lib/timezone';
 import {
   DEFAULT_RECRUIT_FIELDS,
   FIELD_TYPES,
@@ -725,29 +725,57 @@ export async function saveEvent(formData: FormData) {
   const duration = endDate ? endDate.getTime() - startDate.getTime() : null;
   // Série partagée seulement si > 1 occurrence (sinon événement unique).
   const seriesId = occurrences > 1 ? crypto.randomUUID() : null;
+  // Créneau de publication (jour + heure, en heure de Paris) des occurrences
+  // suivantes : le bot publiera chaque annonce à ce créneau, juste avant le raid.
+  const publishWeekday = parseWeekday(formData.get('publishWeekday'));
+  const publishTime = parseTime(formData.get('publishTime'));
 
   // Génère toutes les occurrences en une seule transaction (un aller-retour DB
   // groupé au lieu de N séquentiels).
   const created = await prisma.$transaction(
     Array.from({ length: occurrences }, (_, i) => {
       const occStart = stepZonedDate(startDate, recurrence, i);
+      // 1ʳᵉ occurrence : publiée tout de suite (announceAt = null). Suivantes :
+      // publiées au créneau fixe qui précède leur date.
+      const announceAt =
+        i === 0 ? null : previousZonedSlot(occStart, publishWeekday, publishTime.hour, publishTime.minute);
       return prisma.event.create({
         data: {
           ...data,
           startDate: occStart,
           endDate: duration != null ? new Date(occStart.getTime() + duration) : null,
           seriesId,
+          announceAt,
         },
       });
     }),
   );
 
-  // Publie / met à jour le message Discord de chaque occurrence (no-op si bot
-  // non configuré). En parallèle : le temps total ≈ un seul appel, pas N — sinon
-  // une série de 52 bloque le formulaire de longues secondes.
-  await Promise.allSettled(created.map((e) => syncEventToBot(e.id)));
+  // On ne publie sur Discord que les occurrences dont l'heure d'annonce est déjà
+  // passée (la 1ʳᵉ, et toute autre créée « en retard »). Les suivantes seront
+  // publiées par la boucle du bot le moment venu. En parallèle pour ne pas
+  // bloquer le formulaire.
+  const now = Date.now();
+  const due = created.filter((e) => !e.announceAt || e.announceAt.getTime() <= now);
+  await Promise.allSettled(due.map((e) => syncEventToBot(e.id)));
   revalidatePublic();
   revalidatePath('/admin/calendrier');
+}
+
+/** Jour de publication (convention JS : 0 = dimanche … 6 = samedi ; défaut lundi). */
+function parseWeekday(raw: FormDataEntryValue | null): number {
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 0 && n <= 6 ? n : 1;
+}
+
+/** Heure de publication « HH:MM » → { hour, minute } (défaut 18h00). */
+function parseTime(raw: FormDataEntryValue | null): { hour: number; minute: number } {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(raw ?? ''));
+  if (!m) return { hour: 18, minute: 0 };
+  return {
+    hour: Math.min(23, Math.max(0, Number(m[1]))),
+    minute: Math.min(59, Math.max(0, Number(m[2]))),
+  };
 }
 
 /** Nombre d'occurrences à générer (1 si pas de récurrence ; borné à 52). */

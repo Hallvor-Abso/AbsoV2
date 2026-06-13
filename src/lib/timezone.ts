@@ -78,3 +78,25 @@ export function stepZonedDate(
   }
   return zonedWallToUtc(w, PARIS_TZ);
 }
+
+/**
+ * Renvoie l'instant du dernier créneau « jour de semaine + heure » (en heure de
+ * Paris) qui tombe à ou avant `before`. Sert à planifier la publication d'une
+ * occurrence sur un créneau fixe précédant sa date (ex. « le lundi 18h00 »).
+ *
+ * `weekday` suit la convention JS : 0 = dimanche … 6 = samedi.
+ */
+export function previousZonedSlot(before: Date, weekday: number, hour: number, minute: number): Date {
+  const w = getZonedParts(before, PARIS_TZ);
+  // Jour de semaine de la date-mur de Paris (Date.UTC sur les composantes mur).
+  const currentWeekday = new Date(Date.UTC(w.year, w.month - 1, w.day)).getUTCDay();
+  const dayDiff = (currentWeekday - weekday + 7) % 7;
+  const slot: WallClock = { year: w.year, month: w.month, day: w.day - dayDiff, hour, minute, second: 0 };
+  let utc = zonedWallToUtc(slot, PARIS_TZ);
+  // Si le créneau du même jour tombe après `before` (heure plus tardive), on
+  // recule d'une semaine. Le débordement de `day` est géré par Date.UTC.
+  if (utc.getTime() > before.getTime()) {
+    utc = zonedWallToUtc({ ...slot, day: slot.day - 7 }, PARIS_TZ);
+  }
+  return utc;
+}
