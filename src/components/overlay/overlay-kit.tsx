@@ -21,7 +21,8 @@ export function useSiteLogo(): string {
   const [logo, setLogo] = useState('');
   useEffect(() => {
     let active = true;
-    fetch('/api/logo')
+    // `no-store` : sans ça, le Chromium d'OBS (CEF) sert une réponse en cache.
+    fetch('/api/logo', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (active && d?.logoUrl) setLogo(d.logoUrl as string);
@@ -52,7 +53,9 @@ export function useOverlayData(intervalMs = 60000): OverlayData | null {
   useEffect(() => {
     let active = true;
     const load = () => {
-      fetch('/api/overlay/data')
+      // `no-store` + anti-cache `t=` : sinon CEF (OBS) fige les données pendant
+      // tout le stream au lieu de les rafraîchir toutes les `intervalMs`.
+      fetch(`/api/overlay/data?t=${Date.now()}`, { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => {
           if (active && d) setData(d as OverlayData);
@@ -87,7 +90,9 @@ export function useOverlayConfig(overlayId: string) {
   useEffect(() => {
     let active = true;
     const fallback: SavedConfig = { shared: {}, overlays: {} };
-    fetch('/api/overlay/config')
+    // `no-store` : la config doit refléter l'admin dès le rechargement de la
+    // source OBS, pas une version mise en cache par CEF.
+    fetch('/api/overlay/config', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: SavedConfig | null) => {
         if (active) setSaved(d && typeof d === 'object' && d.shared ? d : fallback);
