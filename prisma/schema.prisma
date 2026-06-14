@@ -305,6 +305,24 @@ model Event {
   // automatiquement 30 min après le début de l'événement.
   rosterChannelId  String?
   rosterMessageId  String?
+  // Message libre ajouté par le GM à l'annonce de validation (infos en plus :
+  // RDV vocal, consommables…). Affiché dans le message « groupe validé ».
+  rosterMessage    String?
+
+  // MP « tu es pris » aux joueurs retenus : moment d'envoi planifié (20h le jour
+  // du raid, ou tout de suite si validé après 20h) + horodatage d'envoi effectif
+  // (pour ne l'envoyer qu'une fois).
+  rosterDmAt       DateTime?
+  rosterDmSentAt   DateTime?
+
+  // Récurrence : toutes les occurrences générées ensemble partagent ce même
+  // identifiant de série (null = événement unique). Permet de gérer la série.
+  seriesId         String?
+
+  // Publication différée : moment où le bot doit publier le message Discord de
+  // l'événement (null = publier immédiatement). Utilisé pour « dripper » les
+  // occurrences d'une série récurrente au lieu de toutes les poster d'un coup.
+  announceAt       DateTime?
 
   signups          EventSignup[]
 

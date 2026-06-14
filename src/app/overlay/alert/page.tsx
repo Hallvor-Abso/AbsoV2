@@ -101,21 +101,19 @@ export default function AlertOverlay() {
   }, [ready, get]);
 
   // Initialisation du curseur (on ne rejoue pas l'historique) + polling.
+  // IMPORTANT : `cache: 'no-store'` + paramètre anti-cache `t=` car le Chromium
+  // d'OBS (CEF) met sinon en cache les réponses GET → les nouvelles alertes ne
+  // remontent qu'au rechargement de la source au lieu d'arriver en temps réel.
   useEffect(() => {
     let active = true;
-    const init = async () => {
-      try {
-        const r = await fetch('/api/overlay/alerts');
-        const j = await r.json();
-        cursorRef.current = j.lastId ?? 0;
-      } catch {
-        /* ignore */
-      }
+    let iv: ReturnType<typeof setInterval> | undefined;
+    const fetchJson = async (qs: string) => {
+      const r = await fetch(`/api/overlay/alerts${qs}`, { cache: 'no-store' });
+      return r.json();
     };
     const poll = async () => {
       try {
-        const r = await fetch(`/api/overlay/alerts?after=${cursorRef.current}`);
-        const j = await r.json();
+        const j = await fetchJson(`?after=${cursorRef.current}&t=${Date.now()}`);
         if (active && Array.isArray(j.alerts) && j.alerts.length) {
           cursorRef.current = j.lastId;
           setQueue((q) => [...q, ...j.alerts]);
@@ -124,11 +122,21 @@ export default function AlertOverlay() {
         /* ignore */
       }
     };
-    init();
-    const iv = setInterval(poll, 1500);
+    const start = async () => {
+      try {
+        const j = await fetchJson(`?t=${Date.now()}`);
+        cursorRef.current = j.lastId ?? 0;
+      } catch {
+        /* ignore */
+      }
+      // On ne démarre le polling qu'APRÈS l'initialisation du curseur, sinon le
+      // premier tick (curseur encore à 0) rejouerait l'historique récent.
+      if (active) iv = setInterval(poll, 1500);
+    };
+    start();
     return () => {
       active = false;
-      clearInterval(iv);
+      if (iv) clearInterval(iv);
     };
   }, []);
 

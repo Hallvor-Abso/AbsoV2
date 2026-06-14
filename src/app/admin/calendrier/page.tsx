@@ -35,6 +35,7 @@ export default async function AdminCalendarPage() {
     gameId: ev.gameId,
     startDate: ev.startDate.toISOString(),
     endDate: ev.endDate ? ev.endDate.toISOString() : '',
+    rosterMessage: ev.rosterMessage,
     signups: ev.signups.map((s) => ({
       discordId: s.discordId,
       displayName: s.displayName,

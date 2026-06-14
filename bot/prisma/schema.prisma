@@ -216,6 +216,11 @@ model Event {
   reminder1hSentAt  DateTime?
   rosterChannelId  String?
   rosterMessageId  String?
+  rosterMessage    String?
+  rosterDmAt       DateTime?
+  rosterDmSentAt   DateTime?
+  seriesId         String?
+  announceAt       DateTime?
   signups          EventSignup[]
 
   createdAt        DateTime  @default(now())
