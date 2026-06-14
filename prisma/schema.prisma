@@ -309,6 +309,12 @@ model Event {
   // RDV vocal, consommables…). Affiché dans le message « groupe validé ».
   rosterMessage    String?
 
+  // MP « tu es pris » aux joueurs retenus : moment d'envoi planifié (20h le jour
+  // du raid, ou tout de suite si validé après 20h) + horodatage d'envoi effectif
+  // (pour ne l'envoyer qu'une fois).
+  rosterDmAt       DateTime?
+  rosterDmSentAt   DateTime?
+
   // Récurrence : toutes les occurrences générées ensemble partagent ce même
   // identifiant de série (null = événement unique). Permet de gérer la série.
   seriesId         String?

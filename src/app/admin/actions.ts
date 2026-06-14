@@ -24,7 +24,7 @@ import { enqueueAlert } from '@/lib/alerts';
 import { setupSubscriptions, deleteSubscription, clearBroadcaster } from '@/lib/twitch';
 import type { AlertType } from '@prisma/client';
 import { slugify } from '@/lib/utils';
-import { stepZonedDate, previousZonedSlot } from '@/lib/timezone';
+import { stepZonedDate, previousZonedSlot, zonedTimeOnDate } from '@/lib/timezone';
 import {
   DEFAULT_RECRUIT_FIELDS,
   FIELD_TYPES,
@@ -802,8 +802,18 @@ export async function deleteEvent(id: string) {
 
 /** Valide le groupe de raid (joueurs retenus) → ping Discord des sélectionnés. */
 export async function validateRaidRoster(eventId: string, selectedDiscordIds: string[], message?: string) {
-  const ev = await prisma.event.findUnique({ where: { id: eventId }, select: { gameId: true, title: true } });
+  const ev = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { gameId: true, title: true, startDate: true, rosterDmSentAt: true },
+  });
   await requireGameAccess(ev?.gameId);
+
+  // Planifie le MP « tu es pris » aux retenus : 20h00 (Paris) le jour du raid,
+  // ou tout de suite si on valide déjà après 20h. On ne re-planifie pas si le MP
+  // a déjà été envoyé (évite de re-spammer en cas de re-validation).
+  const now = new Date();
+  const threshold = ev?.startDate ? zonedTimeOnDate(ev.startDate, 20, 0) : now;
+  const rosterDmAt = ev?.rosterDmSentAt ? undefined : now < threshold ? threshold : now;
 
   const ids = new Set(selectedDiscordIds);
   const signups = await prisma.eventSignup.findMany({
@@ -813,7 +823,7 @@ export async function validateRaidRoster(eventId: string, selectedDiscordIds: st
   await prisma.$transaction([
     prisma.event.update({
       where: { id: eventId },
-      data: { rosterMessage: sanitizeText(message, 1000) || null },
+      data: { rosterMessage: sanitizeText(message, 1000) || null, ...(rosterDmAt ? { rosterDmAt } : {}) },
     }),
     ...signups.map((s) =>
       prisma.eventSignup.update({ where: { id: s.id }, data: { selected: ids.has(s.discordId) } }),

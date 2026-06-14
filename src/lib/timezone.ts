@@ -79,6 +79,12 @@ export function stepZonedDate(
   return zonedWallToUtc(w, PARIS_TZ);
 }
 
+/** Instant UTC correspondant à `hour:minute` (heure de Paris) le même jour-calendrier que `ref`. */
+export function zonedTimeOnDate(ref: Date, hour: number, minute: number): Date {
+  const w = getZonedParts(ref, PARIS_TZ);
+  return zonedWallToUtc({ year: w.year, month: w.month, day: w.day, hour, minute, second: 0 }, PARIS_TZ);
+}
+
 /**
  * Renvoie l'instant du dernier créneau « jour de semaine + heure » (en heure de
  * Paris) qui tombe à ou avant `before`. Sert à planifier la publication d'une

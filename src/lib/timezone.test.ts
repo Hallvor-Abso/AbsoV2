@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { stepZonedDate, previousZonedSlot, PARIS_TZ } from './timezone';
+import { stepZonedDate, previousZonedSlot, zonedTimeOnDate, PARIS_TZ } from './timezone';
 
 /** Heure-mur de Paris (« HH:mm ») d'un instant, pour les assertions. */
 function parisTime(d: Date): string {
@@ -79,5 +79,23 @@ describe('previousZonedSlot', () => {
     const slot = previousZonedSlot(raid, 1, 18, 0); // lundi 30 mars 18h00 (déjà heure d'été)
     expect(parisDate(slot)).toBe('30/03/2026');
     expect(parisTime(slot)).toBe('18:00');
+  });
+});
+
+describe('zonedTimeOnDate', () => {
+  it('renvoie 20h00 Paris le jour du raid (été = UTC+2)', () => {
+    const raid = new Date('2026-06-14T19:00:00.000Z'); // dimanche 14 juin, 21h00 Paris
+    const t = zonedTimeOnDate(raid, 20, 0);
+    expect(parisDate(t)).toBe('14/06/2026');
+    expect(parisTime(t)).toBe('20:00');
+    expect(t.toISOString()).toBe('2026-06-14T18:00:00.000Z'); // 20h Paris = 18h UTC en été
+  });
+
+  it('renvoie 20h00 Paris le jour du raid (hiver = UTC+1)', () => {
+    const raid = new Date('2026-12-20T20:00:00.000Z'); // 20 déc, 21h00 Paris
+    const t = zonedTimeOnDate(raid, 20, 0);
+    expect(parisDate(t)).toBe('20/12/2026');
+    expect(parisTime(t)).toBe('20:00');
+    expect(t.toISOString()).toBe('2026-12-20T19:00:00.000Z'); // 20h Paris = 19h UTC en hiver
   });
 });

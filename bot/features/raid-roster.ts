@@ -78,6 +78,64 @@ export async function postRaidRoster(client: Client, eventId: string): Promise<v
     data: { rosterChannelId: channel.id, rosterMessageId: sent.id },
   });
   console.log(`🛡️ Groupe validé posté pour « ${event.title} » (${event.signups.length} joueur·s).`);
+
+  // MP « tu es pris » : envoi immédiat si l'heure planifiée est déjà passée
+  // (groupe validé après 20h). Sinon, la boucle l'enverra à 20h.
+  if (event.rosterDmAt && event.rosterDmAt.getTime() <= Date.now() && !event.rosterDmSentAt) {
+    await sendRosterSelectionDms(client, event.id);
+  }
+}
+
+/** Envoie un MP à un membre (ignore silencieusement si MP fermés / introuvable). */
+async function dmUser(client: Client, discordId: string, content: string): Promise<boolean> {
+  try {
+    const user = await client.users.fetch(discordId);
+    await user.send(content);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Envoie le MP « tu es pris pour le raid » aux joueurs RETENUS et marque l'envoi
+ * (idempotent : ne renvoie pas si déjà fait, ne marque pas si personne à notifier).
+ */
+export async function sendRosterSelectionDms(client: Client, eventId: string): Promise<void> {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: { game: true, signups: { where: { status: 'GOING', selected: true } } },
+  });
+  if (!event || event.rosterDmSentAt) return;
+  if (event.signups.length === 0) return; // rien à notifier → on ne marque pas « envoyé »
+
+  const note = event.rosterMessage?.trim();
+  let n = 0;
+  for (const s of event.signups) {
+    const ok = await dmUser(
+      client,
+      s.discordId,
+      `🎯 **Tu es pris pour le raid — ${event.title}** (${event.game.name})\n` +
+        `🗓️ ${fmt(event.startDate)}\n` +
+        `Tu fais partie du groupe retenu — prépare-toi et sois à l'heure ! 🛡️` +
+        (note ? `\n\n📌 ${note}` : ''),
+    );
+    if (ok) n += 1;
+  }
+  await prisma.event.update({ where: { id: event.id }, data: { rosterDmSentAt: new Date() } });
+  console.log(`📩 MP « tu es pris » — ${event.title} : ${n}/${event.signups.length} envoyé(s).`);
+}
+
+/** Boucle : envoie les MP de sélection dont l'heure planifiée (20h) est arrivée. */
+export async function sweepRosterSelectionDms(client: Client): Promise<void> {
+  const now = new Date();
+  const events = await prisma.event.findMany({
+    where: { rosterDmAt: { not: null, lte: now }, rosterDmSentAt: null, startDate: { gt: now } },
+    select: { id: true },
+  });
+  for (const e of events) {
+    await sendRosterSelectionDms(client, e.id).catch((err) => console.error('MP sélection :', err));
+  }
 }
 
 /** Supprime les messages de groupe dont l'événement a commencé depuis 30 min. */

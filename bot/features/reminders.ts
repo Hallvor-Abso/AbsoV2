@@ -2,13 +2,14 @@ import type { Client } from 'discord.js';
 import { SignupStatus } from '@prisma/client';
 import { prisma } from '../prisma';
 import { env } from '../env';
-import { sweepRaidRosters } from './raid-roster';
+import { sweepRaidRosters, sweepRosterSelectionDms } from './raid-roster';
 import { publishScheduledEvents } from './calendar';
 
 /**
  * Rappels de raid en message privé :
- *  - ~24h avant → MP aux inscrits « Peut-être » (penser à confirmer)
- *  - ~1h avant  → MP aux inscrits « Présent » (prépare-toi)
+ *  - ~24h avant → MP aux inscrits « Peut-être » + aux membres du jeu non-inscrits.
+ * Le MP « tu es pris » aux joueurs RETENUS (à la validation du groupe) est géré
+ * à part, dans raid-roster.ts.
  * Chaque rappel est horodaté sur l'événement → envoyé une seule fois.
  * Les MP qui échouent (MP fermés) sont ignorés silencieusement.
  */
@@ -77,22 +78,9 @@ async function sendReminders(client: Client): Promise<void> {
     }
   }
 
-  // 1h avant (dans l'heure) → MP aux « Présent ».
-  const events1 = await prisma.event.findMany({
-    where: { startDate: { gt: now, lte: in1h }, reminder1hSentAt: null },
-    include: { game: true, signups: { where: { status: SignupStatus.GOING } } },
-  });
-  for (const ev of events1) {
-    for (const s of ev.signups) {
-      await dm(
-        client,
-        s.discordId,
-        `🔔 **Rappel — ${ev.title}** (${ev.game.name})\nÇa commence dans moins d'une heure : **${fmt(ev.startDate)}**.\nTu es **Présent** — prépare-toi ! 🛡️`,
-      );
-    }
-    await prisma.event.update({ where: { id: ev.id }, data: { reminder1hSentAt: now } });
-    if (ev.signups.length) console.log(`🔔 Rappel 1h : ${ev.title} → ${ev.signups.length} MP`);
-  }
+  // NB : le rappel « 1h avant » aux présents a été remplacé par le MP « tu es
+  // pris » envoyé aux joueurs RETENUS lors de la validation du groupe
+  // (cf. sweepRosterSelectionDms / sendRosterSelectionDms dans raid-roster.ts).
 }
 
 /** Démarre la boucle de rappels (vérification périodique). */
@@ -100,6 +88,7 @@ export function startReminderLoop(client: Client): void {
   const run = () => {
     sendReminders(client).catch((e) => console.error('Rappels raid :', e));
     sweepRaidRosters(client).catch((e) => console.error('Nettoyage groupes raid :', e));
+    sweepRosterSelectionDms(client).catch((e) => console.error('MP sélection raid :', e));
     publishScheduledEvents(client).catch((e) => console.error('Publication planifiée :', e));
   };
   run();

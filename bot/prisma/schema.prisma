@@ -217,6 +217,8 @@ model Event {
   rosterChannelId  String?
   rosterMessageId  String?
   rosterMessage    String?
+  rosterDmAt       DateTime?
+  rosterDmSentAt   DateTime?
   seriesId         String?
   announceAt       DateTime?
   signups          EventSignup[]
