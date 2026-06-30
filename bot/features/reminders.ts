@@ -3,7 +3,7 @@ import { SignupStatus } from '@prisma/client';
 import { prisma } from '../prisma';
 import { env } from '../env';
 import { sweepRaidRosters, sweepRosterSelectionDms } from './raid-roster';
-import { publishScheduledEvents } from './calendar';
+import { publishScheduledEvents, sweepStartedEventMessages } from './calendar';
 
 /**
  * Rappels de raid en message privé :
@@ -90,6 +90,7 @@ export function startReminderLoop(client: Client): void {
     sweepRaidRosters(client).catch((e) => console.error('Nettoyage groupes raid :', e));
     sweepRosterSelectionDms(client).catch((e) => console.error('MP sélection raid :', e));
     publishScheduledEvents(client).catch((e) => console.error('Publication planifiée :', e));
+    sweepStartedEventMessages(client).catch((e) => console.error('Nettoyage annonces events :', e));
   };
   run();
   setInterval(run, CHECK_INTERVAL_MS);

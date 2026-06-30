@@ -200,6 +200,11 @@ export async function syncEvent(client: Client, eventId: string): Promise<void> 
   // boucle planifiée du bot la publiera le moment venu.
   if (!base.discordMessageId && base.announceAt && base.announceAt.getTime() > Date.now()) return;
 
+  // Ne pas (re)créer de message pour un raid déjà commencé : son annonce a pu
+  // être nettoyée automatiquement 30 min après le début (cf. sweepStartedEventMessages).
+  // On laisse l'édition d'un message existant passer (discordMessageId présent).
+  if (!base.discordMessageId && base.startDate.getTime() <= Date.now()) return;
+
   const channelId =
     base.discordChannelId || base.game.discordCalendarChannelId || env.DISCORD_CALENDAR_CHANNEL_ID;
   if (!channelId) {
@@ -507,6 +512,35 @@ export async function removeEventMessage(
     await msg.delete();
   } catch {
     // déjà supprimé / introuvable → rien à faire.
+  }
+}
+
+/** Délai après le début d'un raid avant de nettoyer son annonce Discord. */
+const EVENT_CLEANUP_DELAY_MS = 30 * 60 * 1000; // 30 minutes
+
+/**
+ * Supprime le message Discord des events commencés depuis plus de 30 min, pour
+ * désencombrer le salon calendrier. L'événement reste en base (les stats de
+ * Présence et l'historique sont conservés) ; on vide juste ses identifiants de
+ * message pour que le bot ne le republie pas. Appelée périodiquement.
+ */
+export async function sweepStartedEventMessages(client: Client): Promise<void> {
+  const cutoff = new Date(Date.now() - EVENT_CLEANUP_DELAY_MS);
+  const due = await prisma.event.findMany({
+    where: { discordMessageId: { not: null }, startDate: { lte: cutoff } },
+    select: { id: true, title: true, discordChannelId: true, discordMessageId: true },
+  });
+  for (const e of due) {
+    try {
+      await removeEventMessage(client, e.discordChannelId, e.discordMessageId);
+      await prisma.event.update({
+        where: { id: e.id },
+        data: { discordChannelId: null, discordMessageId: null },
+      });
+      console.log(`🧹 Annonce nettoyée (raid commencé depuis 30 min) : « ${e.title} ».`);
+    } catch (err) {
+      console.error(`Nettoyage de l'annonce « ${e.title} » :`, err);
+    }
   }
 }
 
