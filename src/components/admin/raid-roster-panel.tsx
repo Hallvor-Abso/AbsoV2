@@ -20,9 +20,18 @@ const ROLE_GROUPS: { key: string; label: string; emoji: string }[] = [
 ];
 
 /** Sélection des joueurs retenus pour le raid + validation (ping Discord). */
-export function RaidRosterPanel({ eventId, signups }: { eventId: string; signups: RosterSignup[] }) {
+export function RaidRosterPanel({
+  eventId,
+  signups,
+  defaultMessage = '',
+}: {
+  eventId: string;
+  signups: RosterSignup[];
+  defaultMessage?: string;
+}) {
   const toast = useToast();
   const [pending, startTransition] = useTransition();
+  const [message, setMessage] = useState(defaultMessage);
   const [checked, setChecked] = useState<Set<string>>(
     () => new Set(signups.filter((s) => s.selected).map((s) => s.discordId)),
   );
@@ -42,7 +51,7 @@ export function RaidRosterPanel({ eventId, signups }: { eventId: string; signups
   const validate = () =>
     startTransition(async () => {
       try {
-        await validateRaidRoster(eventId, [...checked]);
+        await validateRaidRoster(eventId, [...checked], message);
         toast(`Groupe validé (${checked.size}) — ping envoyé sur Discord.`);
       } catch {
         toast('Échec de la validation.', 'error');
@@ -91,6 +100,19 @@ export function RaidRosterPanel({ eventId, signups }: { eventId: string; signups
             </div>
           );
         })}
+      </div>
+
+      <div>
+        <label className="label">Message de validation (optionnel)</label>
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows={2}
+          maxLength={1000}
+          className="field"
+          placeholder="Infos en plus : RDV 20h45 en vocal, consommables fournis…"
+        />
+        <p className="mt-1 text-xs text-muted">Ajouté à l'annonce du groupe sur Discord.</p>
       </div>
 
       <button type="button" onClick={validate} disabled={pending} className="btn-primary text-sm disabled:opacity-60">
