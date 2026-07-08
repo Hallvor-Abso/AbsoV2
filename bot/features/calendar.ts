@@ -548,8 +548,12 @@ export async function sweepStartedEventMessages(client: Client): Promise<void> {
  * Publie les occurrences de série dont l'heure d'annonce est arrivée et qui
  * n'ont pas encore de message Discord (et dont le raid n'est pas déjà passé).
  * Appelée périodiquement par la boucle du bot.
+ *
+ * `logSummary` (1er passage au démarrage) : trace une ligne de diagnostic dans
+ * les logs — pratique pour vérifier depuis Railway que la boucle tourne bien et
+ * qu'elle « voit » les occurrences récurrentes en attente.
  */
-export async function publishScheduledEvents(client: Client): Promise<void> {
+export async function publishScheduledEvents(client: Client, logSummary = false): Promise<void> {
   const now = new Date();
   const due = await prisma.event.findMany({
     where: {
@@ -560,6 +564,14 @@ export async function publishScheduledEvents(client: Client): Promise<void> {
     select: { id: true, title: true },
     orderBy: { startDate: 'asc' },
   });
+  if (logSummary) {
+    const pending = await prisma.event.count({
+      where: { announceAt: { not: null, gt: now }, discordMessageId: null, startDate: { gt: now } },
+    });
+    console.log(
+      `🗓️  Boucle de publication planifiée active — ${due.length} à publier maintenant, ${pending} occurrence(s) en attente.`,
+    );
+  }
   for (const e of due) {
     try {
       await syncEvent(client, e.id);

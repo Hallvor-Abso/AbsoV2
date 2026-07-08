@@ -85,12 +85,14 @@ async function sendReminders(client: Client): Promise<void> {
 
 /** Démarre la boucle de rappels (vérification périodique). */
 export function startReminderLoop(client: Client): void {
+  let firstTick = true; // 1er passage : trace un résumé des annonces planifiées.
   const run = () => {
     sendReminders(client).catch((e) => console.error('Rappels raid :', e));
     sweepRaidRosters(client).catch((e) => console.error('Nettoyage groupes raid :', e));
     sweepRosterSelectionDms(client).catch((e) => console.error('MP sélection raid :', e));
-    publishScheduledEvents(client).catch((e) => console.error('Publication planifiée :', e));
+    publishScheduledEvents(client, firstTick).catch((e) => console.error('Publication planifiée :', e));
     sweepStartedEventMessages(client).catch((e) => console.error('Nettoyage annonces events :', e));
+    firstTick = false;
   };
   run();
   setInterval(run, CHECK_INTERVAL_MS);
