@@ -729,16 +729,20 @@ export async function saveEvent(formData: FormData) {
   // suivantes : le bot publiera chaque annonce à ce créneau, juste avant le raid.
   const publishWeekday = parseWeekday(formData.get('publishWeekday'));
   const publishTime = parseTime(formData.get('publishTime'));
+  // Publication différée optionnelle de la 1ʳᵉ (ou seule) annonce : si renseignée,
+  // le bot la postera à cet instant (ex. raid demain, annoncé aujourd'hui à 20h).
+  // Vide → publication immédiate (comportement par défaut).
+  const firstAnnounceAt = parseInstant(formData.get('announceAt'));
 
   // Génère toutes les occurrences en une seule transaction (un aller-retour DB
   // groupé au lieu de N séquentiels).
   const created = await prisma.$transaction(
     Array.from({ length: occurrences }, (_, i) => {
       const occStart = stepZonedDate(startDate, recurrence, i);
-      // 1ʳᵉ occurrence : publiée tout de suite (announceAt = null). Suivantes :
-      // publiées au créneau fixe qui précède leur date.
+      // 1ʳᵉ occurrence : publiée tout de suite (announceAt = null) ou à la date de
+      // publication choisie. Suivantes : au créneau fixe qui précède leur date.
       const announceAt =
-        i === 0 ? null : previousZonedSlot(occStart, publishWeekday, publishTime.hour, publishTime.minute);
+        i === 0 ? firstAnnounceAt : previousZonedSlot(occStart, publishWeekday, publishTime.hour, publishTime.minute);
       return prisma.event.create({
         data: {
           ...data,
@@ -776,6 +780,14 @@ function parseTime(raw: FormDataEntryValue | null): { hour: number; minute: numb
     hour: Math.min(23, Math.max(0, Number(m[1]))),
     minute: Math.min(59, Math.max(0, Number(m[2]))),
   };
+}
+
+/** Parse un instant ISO (UTC) issu du formulaire ; null si vide ou invalide. */
+function parseInstant(raw: FormDataEntryValue | null): Date | null {
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 /** Nombre d'occurrences à générer (1 si pas de récurrence ; borné à 52). */

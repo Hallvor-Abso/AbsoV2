@@ -210,6 +210,17 @@ function EventForm({
           <textarea name="description" rows={2} defaultValue={event?.description ?? ''} className="field" placeholder="Détails de l'événement..." />
         </div>
 
+        {!event && (
+          <div>
+            <label className="label">Publier l'annonce le (optionnel)</label>
+            <DateTimeInput name="announceAt" />
+            <p className="mt-1 text-xs text-muted">
+              Vide = publiée tout de suite. Sinon, l'annonce Discord est postée à cette date/heure
+              (ex. un raid <strong>demain</strong> mais annoncé <strong>aujourd'hui à 20h</strong>).
+            </p>
+          </div>
+        )}
+
         {!event && <RecurrenceFields />}
 
         <button type="submit" className="btn-primary">{event ? 'Enregistrer' : "Ajouter l'événement"}</button>
@@ -286,9 +297,9 @@ function RecurrenceFields() {
             </div>
           </div>
           <p className="mt-2 text-xs text-muted">
-            La 1ʳᵉ occurrence est publiée sur Discord immédiatement. Chaque occurrence suivante est annoncée
-            automatiquement à ce créneau (heure de Paris), juste avant sa date. Chaque occurrence reste
-            modifiable individuellement.
+            La 1ʳᵉ occurrence est publiée immédiatement (ou à la date de publication ci-dessus si tu l'as
+            renseignée). Chaque occurrence suivante est annoncée automatiquement à ce créneau (heure de Paris),
+            juste avant sa date. Chaque occurrence reste modifiable individuellement.
           </p>
         </>
       )}
