@@ -200,10 +200,12 @@ export async function syncEvent(client: Client, eventId: string): Promise<void> 
   // boucle planifiée du bot la publiera le moment venu.
   if (!base.discordMessageId && base.announceAt && base.announceAt.getTime() > Date.now()) return;
 
-  // Ne pas (re)créer de message pour un raid déjà commencé : son annonce a pu
-  // être nettoyée automatiquement 30 min après le début (cf. sweepStartedEventMessages).
-  // On laisse l'édition d'un message existant passer (discordMessageId présent).
-  if (!base.discordMessageId && base.startDate.getTime() <= Date.now()) return;
+  // Ne pas RECRÉER de message pour un raid dont l'annonce a déjà été nettoyée
+  // (le nettoyage a lieu 30 min après le début). On garde donc cette même marge :
+  // un raid créé/publié peu après son heure de début (annonce de dernière minute)
+  // doit quand même être posté ; seul un raid commencé depuis > 30 min est ignoré.
+  // L'édition d'un message existant passe toujours (discordMessageId présent).
+  if (!base.discordMessageId && base.startDate.getTime() <= Date.now() - EVENT_CLEANUP_DELAY_MS) return;
 
   const channelId =
     base.discordChannelId || base.game.discordCalendarChannelId || env.DISCORD_CALENDAR_CHANNEL_ID;
@@ -555,11 +557,14 @@ export async function sweepStartedEventMessages(client: Client): Promise<void> {
  */
 export async function publishScheduledEvents(client: Client, logSummary = false): Promise<void> {
   const now = new Date();
+  // Même marge que le nettoyage : on publie encore une annonce dont le raid a
+  // commencé il y a moins de 30 min (au-delà, l'annonce serait nettoyée aussitôt).
+  const startFloor = new Date(now.getTime() - EVENT_CLEANUP_DELAY_MS);
   const due = await prisma.event.findMany({
     where: {
       announceAt: { not: null, lte: now },
       discordMessageId: null,
-      startDate: { gt: now },
+      startDate: { gt: startFloor },
     },
     select: { id: true, title: true },
     orderBy: { startDate: 'asc' },
