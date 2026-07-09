@@ -721,10 +721,13 @@ export async function saveEvent(formData: FormData) {
 
   // Création : génère une série si une récurrence est demandée.
   const recurrence = (formData.get('recurrence') as string) || 'none';
-  const occurrences = clampOccurrences(formData.get('occurrences'), recurrence);
+  // Série « sans fin » : le bot génère les occurrences au fil de l'eau. On en
+  // crée un premier lot d'avance ; le reste suivra jusqu'à ce que le GM l'arrête.
+  const openEnded = formData.get('openEnded') === 'on' && recurrence !== 'none';
+  const occurrences = openEnded ? OPEN_SERIES_INITIAL : clampOccurrences(formData.get('occurrences'), recurrence);
   const duration = endDate ? endDate.getTime() - startDate.getTime() : null;
-  // Série partagée seulement si > 1 occurrence (sinon événement unique).
-  const seriesId = occurrences > 1 ? crypto.randomUUID() : null;
+  // Série partagée dès qu'il y a plusieurs occurrences (ou une série ouverte).
+  const seriesId = occurrences > 1 || openEnded ? crypto.randomUUID() : null;
   // Créneau de publication (jour + heure, en heure de Paris) des occurrences
   // suivantes : le bot publiera chaque annonce à ce créneau, juste avant le raid.
   const publishWeekday = parseWeekday(formData.get('publishWeekday'));
@@ -733,6 +736,11 @@ export async function saveEvent(formData: FormData) {
   // le bot la postera à cet instant (ex. raid demain, annoncé aujourd'hui à 20h).
   // Vide → publication immédiate (comportement par défaut).
   const firstAnnounceAt = parseInstant(formData.get('announceAt'));
+  // Champs de cadence mémorisés uniquement pour une série ouverte (le bot en a
+  // besoin pour générer les occurrences suivantes ; null sinon).
+  const seriesFields = openEnded
+    ? { seriesOpen: true, recurrence, publishWeekday, publishHour: publishTime.hour, publishMinute: publishTime.minute }
+    : {};
 
   // Génère toutes les occurrences en une seule transaction (un aller-retour DB
   // groupé au lieu de N séquentiels).
@@ -750,6 +758,7 @@ export async function saveEvent(formData: FormData) {
           endDate: duration != null ? new Date(occStart.getTime() + duration) : null,
           seriesId,
           announceAt,
+          ...seriesFields,
         },
       });
     }),
@@ -782,6 +791,9 @@ function parseTime(raw: FormDataEntryValue | null): { hour: number; minute: numb
   };
 }
 
+/** Nombre d'occurrences créées d'avance pour une série « sans fin » à sa création. */
+const OPEN_SERIES_INITIAL = 6;
+
 /** Parse un instant ISO (UTC) issu du formulaire ; null si vide ou invalide. */
 function parseInstant(raw: FormDataEntryValue | null): Date | null {
   const s = String(raw ?? '').trim();
@@ -808,6 +820,20 @@ export async function deleteEvent(id: string) {
   // Retire le message Discord associé (no-op si bot non configuré).
   await removeEventFromBot(ev?.discordChannelId ?? null, ev?.discordMessageId ?? null);
   await logAudit('Événement supprimé', ev?.title ?? id);
+  revalidatePublic();
+  revalidatePath('/admin/calendrier');
+}
+
+/**
+ * Arrête une série récurrente « sans fin » : le bot ne génère plus de nouvelles
+ * occurrences. Les occurrences déjà créées (annoncées ou à venir) sont
+ * conservées, pour que le calendrier reste complet côté joueurs.
+ */
+export async function stopEventSeries(seriesId: string) {
+  const ev = await prisma.event.findFirst({ where: { seriesId }, select: { gameId: true, title: true } });
+  await requireGameAccess(ev?.gameId);
+  await prisma.event.updateMany({ where: { seriesId }, data: { seriesOpen: false } });
+  await logAudit('Série récurrente arrêtée', ev?.title ?? seriesId);
   revalidatePublic();
   revalidatePath('/admin/calendrier');
 }

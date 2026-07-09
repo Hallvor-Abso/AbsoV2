@@ -221,6 +221,11 @@ model Event {
   rosterDmSentAt   DateTime?
   seriesId         String?
   announceAt       DateTime?
+  seriesOpen       Boolean   @default(false)
+  recurrence       String?
+  publishWeekday   Int?
+  publishHour      Int?
+  publishMinute    Int?
   signups          EventSignup[]
 
   createdAt        DateTime  @default(now())
