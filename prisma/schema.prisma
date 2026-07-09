@@ -324,6 +324,16 @@ model Event {
   // occurrences d'une série récurrente au lieu de toutes les poster d'un coup.
   announceAt       DateTime?
 
+  // Série récurrente « sans fin » : le bot génère les occurrences au fil de
+  // l'eau tant que `seriesOpen` est vrai (arrêtée = plus de nouvelles créées,
+  // les existantes restent). La cadence + le créneau de publication sont
+  // mémorisés sur chaque occurrence pour pouvoir générer la suivante.
+  seriesOpen       Boolean   @default(false)
+  recurrence       String?
+  publishWeekday   Int?
+  publishHour      Int?
+  publishMinute    Int?
+
   signups          EventSignup[]
 
   createdAt        DateTime  @default(now())

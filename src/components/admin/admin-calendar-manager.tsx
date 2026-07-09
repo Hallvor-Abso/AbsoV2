@@ -5,7 +5,7 @@ import { GameTabBar, type GameTabInfo } from '@/components/game-tab-bar';
 import { ConfirmButton } from './confirm-button';
 import { ActionForm } from './action-form';
 import { DateTimeInput } from './datetime-input';
-import { saveEvent, deleteEvent } from '@/app/admin/actions';
+import { saveEvent, deleteEvent, stopEventSeries } from '@/app/admin/actions';
 import { RaidRosterPanel, type RosterSignup } from './raid-roster-panel';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +18,8 @@ export type AdminEvent = {
   startDate: string; // instant UTC au format ISO ('' si vide)
   endDate: string;
   rosterMessage: string | null;
+  seriesId: string | null;
+  seriesOpen: boolean; // série récurrente « sans fin » encore active
   signups: RosterSignup[];
 };
 
@@ -232,6 +234,19 @@ function EventForm({
         </div>
       )}
 
+      {event && event.seriesId && event.seriesOpen && (
+        <ActionForm
+          action={stopEventSeries.bind(null, event.seriesId)}
+          success="Série récurrente arrêtée"
+          onDone={onDone}
+          className="border-t border-border pt-3"
+        >
+          <ConfirmButton message="Arrêter la série récurrente ? Les occurrences déjà créées sont conservées ; le bot n'en générera plus de nouvelles.">
+            Arrêter la série récurrente
+          </ConfirmButton>
+        </ActionForm>
+      )}
+
       {event && (
         <ActionForm action={deleteEvent.bind(null, event.id)} success="Événement supprimé" onDone={onDone} className="border-t border-border pt-3">
           <ConfirmButton message="Supprimer cet événement ?">Supprimer l'événement</ConfirmButton>
@@ -245,9 +260,11 @@ function EventForm({
 function RecurrenceFields() {
   const [recurrence, setRecurrence] = useState('none');
   const [occurrences, setOccurrences] = useState('4');
-  // Le créneau de publication ne concerne que les occurrences 2, 3… : inutile
-  // (et masqué) tant qu'il n'y a pas au moins 2 occurrences.
-  const showSlot = recurrence !== 'none' && (Number(occurrences) || 0) >= 2;
+  const [openEnded, setOpenEnded] = useState(false);
+  const recurring = recurrence !== 'none';
+  // Le créneau de publication concerne les occurrences suivantes : utile dès
+  // qu'il y a ≥ 2 occurrences, ou pour une série sans fin.
+  const showSlot = recurring && (openEnded || (Number(occurrences) || 0) >= 2);
   return (
     <div className="rounded-lg border border-border/60 bg-ink-soft/30 p-3">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -266,7 +283,7 @@ function RecurrenceFields() {
             <option value="monthly">Tous les mois</option>
           </select>
         </div>
-        {recurrence !== 'none' && (
+        {recurring && !openEnded && (
           <div>
             <label className="label">Nombre d'occurrences</label>
             <input
@@ -281,6 +298,18 @@ function RecurrenceFields() {
           </div>
         )}
       </div>
+      {recurring && (
+        <label className="mt-3 flex items-center gap-2 text-sm text-foreground">
+          <input
+            type="checkbox"
+            name="openEnded"
+            checked={openEnded}
+            onChange={(e) => setOpenEnded(e.target.checked)}
+            className="h-4 w-4 accent-accent"
+          />
+          Sans fin (jusqu'à ce que je l'arrête)
+        </label>
+      )}
       {showSlot && (
         <>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
@@ -305,6 +334,13 @@ function RecurrenceFields() {
             La 1ʳᵉ occurrence est publiée immédiatement (ou à la date de publication ci-dessus si tu l'as
             renseignée). Chaque occurrence suivante est annoncée automatiquement à ce créneau (heure de Paris),
             juste avant sa date. Chaque occurrence reste modifiable individuellement.
+            {openEnded && (
+              <>
+                {' '}
+                <strong>Série sans fin</strong> : le bot garde toujours quelques semaines d'avance et continue
+                jusqu'à ce que tu cliques « Arrêter la série » sur une occurrence.
+              </>
+            )}
           </p>
         </>
       )}

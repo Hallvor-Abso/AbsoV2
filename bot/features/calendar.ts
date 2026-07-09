@@ -15,6 +15,7 @@ import {
 import { SignupStatus } from '@prisma/client';
 import { prisma } from '../prisma';
 import { env } from '../env';
+import { stepZonedDate, previousZonedSlot } from '../timezone';
 import { resolveRoleMentions, calendarRoleNames } from './roles';
 import {
   CLASSES,
@@ -583,6 +584,81 @@ export async function publishScheduledEvents(client: Client, logSummary = false)
       console.log(`📣 Annonce planifiée publiée : « ${e.title} ».`);
     } catch (err) {
       console.error(`Publication planifiée « ${e.title} » :`, err);
+    }
+  }
+}
+
+/** Nombre d'occurrences futures qu'on garde toujours d'avance sur une série ouverte. */
+const OPEN_SERIES_HORIZON = 6;
+
+/**
+ * Prolonge les séries récurrentes « sans fin » (seriesOpen = true) : pour
+ * chacune, tant qu'il n'y a pas au moins OPEN_SERIES_HORIZON occurrences dans le
+ * futur, on crée la suivante (même cadence + créneau de publication, en heure de
+ * Paris). Ainsi la série continue indéfiniment jusqu'à ce que le GM l'arrête
+ * (seriesOpen repassé à false). Appelée périodiquement par la boucle du bot.
+ */
+export async function extendOpenSeries(): Promise<void> {
+  const now = new Date();
+  const open = await prisma.event.findMany({
+    where: { seriesOpen: true },
+    orderBy: { startDate: 'asc' },
+  });
+
+  // Regroupe les occurrences par série.
+  const bySeries = new Map<string, typeof open>();
+  for (const e of open) {
+    if (!e.seriesId) continue;
+    const arr = bySeries.get(e.seriesId);
+    if (arr) arr.push(e);
+    else bySeries.set(e.seriesId, [e]);
+  }
+
+  for (const [seriesId, occs] of bySeries) {
+    const template = occs[occs.length - 1]; // occurrence la plus tardive (triées asc)
+    const recurrence = template.recurrence;
+    if (!recurrence) continue; // sécurité : pas de cadence → on ne génère rien
+    const duration = template.endDate ? template.endDate.getTime() - template.startDate.getTime() : null;
+    let futureCount = occs.filter((o) => o.startDate.getTime() > now.getTime()).length;
+    let anchorStart = template.startDate;
+    let created = 0;
+
+    // Borne dure : évite toute boucle infinie. On saute les créneaux déjà passés
+    // (aucune occurrence créée pour eux) et on ne crée que ceux dans le futur.
+    let guard = 0;
+    while (futureCount < OPEN_SERIES_HORIZON && guard < 520) {
+      guard += 1;
+      const occStart = stepZonedDate(anchorStart, recurrence, 1);
+      anchorStart = occStart;
+      if (occStart.getTime() <= now.getTime()) continue; // créneau passé → on n'en crée pas
+      const announceAt = previousZonedSlot(
+        occStart,
+        template.publishWeekday ?? 1,
+        template.publishHour ?? 18,
+        template.publishMinute ?? 0,
+      );
+      await prisma.event.create({
+        data: {
+          title: template.title,
+          description: template.description,
+          type: template.type,
+          gameId: template.gameId,
+          startDate: occStart,
+          endDate: duration != null ? new Date(occStart.getTime() + duration) : null,
+          seriesId,
+          seriesOpen: true,
+          recurrence,
+          publishWeekday: template.publishWeekday,
+          publishHour: template.publishHour,
+          publishMinute: template.publishMinute,
+          announceAt,
+        },
+      });
+      created += 1;
+      futureCount += 1;
+    }
+    if (created > 0) {
+      console.log(`♻️  Série « ${template.title} » prolongée (+${created} occurrence(s)).`);
     }
   }
 }
