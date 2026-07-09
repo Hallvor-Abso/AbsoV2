@@ -212,7 +212,7 @@ function EventForm({
 
         {!event && (
           <div>
-            <label className="label">Publier l'annonce le (optionnel)</label>
+            <label className="label">Publier la 1ʳᵉ annonce le (optionnel)</label>
             <DateTimeInput name="announceAt" />
             <p className="mt-1 text-xs text-muted">
               Vide = publiée tout de suite. Sinon, l'annonce Discord est postée à cette date/heure
@@ -244,6 +244,10 @@ function EventForm({
 /** Options de récurrence (création uniquement) : cadence + nombre d'occurrences. */
 function RecurrenceFields() {
   const [recurrence, setRecurrence] = useState('none');
+  const [occurrences, setOccurrences] = useState('4');
+  // Le créneau de publication ne concerne que les occurrences 2, 3… : inutile
+  // (et masqué) tant qu'il n'y a pas au moins 2 occurrences.
+  const showSlot = recurrence !== 'none' && (Number(occurrences) || 0) >= 2;
   return (
     <div className="rounded-lg border border-border/60 bg-ink-soft/30 p-3">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -270,17 +274,18 @@ function RecurrenceFields() {
               type="number"
               min={1}
               max={52}
-              defaultValue={4}
+              value={occurrences}
+              onChange={(e) => setOccurrences(e.target.value)}
               className="field"
             />
           </div>
         )}
       </div>
-      {recurrence !== 'none' && (
+      {showSlot && (
         <>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="label">Publier l'annonce le</label>
+              <label className="label">Publier les annonces suivantes le</label>
               <select name="publishWeekday" defaultValue="1" className="field">
                 <option value="1">Lundi</option>
                 <option value="2">Mardi</option>
