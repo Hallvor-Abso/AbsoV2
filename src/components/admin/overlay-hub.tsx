@@ -58,6 +58,7 @@ const OVERLAYS: OverlayDef[] = [
     shared: ['name', 'twitch', 'discord', 'guild', 'site', 'siteUrl', 'transparent'],
     fields: [
       { param: 'title', label: 'Titre', kind: 'text', placeholder: 'Le stream commence bientôt' },
+      { param: 'timer', label: 'Afficher le compte à rebours', kind: 'toggle', defaultOn: true, off: '0' },
       { param: 'min', label: 'Durée (minutes)', kind: 'number', placeholder: '10' },
     ],
   },

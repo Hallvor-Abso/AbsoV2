@@ -14,6 +14,8 @@ export default function StartingSoonOverlay() {
   const { ready, get } = useOverlayConfig('starting-soon');
   const min = Number(get('min'));
   const cd = useCountdown(Number.isFinite(min) && min > 0 ? min : 10);
+  // Compte à rebours affiché par défaut ; masqué avec ?timer=0 (ou via le hub).
+  const showTimer = get('timer') !== '0';
   const [meta, setMeta] = useState({ name: 'Hallvor', title: 'Le stream commence bientôt' });
 
   useEffect(() => {
@@ -29,15 +31,17 @@ export default function StartingSoonOverlay() {
       <div className="ov-center">
         <div className="ov-eyebrow">
           <span className="ov-live-dot" />
-          {cd.done ? 'En direct' : 'En direct dans'}
+          {showTimer ? (cd.done ? 'En direct' : 'En direct dans') : 'Bientôt en direct'}
         </div>
-        <CountdownRing
-          done={cd.done}
-          progress={cd.progress}
-          time={cd.time}
-          label="avant le live"
-          doneText="ÇA COMMENCE !"
-        />
+        {showTimer && (
+          <CountdownRing
+            done={cd.done}
+            progress={cd.progress}
+            time={cd.time}
+            label="avant le live"
+            doneText="ÇA COMMENCE !"
+          />
+        )}
         <h1 className="ov-name">{meta.name}</h1>
         <p className="ov-title">{meta.title}</p>
       </div>
