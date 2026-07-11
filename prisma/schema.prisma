@@ -36,7 +36,23 @@ model User {
   discordRoles String[] @default([])
   adminGames   Game[]   @relation("GameAdmins")
   applications Application[]
+  resetTokens  PasswordResetToken[]
   createdAt    DateTime @default(now())
+}
+
+// Jeton de réinitialisation de mot de passe (envoyé par email). On ne stocke que
+// le HASH du jeton (le jeton brut n'existe que dans le lien envoyé). Usage unique
+// + expiration courte.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 enum Role {

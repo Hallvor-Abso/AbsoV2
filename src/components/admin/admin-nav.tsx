@@ -127,6 +127,13 @@ export function AdminNav({
         {links}
         <div className="mt-auto space-y-3 border-t border-border pt-4">
           <Link
+            href="/admin/compte"
+            className="flex items-center gap-2 px-3 text-sm text-muted transition-colors hover:text-accent"
+          >
+            <Icon name="members" className="h-4 w-4" />
+            Mon compte
+          </Link>
+          <Link
             href="/"
             className="flex items-center gap-2 px-3 text-sm text-muted transition-colors hover:text-accent"
           >

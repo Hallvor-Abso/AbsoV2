@@ -52,7 +52,12 @@ function LoginForm() {
           <input id="identifier" name="identifier" required autoFocus className="field" />
         </div>
         <div>
-          <label className="label" htmlFor="password">Mot de passe</label>
+          <div className="flex items-center justify-between">
+            <label className="label" htmlFor="password">Mot de passe</label>
+            <Link href="/mot-de-passe-oublie" className="mb-1.5 text-xs text-muted hover:text-accent">
+              Mot de passe oublié ?
+            </Link>
+          </div>
           <input id="password" name="password" type="password" required className="field" />
         </div>
         {error && (
