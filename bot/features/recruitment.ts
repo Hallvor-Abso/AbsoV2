@@ -192,3 +192,30 @@ export async function deleteApplicationChannel(client: Client, channelId: string
     await channel.delete('Candidature supprimée depuis le site');
   }
 }
+
+/**
+ * Rattrapage : publie les candidatures EN ATTENTE qui n'ont pas encore de salon
+ * Discord — typiquement déposées pendant que le bot était éteint, ou avant que
+ * la catégorie de recrutement du jeu ne soit configurée. Limité au mode
+ * « salon dédié » (catégorie) : en mode salon unique, rien n'est mémorisé en
+ * base, on ne peut donc pas savoir si la candidature a déjà été postée (on
+ * s'abstient pour éviter les doublons). Appelée périodiquement par la boucle.
+ */
+export async function sweepUnpostedApplications(client: Client): Promise<void> {
+  const due = await prisma.application.findMany({
+    where: {
+      status: 'PENDING',
+      discordChannelId: null,
+      game: { discordRecruitmentCategoryId: { not: null } },
+    },
+    select: { id: true, pseudo: true },
+  });
+  for (const a of due) {
+    try {
+      await postApplication(client, a.id);
+      console.log(`📥 Candidature rattrapée (salon créé) : « ${a.pseudo} ».`);
+    } catch (err) {
+      console.error(`Rattrapage candidature « ${a.pseudo} » :`, err);
+    }
+  }
+}

@@ -4,6 +4,7 @@ import { prisma } from '../prisma';
 import { env } from '../env';
 import { sweepRaidRosters, sweepRosterSelectionDms } from './raid-roster';
 import { publishScheduledEvents, sweepStartedEventMessages, extendOpenSeries } from './calendar';
+import { sweepUnpostedApplications } from './recruitment';
 
 /**
  * Rappels de raid en message privé :
@@ -99,6 +100,7 @@ export function startReminderLoop(client: Client): void {
         publishScheduledEvents(client, summarize).catch((e) => console.error('Publication planifiée :', e)),
       );
     sweepStartedEventMessages(client).catch((e) => console.error('Nettoyage annonces events :', e));
+    sweepUnpostedApplications(client).catch((e) => console.error('Rattrapage candidatures :', e));
   };
   run();
   setInterval(run, CHECK_INTERVAL_MS);
