@@ -86,6 +86,12 @@ model Game {
   // « Officier WOW », « Roster WOW », etc. Vide → déduit du slug en majuscules.
   discordRoleTag  String?
 
+  // Bloc d'intro de la page recrutement (affiché avant le formulaire) :
+  // les profils de joueurs recherchés + ce que la guilde apporte. Une ligne
+  // par point (rendue en liste à puces). Vides → la section n'apparaît pas.
+  recruitProfileText String?
+  recruitOfferText   String?
+
   raidTiers       RaidTier[]
   news            News[]
   recruitmentRoles RecruitmentRole[]

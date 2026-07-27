@@ -449,6 +449,23 @@ export async function deleteSlot(id: string) {
   revalidatePath('/admin/recrutement');
 }
 
+/**
+ * Enregistre le bloc d'intro de la page recrutement d'un jeu : les profils de
+ * joueurs recherchés + ce que la guilde apporte (affiché avant le formulaire).
+ */
+export async function saveRecruitIntro(formData: FormData) {
+  const gameId = formData.get('gameId') as string;
+  await requireGameAccess(gameId);
+  const profileText = sanitizeText(formData.get('profileText'), 2000) || null;
+  const offerText = sanitizeText(formData.get('offerText'), 2000) || null;
+  await prisma.game.update({
+    where: { id: gameId },
+    data: { recruitProfileText: profileText, recruitOfferText: offerText },
+  });
+  revalidatePublic();
+  revalidatePath('/admin/recrutement');
+}
+
 /** Crée un rôle de recrutement (Tank, Heal...) pour un jeu. */
 export async function createRecruitRole(formData: FormData) {
   const gameId = formData.get('gameId') as string;

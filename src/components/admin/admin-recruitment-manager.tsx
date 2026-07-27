@@ -13,6 +13,7 @@ import {
   addRecruitClass,
   cycleSlotStatus,
   deleteSlot,
+  saveRecruitIntro,
 } from '@/app/admin/actions';
 import { RecruitFieldsEditor, type AdminField } from './recruit-fields-editor';
 
@@ -23,6 +24,9 @@ export type AdminRecruitGame = GameTabInfo & {
   roles: AdminRole[];
   slots: AdminSlot[];
   fields: AdminField[];
+  /** Bloc d'intro public : profils recherchés + apports de la guilde. */
+  profileText: string | null;
+  offerText: string | null;
 };
 
 // Couleurs des boutons de spécialisation selon le statut (cycle au clic).
@@ -106,6 +110,15 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
 
       <GameTabBar games={games} activeId={game.id} onSelect={setActiveId} />
 
+      {/* Bloc d'intro public : profils recherchés + apports de la guilde.
+          key = jeu actif pour recharger les defaultValue au changement d'onglet. */}
+      <IntroEditor
+        key={game.id}
+        gameId={game.id}
+        profileText={game.profileText}
+        offerText={game.offerText}
+      />
+
       {/* Éditeurs de rôle */}
       {uniqueRoles.length === 0 ? (
         <p className="card p-8 text-center text-muted">
@@ -176,6 +189,59 @@ export function AdminRecruitmentManager({ games }: { games: AdminRecruitGame[] }
 
       {/* Constructeur du formulaire de candidature pour le jeu sélectionné */}
       <RecruitFieldsEditor gameId={game.id} fields={game.fields} />
+    </div>
+  );
+}
+
+/**
+ * Éditeur du bloc d'intro affiché sur la page publique de recrutement, avant le
+ * formulaire : « profils recherchés » + « ce que la guilde apporte ».
+ * Une ligne = un point de la liste. Les deux champs vides → section masquée.
+ */
+function IntroEditor({
+  gameId,
+  profileText,
+  offerText,
+}: {
+  gameId: string;
+  profileText: string | null;
+  offerText: string | null;
+}) {
+  return (
+    <div className="card mb-6 p-6">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+        Présentation (page publique)
+      </p>
+      <p className="mb-4 mt-1.5 text-sm text-muted">
+        Affichée avant le formulaire de candidature. <strong>Une ligne = un point</strong> de la
+        liste. Laisse les deux champs vides pour masquer la section.
+      </p>
+      <ActionForm action={saveRecruitIntro} success="Présentation enregistrée" className="space-y-4">
+        <input type="hidden" name="gameId" value={gameId} />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div>
+            <label className="label">Les profils que nous recherchons</label>
+            <textarea
+              name="profileText"
+              rows={6}
+              defaultValue={profileText ?? ''}
+              placeholder={'Joueurs assidus (2 raids/semaine)\nEsprit d’équipe et bonne ambiance\nEnvie de progresser sur du contenu HL'}
+              className="field text-sm"
+            />
+          </div>
+          <div>
+            <label className="label">Ce que la guilde t'apporte</label>
+            <textarea
+              name="offerText"
+              rows={6}
+              defaultValue={offerText ?? ''}
+              placeholder={'Un roster stable et expérimenté\nUne ambiance mature et détendue\nDiscord actif, événements réguliers'}
+              className="field text-sm"
+            />
+          </div>
+        </div>
+        <button type="submit" className="btn-primary py-2 text-sm">💾 Sauvegarder</button>
+      </ActionForm>
     </div>
   );
 }

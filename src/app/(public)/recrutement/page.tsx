@@ -68,6 +68,11 @@ export default async function RecruitmentPage({
             required: f.required,
             options: f.options,
           })) as RecruitField[]}
+          intros={games.map((g) => ({
+            gameId: g.id,
+            profileText: g.recruitProfileText ?? null,
+            offerText: g.recruitOfferText ?? null,
+          }))}
           initialGameId={games.find((g) => g.slug === searchParams.jeu)?.id ?? null}
           auth={auth}
         />
