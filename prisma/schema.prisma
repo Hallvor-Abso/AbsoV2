@@ -36,7 +36,23 @@ model User {
   discordRoles String[] @default([])
   adminGames   Game[]   @relation("GameAdmins")
   applications Application[]
+  resetTokens  PasswordResetToken[]
   createdAt    DateTime @default(now())
+}
+
+// Jeton de réinitialisation de mot de passe (envoyé par email). On ne stocke que
+// le HASH du jeton (le jeton brut n'existe que dans le lien envoyé). Usage unique
+// + expiration courte.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 enum Role {
@@ -69,6 +85,12 @@ model Game {
   // Tag des rôles Discord du jeu (ex. « WOW », « SWTOR »). Le bot pingue alors
   // « Officier WOW », « Roster WOW », etc. Vide → déduit du slug en majuscules.
   discordRoleTag  String?
+
+  // Bloc d'intro de la page recrutement (affiché avant le formulaire) :
+  // les profils de joueurs recherchés + ce que la guilde apporte. Une ligne
+  // par point (rendue en liste à puces). Vides → la section n'apparaît pas.
+  recruitProfileText String?
+  recruitOfferText   String?
 
   raidTiers       RaidTier[]
   news            News[]

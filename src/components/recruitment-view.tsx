@@ -25,6 +25,13 @@ export type RecruitRole = {
 
 export type RecruitField = FormFieldDef & { gameId: string };
 
+/** Bloc d'intro par jeu : profils recherchés + apports de la guilde (1 ligne = 1 point). */
+export type RecruitIntro = {
+  gameId: string;
+  profileText: string | null;
+  offerText: string | null;
+};
+
 /**
  * Affichage du recrutement, lisible et par jeu :
  * - onglets pour distinguer les jeux
@@ -37,6 +44,7 @@ export function RecruitmentView({
   slots,
   roles: roleCategories = [],
   fields = [],
+  intros = [],
   initialGameId = null,
   auth,
 }: {
@@ -44,6 +52,7 @@ export function RecruitmentView({
   slots: RecruitSlot[];
   roles?: RecruitRole[];
   fields?: RecruitField[];
+  intros?: RecruitIntro[];
   initialGameId?: string | null;
   auth: RecruitAuth;
 }) {
@@ -65,6 +74,7 @@ export function RecruitmentView({
 
   const gameSlots = slots.filter((s) => s.gameId === activeGame.id);
   const gameRoles = roleCategories.filter((r) => r.gameId === activeGame.id);
+  const intro = intros.find((i) => i.gameId === activeGame.id) ?? null;
   // Champs du formulaire du jeu, ou jeu de champs par défaut s'il n'a rien défini.
   const customFields = fields.filter((f) => f.gameId === activeGame.id);
   const gameFields: FormFieldDef[] = customFields.length > 0 ? customFields : DEFAULT_RECRUIT_FIELDS;
@@ -139,6 +149,33 @@ export function RecruitmentView({
         </div>
       )}
 
+      {/* ---- Profils recherchés & apports de la guilde (avant le formulaire) ---- */}
+      {intro && (intro.profileText || intro.offerText) && (
+        <div className="mt-16">
+          <SectionHeading
+            eyebrow="Avant de postuler"
+            title="Est-ce qu'on est faits pour jouer ensemble ?"
+            className="mb-8"
+          />
+          <div className="grid items-start gap-5 lg:grid-cols-2">
+            {intro.profileText && (
+              <IntroCard
+                title="Les profils que nous recherchons"
+                text={intro.profileText}
+                bullet="→"
+              />
+            )}
+            {intro.offerText && (
+              <IntroCard
+                title="Ce que la guilde t'apporte"
+                text={intro.offerText}
+                bullet="✦"
+              />
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ---- Formulaire de candidature, propre au jeu sélectionné ---- */}
       <div className="mt-16">
         <SectionHeading
@@ -155,6 +192,30 @@ export function RecruitmentView({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Carte d'intro : chaque ligne non vide du texte devient un point de liste
+ * (les « - » / « • » en début de ligne sont ignorés, la puce est fournie).
+ */
+function IntroCard({ title, text, bullet }: { title: string; text: string; bullet: string }) {
+  const lines = text
+    .split('\n')
+    .map((l) => l.replace(/^\s*[-•*]\s*/, '').trim())
+    .filter(Boolean);
+  return (
+    <div className="card p-6">
+      <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-muted">{title}</h3>
+      <ul className="space-y-2.5">
+        {lines.map((line, i) => (
+          <li key={i} className="flex items-start gap-2.5 text-sm text-foreground/90">
+            <span className="mt-0.5 shrink-0 text-accent">{bullet}</span>
+            {line}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -51,6 +51,8 @@ model Game {
   discordRecruitmentChannelId String?
   discordRecruitmentCategoryId String?
   discordRoleTag  String?
+  recruitProfileText String?
+  recruitOfferText   String?
 
   raidTiers        RaidTier[]
   news             News[]

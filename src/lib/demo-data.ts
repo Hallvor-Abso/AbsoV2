@@ -31,6 +31,8 @@ const wow = {
   isActive: true,
   status: 'ACTIVE' as const,
   order: 0,
+  recruitProfileText: null,
+  recruitOfferText: null,
   createdAt: now,
   updatedAt: now,
 };
@@ -46,6 +48,8 @@ const swtor = {
   isActive: true,
   status: 'UPCOMING' as const,
   order: 1,
+  recruitProfileText: null,
+  recruitOfferText: null,
   createdAt: now,
   updatedAt: now,
 };
