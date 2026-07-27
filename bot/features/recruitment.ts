@@ -101,6 +101,42 @@ async function getOrCreateCandidateChannel(
   return guild.channels.create({ name, type: ChannelType.GuildText, parent: cat.id });
 }
 
+/**
+ * Permissions du salon candidat : visible par le GM, les Officiers du jeu et le
+ * candidat lui-même — masqué pour @everyone. N'ajoute que les autorisations
+ * MANQUANTES (idempotent) : les réglages manuels des officiers sont préservés.
+ */
+async function applyCandidateChannelPermissions(
+  channel: GuildTextBasedChannel,
+  game: { slug: string; discordRoleTag: string | null },
+  candidateDiscordId: string | null,
+): Promise<void> {
+  if (!('permissionOverwrites' in channel)) return; // fil de discussion → ignoré
+  const guild = channel.guild;
+  const allow = { ViewChannel: true, SendMessages: true, ReadMessageHistory: true };
+  const has = (id: string) => channel.permissionOverwrites.cache.has(id);
+
+  // Le bot d'abord (pour ne pas se verrouiller dehors quand on masque @everyone).
+  const me = guild.members.me;
+  if (me && !has(me.id)) await channel.permissionOverwrites.edit(me.id, allow).catch(() => {});
+  if (!has(guild.roles.everyone.id)) {
+    await channel.permissionOverwrites.edit(guild.roles.everyone.id, { ViewChannel: false }).catch(() => {});
+  }
+
+  // GM + Officier <TAG> du jeu (résolus par nom, insensible à la casse).
+  await guild.roles.fetch().catch(() => {});
+  for (const name of applicationRoleNames(game)) {
+    const role = guild.roles.cache.find((r) => r.name.toLowerCase() === name.toLowerCase());
+    if (role && !has(role.id)) await channel.permissionOverwrites.edit(role.id, allow).catch(() => {});
+  }
+
+  // Le candidat (si son compte Discord est lié et qu'il est sur le serveur).
+  if (candidateDiscordId && !has(candidateDiscordId)) {
+    const member = await guild.members.fetch(candidateDiscordId).catch(() => null);
+    if (member) await channel.permissionOverwrites.edit(member.id, allow).catch(() => {});
+  }
+}
+
 /** Publie une nouvelle candidature : salon dédié « candid-pseudo », ou salon unique. */
 export async function postApplication(client: Client, applicationId: string): Promise<void> {
   const application = await prisma.application.findUnique({
@@ -116,6 +152,8 @@ export async function postApplication(client: Client, applicationId: string): Pr
   if (game.discordRecruitmentCategoryId) {
     target = await getOrCreateCandidateChannel(client, game.discordRecruitmentCategoryId, application.pseudo);
     dedicated = true;
+    // Accès : GM + Officiers du jeu + le candidat (masqué pour @everyone).
+    await applyCandidateChannelPermissions(target, game, application.user?.discordId ?? null);
   } else if (game.discordRecruitmentChannelId) {
     const channel = await client.channels.fetch(game.discordRecruitmentChannelId);
     if (!channel || !channel.isTextBased() || channel.isDMBased()) {
@@ -216,6 +254,31 @@ export async function sweepUnpostedApplications(client: Client): Promise<void> {
       console.log(`📥 Candidature rattrapée (salon créé) : « ${a.pseudo} ».`);
     } catch (err) {
       console.error(`Rattrapage candidature « ${a.pseudo} » :`, err);
+    }
+  }
+
+  // Réparation : complète les permissions des salons candidats existants
+  // (candidatures encore en attente). Idempotent — n'ajoute que le manquant.
+  const withChannel = await prisma.application.findMany({
+    where: {
+      status: 'PENDING',
+      discordChannelId: { not: null },
+      game: { discordRecruitmentCategoryId: { not: null } },
+    },
+    include: { game: true, user: { select: { discordId: true } } },
+  });
+  for (const a of withChannel) {
+    if (!a.game) continue;
+    try {
+      const channel = await client.channels.fetch(a.discordChannelId!).catch(() => null);
+      if (!channel || !channel.isTextBased() || channel.isDMBased()) continue;
+      await applyCandidateChannelPermissions(
+        channel as GuildTextBasedChannel,
+        a.game,
+        a.user?.discordId ?? null,
+      );
+    } catch (err) {
+      console.error(`Permissions salon candidature « ${a.pseudo} » :`, err);
     }
   }
 }
