@@ -125,8 +125,8 @@ const OVERLAYS: OverlayDef[] = [
     id: 'badge',
     name: 'Badge logo',
     path: '/overlay/badge',
-    size: 'auto · transparent',
-    desc: 'Pilule avec le logo + infos qui alternent (site, Discord, prochain raid, dernier boss). Déplaçable où tu veux.',
+    size: 'taille = source (conseillé 520×80) · transparent',
+    desc: 'Pilule avec le logo + infos qui alternent (site, Discord, prochain raid, dernier boss). Remplit sa source : dimensionne-la pour choisir la taille.',
     shared: ['site', 'siteUrl', 'discord'],
     fields: [
       { param: 'auto', label: 'Infos auto (prochain raid, dernier boss)', kind: 'toggle', defaultOn: true, off: '0' },

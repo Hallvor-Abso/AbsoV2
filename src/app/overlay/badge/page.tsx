@@ -7,7 +7,8 @@ import { ACCENT, useOverlayConfig, useOverlayData, useSiteLogo } from '@/compone
  * Badge « Absolution » — Browser Source OBS séparée (fond transparent),
  * à placer où tu veux sur le stream. Pilule horizontale : logo à gauche,
  * infos à droite qui alternent en douceur (site, Discord, prochain raid,
- * dernier boss tombé).
+ * dernier boss tombé). REMPLIT sa source : dimensionne la source pour choisir
+ * la taille du badge (conseillé : 520×80).
  *
  *   https://absolution-guild.com/overlay/badge
  *
@@ -88,7 +89,7 @@ export default function BadgeOverlay() {
 
   return (
     <div className="bd-root">
-      <div className={`bd-card ${cfg.bare ? 'bd-bare' : ''}`}>
+      <div className={`bd-card ${cfg.bare ? 'bd-bare' : ''} ${info ? '' : 'bd-solo'}`}>
         <div className="bd-brand">
           {siteLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -113,35 +114,41 @@ export default function BadgeOverlay() {
       </div>
 
       <style>{`
-        .bd-root { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+        /* Le badge REMPLIT sa source OBS : toutes les tailles sont relatives à
+           la hauteur de la source (vh) → dimensionne la source, tout suit.
+           Taille conseillée : 520×80 (élargis-la si tes titres sont longs). */
+        .bd-root { position: fixed; inset: 0; display: flex; align-items: stretch; justify-content: stretch;
           background: transparent; font-family: var(--font-space-grotesk), system-ui, sans-serif; color: #fff; }
-        .bd-card { position: relative; display: inline-flex; align-items: center; gap: 16px;
-          padding: 12px 22px 12px 16px; border-radius: 999px; overflow: hidden;
+        .bd-card { position: relative; flex: 1; display: flex; align-items: center; gap: 4.5vh;
+          margin: 4px; padding: 0 8vh 0 5vh; border-radius: 999px; overflow: hidden;
           border: 1px solid rgba(255,255,255,.08);
           background: linear-gradient(135deg, rgba(20,26,38,.95), rgba(10,12,17,.95));
           backdrop-filter: blur(6px); box-shadow: 0 8px 30px rgba(0,0,0,.5); }
         /* fine ligne d'accent en bas de la pilule */
         .bd-card::after { content: ''; position: absolute; left: 12%; right: 12%; bottom: 0; height: 2px;
           background: linear-gradient(90deg, transparent, ${ACCENT}, transparent); opacity: .8; }
-        .bd-bare { background: none; border: none; backdrop-filter: none; box-shadow: none; padding: 0; }
+        .bd-bare { background: none; border: none; backdrop-filter: none; box-shadow: none; }
         .bd-bare::after { display: none; }
+        .bd-solo { justify-content: center; }
 
-        .bd-brand { display: flex; align-items: center; }
-        .bd-logo { height: 40px; width: auto; max-width: 220px; object-fit: contain; display: block;
+        .bd-brand { display: flex; align-items: center; flex: none; }
+        .bd-logo { height: 62vh; width: auto; max-width: 40vw; object-fit: contain; display: block;
           filter: drop-shadow(0 0 12px rgba(74,158,255,.35)); }
-        .bd-name { font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: .2em;
+        .bd-name { font-size: 34vh; font-weight: 700; text-transform: uppercase; letter-spacing: .2em;
           color: rgba(255,255,255,.92); white-space: nowrap; }
 
-        .bd-sep { width: 1px; height: 30px; flex: none;
+        .bd-sep { width: 1px; height: 52vh; flex: none;
           background: linear-gradient(180deg, transparent, rgba(255,255,255,.25), transparent); }
 
-        .bd-info { display: flex; flex-direction: column; justify-content: center; min-width: 170px;
-          animation: bdIn .45s cubic-bezier(.2,.9,.3,1) both; }
-        .bd-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .18em;
-          color: ${ACCENT}; white-space: nowrap; }
-        .bd-value { font-family: var(--font-inter), system-ui, sans-serif; font-size: 16px; font-weight: 600;
-          color: rgba(255,255,255,.92); white-space: nowrap; max-width: 420px; overflow: hidden;
-          text-overflow: ellipsis; }
+        /* La zone d'infos prend TOUTE la place restante ; le texte ne peut se
+           couper (…) que si la source est vraiment trop étroite. */
+        .bd-info { display: flex; flex-direction: column; justify-content: center; gap: 2vh;
+          flex: 1; min-width: 0; animation: bdIn .45s cubic-bezier(.2,.9,.3,1) both; }
+        .bd-label { font-size: 15vh; font-weight: 700; text-transform: uppercase; letter-spacing: .18em;
+          color: ${ACCENT}; white-space: nowrap; line-height: 1; }
+        .bd-value { font-family: var(--font-inter), system-ui, sans-serif; font-size: 25vh; font-weight: 600;
+          color: rgba(255,255,255,.92); white-space: nowrap; line-height: 1.15;
+          overflow: hidden; text-overflow: ellipsis; }
 
         .bd-bare .bd-logo { filter: drop-shadow(0 2px 8px rgba(0,0,0,.9)) drop-shadow(0 0 16px rgba(0,0,0,.6)); }
         .bd-bare .bd-name { text-shadow: 0 2px 8px rgba(0,0,0,.9), 0 0 18px rgba(0,0,0,.7); }
