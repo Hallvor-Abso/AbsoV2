@@ -126,9 +126,13 @@ const OVERLAYS: OverlayDef[] = [
     name: 'Badge logo',
     path: '/overlay/badge',
     size: 'auto · transparent',
-    desc: 'Badge avec le logo de la guilde, autonome et déplaçable.',
-    shared: ['site', 'siteUrl'],
-    fields: [{ param: 'bare', label: 'Sans cadre/fond', kind: 'toggle', defaultOn: false, on: '1' }],
+    desc: 'Pilule avec le logo + infos qui alternent (site, Discord, prochain raid, dernier boss). Déplaçable où tu veux.',
+    shared: ['site', 'siteUrl', 'discord'],
+    fields: [
+      { param: 'auto', label: 'Infos auto (prochain raid, dernier boss)', kind: 'toggle', defaultOn: true, off: '0' },
+      { param: 'interval', label: 'Durée par info (s)', kind: 'number', placeholder: '8' },
+      { param: 'bare', label: 'Sans cadre/fond', kind: 'toggle', defaultOn: false, on: '1' },
+    ],
   },
   {
     id: 'ticker',
