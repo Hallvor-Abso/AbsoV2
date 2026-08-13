@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ACCENT, useOverlayConfig, useOverlayData, useSiteLogo } from '@/components/overlay/overlay-kit';
 
 /**
  * Panneau d'infos — Browser Source OBS, fond transparent. Le panneau REMPLIT
  * sa source : dimensionne la source à la largeur de ta caméra et place-la
- * au-dessus. Affiche un message à la fois ; pour passer au suivant, le panneau
- * pivote en 3D comme un cube. Messages perso + infos auto de la guilde.
+ * au-dessus. Affiche un message à la fois, avec un fondu doux entre chaque.
+ * Le texte S'ADAPTE toujours à la taille de la source (jamais coupé) :
+ * il rétrécit légèrement si le message est long. Messages perso + infos auto.
  *   https://absolution-guild.com/overlay/ticker
  *   https://absolution-guild.com/overlay/ticker?messages=Salut à tous|GG l'équipe
  *
@@ -19,8 +20,6 @@ import { ACCENT, useOverlayConfig, useOverlayData, useSiteLogo } from '@/compone
  */
 
 type Cfg = { messages: string[]; auto: boolean; interval: number; logo: boolean };
-
-const FACE_ROT = [0, 90, 180, 270];
 
 function readConfig(get: (k: string) => string | null): Cfg {
   const interval = Number(get('interval'));
@@ -45,6 +44,38 @@ function buildItems(cfg: Cfg | null, data: ReturnType<typeof useOverlayData>): s
   return items;
 }
 
+/**
+ * Texte sur UNE ligne qui s'ajuste à la largeur disponible : si le message
+ * déborde, la police est réduite proportionnellement (plancher à 50 %, au-delà
+ * points de suspension — cas extrême d'une source très étroite).
+ */
+function FitText({ text }: { text: string }) {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const spanRef = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    const span = spanRef.current;
+    if (!box || !span) return;
+    const fit = () => {
+      span.style.fontSize = ''; // mesure à la taille de base héritée
+      const avail = box.clientWidth;
+      const need = span.scrollWidth;
+      if (avail > 0 && need > avail) {
+        span.style.fontSize = `${Math.max(Math.round((avail / need) * 100), 50)}%`;
+      }
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [text]);
+  return (
+    <div ref={boxRef} className="tk-fit">
+      <span ref={spanRef} className="tk-text">{text}</span>
+    </div>
+  );
+}
+
 export default function TickerOverlay() {
   const { ready, get } = useOverlayConfig('ticker');
   const [cfg, setCfg] = useState<Cfg | null>(null);
@@ -57,48 +88,19 @@ export default function TickerOverlay() {
   const items = useMemo(() => buildItems(cfg, data), [cfg, data]);
   const itemsKey = items.join('§');
 
-  // Profondeur du cube = moitié de la hauteur du panneau (mesurée) → cube parfait
-  // quelle que soit la taille de la source.
-  const sceneRef = useRef<HTMLDivElement>(null);
-  const [depth, setDepth] = useState(28);
+  // Rotation : un message à la fois, fondu à chaque changement.
+  const [step, setStep] = useState(0);
   useEffect(() => {
-    const el = sceneRef.current;
-    if (!el) return;
-    const update = () => setDepth(Math.max(8, el.clientHeight / 2));
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    update();
-    return () => ro.disconnect();
-  }, []);
-
-  // Cube à 4 faces : la face visible affiche items[step % len] ; à chaque pas on
-  // pivote de 90° et on charge le message suivant sur la face entrante (de profil).
-  const [faces, setFaces] = useState<string[]>(['', '', '', '']);
-  const [rot, setRot] = useState(0);
-  const stepRef = useRef(0);
-
-  useEffect(() => {
-    if (items.length === 0) return;
-    stepRef.current = 0;
-    setRot(0);
-    setFaces([0, 1, 2, 3].map((k) => items[k % items.length]));
-    if (items.length < 2) return;
-
-    const id = setInterval(() => {
-      const ns = stepRef.current + 1;
-      stepRef.current = ns;
-      setFaces((f) => {
-        const c = [...f];
-        c[ns % 4] = items[ns % items.length]; // face entrante (encore de profil)
-        return c;
-      });
-      setRot(-90 * ns);
-    }, cfg!.interval * 1000);
+    setStep(0);
+    if (!cfg || items.length < 2) return;
+    const id = setInterval(() => setStep((s) => s + 1), cfg.interval * 1000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemsKey, cfg?.interval]);
 
   if (!cfg) return <div className="tk-root" />;
+
+  const message = items[step % items.length] ?? '';
 
   return (
     <div className="tk-root">
@@ -110,40 +112,29 @@ export default function TickerOverlay() {
             <img className="tk-side-logo" src={logo} alt="" />
           </div>
         )}
-        <div className="tk-scene" ref={sceneRef}>
-          <div className="tk-cube" style={{ transform: `translateZ(-${depth}px) rotateX(${rot}deg)` }}>
-            {faces.map((text, i) => (
-              <div
-                key={i}
-                className="tk-face"
-                style={{ transform: `rotateX(${FACE_ROT[i]}deg) translateZ(${depth}px)` }}
-              >
-                <span className="tk-bullet">◆</span>
-                <span className="tk-text">{text}</span>
-              </div>
-            ))}
-          </div>
+        {/* key = step → l'animation d'entrée rejoue à chaque message */}
+        <div className="tk-msg" key={step % items.length}>
+          <span className="tk-bullet">◆</span>
+          <FitText text={message} />
         </div>
       </div>
 
       <style>{`
+        /* Toutes les tailles sont relatives à la hauteur de la source (vh) :
+           redimensionner la source redimensionne tout le panneau. */
         .tk-root { position: fixed; inset: 0; background: transparent;
           font-family: var(--font-space-grotesk), system-ui, sans-serif; color: #fff; }
-        .tk-panel { position: absolute; inset: 0; display: flex; align-items: stretch;
-          border-radius: 16px; overflow: hidden;
+        .tk-panel { position: absolute; inset: 3px; display: flex; align-items: stretch;
+          border-radius: 14px; overflow: hidden;
           background:
-            radial-gradient(120% 140% at 50% -20%, rgba(74,158,255,.16), transparent 60%),
-            linear-gradient(180deg, rgba(18,24,35,.97), rgba(8,10,15,.97));
-          border: 2px solid rgba(74,158,255,.85);
-          box-shadow: 0 0 18px rgba(74,158,255,.38), 0 10px 28px rgba(0,0,0,.5),
-            inset 0 0 0 1px rgba(255,255,255,.05), inset 0 0 34px rgba(0,0,0,.32);
-          animation: tkGlow 3.6s ease-in-out infinite; }
-        @keyframes tkGlow {
-          0%,100% { box-shadow: 0 0 16px rgba(74,158,255,.30), 0 10px 28px rgba(0,0,0,.5),
-            inset 0 0 0 1px rgba(255,255,255,.05), inset 0 0 34px rgba(0,0,0,.32); }
-          50% { box-shadow: 0 0 26px rgba(74,158,255,.55), 0 10px 28px rgba(0,0,0,.5),
-            inset 0 0 0 1px rgba(255,255,255,.07), inset 0 0 34px rgba(0,0,0,.32); }
-        }
+            radial-gradient(120% 140% at 50% -20%, rgba(74,158,255,.14), transparent 60%),
+            linear-gradient(180deg, rgba(18,24,35,.96), rgba(8,10,15,.97));
+          border: 1px solid rgba(74,158,255,.45);
+          box-shadow: 0 0 18px rgba(74,158,255,.22), 0 10px 28px rgba(0,0,0,.5),
+            inset 0 0 0 1px rgba(255,255,255,.04); }
+        /* fine ligne d'accent en bas du panneau */
+        .tk-panel::after { content: ''; position: absolute; left: 10%; right: 10%; bottom: 0; height: 2px;
+          background: linear-gradient(90deg, transparent, ${ACCENT}, transparent); opacity: .8; }
 
         /* Ligne lumineuse qui balaie le haut du panneau. */
         .tk-sheen { position: absolute; top: 0; left: 0; right: 0; height: 2px; z-index: 3; pointer-events: none;
@@ -152,24 +143,26 @@ export default function TickerOverlay() {
           animation: tkSheen 4.5s ease-in-out infinite; }
         @keyframes tkSheen { 0% { background-position: -60% 0; } 100% { background-position: 160% 0; } }
 
-        /* Carré du logo : fixe (hors de la scène 3D), fond plus clair, accolé au panneau. */
+        /* Carré du logo : fixe, accolé au panneau. */
         .tk-side { flex: none; aspect-ratio: 1 / 1; height: 100%; z-index: 2;
           display: flex; align-items: center; justify-content: center;
-          background: linear-gradient(180deg, rgba(58,78,108,.85), rgba(30,42,60,.9));
-          border-right: 1px solid rgba(74,158,255,.45);
-          box-shadow: inset 0 0 18px rgba(74,158,255,.12); }
+          background: linear-gradient(180deg, rgba(40,56,82,.85), rgba(20,28,42,.92));
+          border-right: 1px solid rgba(74,158,255,.35);
+          box-shadow: inset 0 0 18px rgba(74,158,255,.10); }
         .tk-side-logo { width: 62%; height: 62%; object-fit: contain;
           filter: drop-shadow(0 0 6px rgba(74,158,255,.6)); }
 
-        .tk-scene { flex: 1; min-width: 0; height: 100%; perspective: 1100px; }
-        .tk-cube { position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
-          transition: transform .8s cubic-bezier(.62,.04,.2,1); }
-        .tk-face { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-          gap: 11px; padding: 6px 24px; backface-visibility: hidden; }
-        .tk-bullet { color: ${ACCENT}; font-size: 11px; flex: none; filter: drop-shadow(0 0 5px rgba(74,158,255,.8)); }
-        .tk-text { font-size: 19px; font-weight: 500; line-height: 1.2; text-align: center; letter-spacing: .01em;
-          color: rgba(255,255,255,.95); text-shadow: 0 1px 8px rgba(0,0,0,.5);
-          display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        /* Message : centré, une ligne, fondu à l'arrivée. */
+        .tk-msg { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center;
+          gap: 3.5vh; padding: 0 5vh; animation: tkIn .55s cubic-bezier(.2,.9,.3,1) both; }
+        .tk-bullet { color: ${ACCENT}; font-size: 13vh; flex: none;
+          filter: drop-shadow(0 0 5px rgba(74,158,255,.8)); }
+        .tk-fit { flex: 1; min-width: 0; display: flex; justify-content: center; font-size: 32vh; }
+        .tk-text { display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden;
+          text-overflow: ellipsis; font-weight: 500; line-height: 1.25; letter-spacing: .01em;
+          color: rgba(255,255,255,.95); text-shadow: 0 1px 8px rgba(0,0,0,.5); }
+
+        @keyframes tkIn { from { opacity: 0; transform: translateY(24%); } to { opacity: 1; transform: none; } }
       `}</style>
     </div>
   );
