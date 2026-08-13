@@ -74,11 +74,12 @@ export default function CameraFrame() {
           font-family: var(--font-space-grotesk), system-ui, sans-serif; color: #fff; }
 
         /* Remplissage de l'intérieur (placeholder ou image) quand pas de webcam.
-           Même ambiance que le panneau d'infos. */
+           Même ambiance que le panneau d'infos, mais OPAQUE : il doit masquer
+           complètement ce qu'il y a derrière (chat du jeu, etc.). */
         .cam-fill { position: absolute; inset: 0; border-radius: 14px; overflow: hidden;
           background:
             radial-gradient(120% 140% at 50% -20%, rgba(74,158,255,.14), transparent 60%),
-            linear-gradient(180deg, rgba(18,24,35,.96), rgba(8,10,15,.97));
+            linear-gradient(180deg, rgb(18,24,35), rgb(8,10,15));
           background-size: cover; background-position: center;
           display: flex; align-items: center; justify-content: center; }
         .cam-ph { display: flex; flex-direction: column; align-items: center; gap: 14px; }
