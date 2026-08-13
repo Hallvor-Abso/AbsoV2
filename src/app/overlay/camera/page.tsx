@@ -59,10 +59,7 @@ export default function CameraFrame() {
         </div>
       )}
       <div className="cam-frame">
-        <span className="cam-c cam-tl" />
-        <span className="cam-c cam-tr" />
-        <span className="cam-c cam-bl" />
-        <span className="cam-c cam-br" />
+        <span className="cam-sheen" />
       </div>
 
       {cfg.plate && (
@@ -76,37 +73,36 @@ export default function CameraFrame() {
         .cam-root { position: fixed; inset: 0; background: transparent; pointer-events: none;
           font-family: var(--font-space-grotesk), system-ui, sans-serif; color: #fff; }
 
-        /* Remplissage de l'intérieur (placeholder ou image) quand pas de webcam */
-        .cam-fill { position: absolute; inset: 0; border-radius: 16px; overflow: hidden;
-          background: radial-gradient(circle at 50% 35%, #1b2433, #0b0e14);
+        /* Remplissage de l'intérieur (placeholder ou image) quand pas de webcam.
+           Même ambiance que le panneau d'infos. */
+        .cam-fill { position: absolute; inset: 0; border-radius: 14px; overflow: hidden;
+          background:
+            radial-gradient(120% 140% at 50% -20%, rgba(74,158,255,.14), transparent 60%),
+            linear-gradient(180deg, rgba(18,24,35,.96), rgba(8,10,15,.97));
           background-size: cover; background-position: center;
           display: flex; align-items: center; justify-content: center; }
         .cam-ph { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-        .cam-ph-logo { width: 38%; max-width: 130px; min-width: 64px; opacity: .92; }
+        .cam-ph-logo { width: 38%; max-width: 130px; min-width: 64px; opacity: .92;
+          filter: drop-shadow(0 0 10px rgba(74,158,255,.35)); }
         .cam-ph-text { font-size: 16px; letter-spacing: .18em; text-transform: uppercase;
           color: rgba(255,255,255,.55); }
 
-        /* Cadre : bordure + lueur, centre transparent */
-        .cam-frame { position: absolute; inset: 0; border-radius: 16px;
-          border: 3px solid rgba(74,158,255,.85);
-          box-shadow: 0 0 22px rgba(74,158,255,.4), inset 0 0 0 1px rgba(255,255,255,.06),
-            inset 0 0 36px rgba(0,0,0,.28); }
+        /* Cadre : même langage que le panneau d'infos — bordure fine, lueur
+           douce, ligne d'accent en bas, balayage lumineux. Centre transparent. */
+        .cam-frame { position: absolute; inset: 0; border-radius: 14px; overflow: hidden;
+          border: 1px solid rgba(74,158,255,.45);
+          box-shadow: 0 0 18px rgba(74,158,255,.22), 0 10px 28px rgba(0,0,0,.4),
+            inset 0 0 0 1px rgba(255,255,255,.04); }
+        /* fine ligne d'accent en bas du cadre */
+        .cam-frame::after { content: ''; position: absolute; left: 10%; right: 10%; bottom: 0; height: 2px;
+          background: linear-gradient(90deg, transparent, ${ACCENT}, transparent); opacity: .8; }
 
-        /* Équerres de coin (par-dessus la bordure) */
-        .cam-c { position: absolute; width: 30px; height: 30px; }
-        .cam-c::before, .cam-c::after { content: ''; position: absolute; background: ${ACCENT};
-          box-shadow: 0 0 8px rgba(74,158,255,.7); }
-        .cam-c::before { width: 100%; height: 5px; }
-        .cam-c::after { width: 5px; height: 100%; }
-        .cam-tl { top: -2px; left: -2px; }
-        .cam-tl::before { top: 0; left: 0; border-top-left-radius: 4px; }
-        .cam-tl::after { top: 0; left: 0; }
-        .cam-tr { top: -2px; right: -2px; }
-        .cam-tr::before { top: 0; right: 0; } .cam-tr::after { top: 0; right: 0; }
-        .cam-bl { bottom: -2px; left: -2px; }
-        .cam-bl::before { bottom: 0; left: 0; } .cam-bl::after { bottom: 0; left: 0; }
-        .cam-br { bottom: -2px; right: -2px; }
-        .cam-br::before { bottom: 0; right: 0; } .cam-br::after { bottom: 0; right: 0; }
+        /* Ligne lumineuse qui balaie le haut du cadre (comme le panneau). */
+        .cam-sheen { position: absolute; top: 0; left: 0; right: 0; height: 2px; pointer-events: none;
+          background: linear-gradient(90deg, transparent, ${ACCENT}, transparent);
+          background-size: 50% 100%; background-repeat: no-repeat;
+          animation: camSheen 4.5s ease-in-out infinite; }
+        @keyframes camSheen { 0% { background-position: -60% 0; } 100% { background-position: 160% 0; } }
 
         /* Plaque pseudo en bas du cadre */
         .cam-plate { position: absolute; left: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 9px;
