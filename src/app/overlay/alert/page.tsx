@@ -147,9 +147,16 @@ export default function AlertOverlay() {
     setQueue(rest);
     setCurrent(next);
     if (cfg.sound) playSound(cfg.soundUrl, cfg.volume);
+  }, [cfg, current, queue]);
+
+  // Fin d'affichage : minuteur SÉPARÉ, lié uniquement à l'alerte en cours.
+  // (Dans l'effet ci-dessus, son nettoyage l'annulait dès que la file changeait
+  // → l'overlay restait « occupé » et ne jouait plus les alertes suivantes.)
+  useEffect(() => {
+    if (!cfg || !current) return;
     const t = setTimeout(() => setCurrent(null), cfg.durationMs);
     return () => clearTimeout(t);
-  }, [cfg, current, queue]);
+  }, [cfg, current]);
 
   if (!current) return <div className="al-root" />;
 
