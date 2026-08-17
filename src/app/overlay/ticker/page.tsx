@@ -101,6 +101,7 @@ export default function TickerOverlay() {
   if (!cfg) return <div className="tk-root" />;
 
   const message = items[step % items.length] ?? '';
+  const previous = step > 0 ? items[(step - 1) % items.length] ?? '' : null;
 
   return (
     <div className="tk-root">
@@ -112,10 +113,19 @@ export default function TickerOverlay() {
             <img className="tk-side-logo" src={logo} alt="" />
           </div>
         )}
-        {/* key = step → l'animation d'entrée rejoue à chaque message */}
-        <div className="tk-msg" key={step % items.length}>
-          <span className="tk-bullet">◆</span>
-          <FitText text={message} />
+        {/* Fondu croisé : l'ancien message s'estompe vers le haut pendant que
+            le nouveau arrive par le bas (key = step → rejoue à chaque pas). */}
+        <div className="tk-stack">
+          {previous !== null && (
+            <div className="tk-msg tk-out" key={`out-${step}`}>
+              <span className="tk-bullet">◆</span>
+              <FitText text={previous} />
+            </div>
+          )}
+          <div className="tk-msg tk-in" key={`in-${step}`}>
+            <span className="tk-bullet">◆</span>
+            <FitText text={message} />
+          </div>
         </div>
       </div>
 
@@ -153,9 +163,12 @@ export default function TickerOverlay() {
         .tk-side-logo { width: 62%; height: 62%; object-fit: contain;
           filter: drop-shadow(0 0 6px rgba(74,158,255,.6)); }
 
-        /* Message : centré, une ligne, fondu à l'arrivée. */
-        .tk-msg { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center;
-          gap: 3.5vh; padding: 0 5vh; animation: tkIn .55s cubic-bezier(.2,.9,.3,1) both; }
+        /* Message : centré, une ligne, fondu croisé entre deux messages. */
+        .tk-stack { flex: 1; min-width: 0; position: relative; }
+        .tk-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+          gap: 3.5vh; padding: 0 5vh; }
+        .tk-in { animation: tkIn 1.1s cubic-bezier(.22,1,.36,1) both; animation-delay: .12s; }
+        .tk-out { animation: tkOut .9s cubic-bezier(.45,0,.55,.4) forwards; }
         .tk-bullet { color: ${ACCENT}; font-size: 13vh; flex: none;
           filter: drop-shadow(0 0 5px rgba(74,158,255,.8)); }
         .tk-fit { flex: 1; min-width: 0; display: flex; justify-content: center; font-size: 32vh; }
@@ -163,7 +176,8 @@ export default function TickerOverlay() {
           text-overflow: ellipsis; font-weight: 500; line-height: 1.25; letter-spacing: .01em;
           color: rgba(255,255,255,.95); text-shadow: 0 1px 8px rgba(0,0,0,.5); }
 
-        @keyframes tkIn { from { opacity: 0; transform: translateY(24%); } to { opacity: 1; transform: none; } }
+        @keyframes tkIn { from { opacity: 0; transform: translateY(55%); } to { opacity: 1; transform: none; } }
+        @keyframes tkOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-55%); } }
       `}</style>
     </div>
   );
