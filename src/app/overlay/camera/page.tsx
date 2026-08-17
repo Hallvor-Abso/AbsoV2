@@ -92,7 +92,9 @@ export default function CameraFrame() {
            douce, ligne d'accent en bas, balayage lumineux. Centre transparent. */
         .cam-frame { position: absolute; inset: 0; border-radius: 14px; overflow: hidden;
           border: 1px solid rgba(74,158,255,.45);
-          box-shadow: 0 0 18px rgba(74,158,255,.22), 0 10px 28px rgba(0,0,0,.4),
+          /* Halo bleu uniquement : pas d'ombre portée sombre, qui dessinait un
+             rectangle aux angles carrés autour des coins arrondis. */
+          box-shadow: 0 0 18px rgba(74,158,255,.22),
             inset 0 0 0 1px rgba(255,255,255,.04); }
         /* fine ligne d'accent en bas du cadre */
         .cam-frame::after { content: ''; position: absolute; left: 10%; right: 10%; bottom: 0; height: 2px;

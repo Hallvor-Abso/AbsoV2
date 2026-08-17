@@ -130,7 +130,8 @@ export default function TickerOverlay() {
             radial-gradient(120% 140% at 50% -20%, rgba(74,158,255,.14), transparent 60%),
             linear-gradient(180deg, rgba(18,24,35,.96), rgba(8,10,15,.97));
           border: 1px solid rgba(74,158,255,.45);
-          box-shadow: 0 0 18px rgba(74,158,255,.22), 0 10px 28px rgba(0,0,0,.5),
+          /* Halo bleu uniquement (pas d'ombre portée sombre : angles carrés). */
+          box-shadow: 0 0 18px rgba(74,158,255,.22),
             inset 0 0 0 1px rgba(255,255,255,.04); }
         /* fine ligne d'accent en bas du panneau */
         .tk-panel::after { content: ''; position: absolute; left: 10%; right: 10%; bottom: 0; height: 2px;
