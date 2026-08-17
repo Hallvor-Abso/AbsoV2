@@ -7,5 +7,13 @@ export const metadata: Metadata = {
 };
 
 export default function OverlayLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      {/* Fond 100 % transparent pour OBS : neutralise le fond global du site
+          (couleur + halos en dégradé), sinon la source dessine un rectangle
+          sombre aux angles carrés autour des overlays. */}
+      <style>{`html, body { background: transparent !important; background-image: none !important; }`}</style>
+      {children}
+    </>
+  );
 }
