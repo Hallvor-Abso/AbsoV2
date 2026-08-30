@@ -83,6 +83,9 @@ export default function AlertOverlay() {
   const { ready, get } = useOverlayConfig('alert');
   const siteLogo = useSiteLogo();
   const cursorRef = useRef(0);
+  // Ids déjà reçus : filet de sécurité contre tout rejeu (une alerte ne peut
+  // être affichée qu'une seule fois, même si l'API la renvoie).
+  const seenRef = useRef<Set<number>>(new Set());
   const [queue, setQueue] = useState<Alert[]>([]);
   const [current, setCurrent] = useState<Alert | null>(null);
   const [cfg, setCfg] = useState<{ durationMs: number; sound: boolean; soundUrl: string | null; volume: number } | null>(null);
@@ -114,10 +117,18 @@ export default function AlertOverlay() {
     const poll = async () => {
       try {
         const j = await fetchJson(`?after=${cursorRef.current}&t=${Date.now()}`);
-        if (active && Array.isArray(j.alerts) && j.alerts.length) {
-          cursorRef.current = j.lastId;
-          setQueue((q) => [...q, ...j.alerts]);
+        if (!active || !Array.isArray(j.alerts) || j.alerts.length === 0) return;
+        // Anti-rejeu : on ne garde que les alertes jamais vues, et le curseur
+        // avance sur le PLUS GRAND id reçu (jamais en arrière, même si la
+        // réponse est incomplète ou `lastId` absent). Sans cela, un curseur
+        // retombé à 0 ferait rejouer l'historique en boucle.
+        const fresh = (j.alerts as Alert[]).filter((a) => !seenRef.current.has(a.id));
+        for (const a of j.alerts as Alert[]) {
+          seenRef.current.add(a.id);
+          if (a.id > cursorRef.current) cursorRef.current = a.id;
         }
+        if (typeof j.lastId === 'number' && j.lastId > cursorRef.current) cursorRef.current = j.lastId;
+        if (fresh.length) setQueue((q) => [...q, ...fresh]);
       } catch {
         /* ignore */
       }
@@ -125,7 +136,7 @@ export default function AlertOverlay() {
     const start = async () => {
       try {
         const j = await fetchJson(`?t=${Date.now()}`);
-        cursorRef.current = j.lastId ?? 0;
+        cursorRef.current = typeof j.lastId === 'number' ? j.lastId : 0;
       } catch {
         /* ignore */
       }
