@@ -14,19 +14,34 @@ export type AlertInput = {
   message?: string;
   amount?: number;
   tier?: string;
+  /** Id de la notification Twitch : rejouer le même id ne crée rien de plus. */
+  eventId?: string | null;
 };
 
-/** Ajoute une alerte à la file (et purge les alertes de plus de 10 minutes). */
+/**
+ * Ajoute une alerte à la file (et purge les alertes de plus de 10 minutes).
+ * Si `eventId` est déjà connu (notification Twitch rejouée), aucune nouvelle
+ * alerte n'est créée : `null` est renvoyé.
+ */
 export async function enqueueAlert(a: AlertInput) {
-  const alert = await prisma.streamAlert.create({
-    data: {
-      type: a.type,
-      username: (a.username ?? '').slice(0, 80),
-      message: (a.message ?? '').slice(0, 300),
-      amount: Number.isFinite(a.amount) ? Math.trunc(a.amount as number) : 0,
-      tier: (a.tier ?? '').slice(0, 10),
-    },
-  });
+  const data = {
+    type: a.type,
+    username: (a.username ?? '').slice(0, 80),
+    message: (a.message ?? '').slice(0, 300),
+    amount: Number.isFinite(a.amount) ? Math.trunc(a.amount as number) : 0,
+    tier: (a.tier ?? '').slice(0, 10),
+    eventId: a.eventId || null,
+  };
+
+  let alert = null;
+  try {
+    alert = await prisma.streamAlert.create({ data });
+  } catch (err) {
+    // P2002 = violation d'unicité sur `eventId` → notification déjà traitée.
+    if ((err as { code?: string }).code !== 'P2002') throw err;
+    return null;
+  }
+
   await prisma.streamAlert.deleteMany({
     where: { createdAt: { lt: new Date(Date.now() - 10 * 60 * 1000) } },
   });

@@ -36,7 +36,10 @@ export async function POST(req: Request) {
     return new Response(payload.challenge ?? '', { status: 200, headers: { 'Content-Type': 'text/plain' } });
   }
   if (messageType === 'notification') {
-    await handleNotification(payload.subscription?.type ?? '', payload.event ?? {});
+    // `id` = twitch-eventsub-message-id : Twitch REJOUE la même notification si
+    // la réponse tarde (démarrage à froid) ou en livraison « au moins une fois ».
+    // On le transmet pour que l'alerte ne soit créée qu'UNE seule fois.
+    await handleNotification(payload.subscription?.type ?? '', payload.event ?? {}, id);
   }
   return new Response('', { status: 204 });
 }
@@ -44,15 +47,16 @@ export async function POST(req: Request) {
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
 const num = (v: unknown) => (typeof v === 'number' ? v : 0);
 
-async function handleNotification(subType: string, e: Record<string, unknown>) {
+async function handleNotification(subType: string, e: Record<string, unknown>, eventId: string) {
   switch (subType) {
     case 'channel.follow':
-      await enqueueAlert({ type: 'FOLLOW', username: str(e.user_name) });
+      await enqueueAlert({ type: 'FOLLOW', username: str(e.user_name), eventId });
       break;
     case 'channel.subscribe':
       // Un abo offert déclenche aussi channel.subscribe (is_gift=true) : on
       // l'ignore ici, il est traité par channel.subscription.gift.
-      if (e.is_gift !== true) await enqueueAlert({ type: 'SUB', username: str(e.user_name), tier: str(e.tier) });
+      if (e.is_gift !== true)
+        await enqueueAlert({ type: 'SUB', username: str(e.user_name), tier: str(e.tier), eventId });
       break;
     case 'channel.subscription.message':
       await enqueueAlert({
@@ -61,6 +65,7 @@ async function handleNotification(subType: string, e: Record<string, unknown>) {
         tier: str(e.tier),
         amount: num(e.cumulative_months) || num(e.duration_months),
         message: str((e.message as Record<string, unknown> | undefined)?.text),
+        eventId,
       });
       break;
     case 'channel.subscription.gift':
@@ -69,6 +74,7 @@ async function handleNotification(subType: string, e: Record<string, unknown>) {
         username: e.is_anonymous === true ? 'Anonyme' : str(e.user_name),
         tier: str(e.tier),
         amount: num(e.total) || 1,
+        eventId,
       });
       break;
     case 'channel.raid':
@@ -76,6 +82,7 @@ async function handleNotification(subType: string, e: Record<string, unknown>) {
         type: 'RAID',
         username: str(e.from_broadcaster_user_name),
         amount: num(e.viewers),
+        eventId,
       });
       break;
   }

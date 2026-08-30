@@ -492,6 +492,12 @@ model StreamAlert {
   message   String    @default("")
   amount    Int       @default(0) // mois (resub), nb d'abos offerts, ou viewers (raid)
   tier      String    @default("") // niveau d'abonnement Twitch (1000/2000/3000)
+
+  // Identifiant de la notification Twitch (« twitch-eventsub-message-id »).
+  // Twitch livre « au moins une fois » et REJOUE la même notification en cas
+  // de réponse lente : l'unicité empêche de créer plusieurs fois la même
+  // alerte (sinon elle repasse en boucle sur le stream). Null = alerte de test.
+  eventId   String?   @unique
   createdAt DateTime  @default(now())
 
   @@index([createdAt])
